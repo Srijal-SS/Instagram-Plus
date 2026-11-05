@@ -201,6 +201,7 @@ final class GlassTabSlide {
                         if (dist < slop) {
                             View tab = tabAt(event.getRawX() - barLeft);
                             if (tab != null && tab.isSelected()) {
+                                if (Settings.GLASS_TAB_BAR_HAPTICS.get()) GlassTabBar.Haptics.tick(tab, Settings.GLASS_TAB_BAR_HAPTIC_STYLE.get());
                                 if (Settings.IOS_TAB_BOUNCE.get()) GlassTabBar.bounceTabIcon(tab);
                                 if (Settings.IOS_TAB_RECLICK_SCROLL.get()) GlassTabBar.scrollToTop(bar);
                             }
@@ -284,6 +285,7 @@ final class GlassTabSlide {
         View tab = tabAt(x);
         if (tab == null) return;
         if (tab.isSelected()) {
+            if (Settings.GLASS_TAB_BAR_HAPTICS.get()) GlassTabBar.Haptics.tick(tab, Settings.GLASS_TAB_BAR_HAPTIC_STYLE.get());
             if (Settings.IOS_TAB_BOUNCE.get()) GlassTabBar.bounceTabIcon(tab);
             if (Settings.IOS_TAB_RECLICK_SCROLL.get()) GlassTabBar.scrollToTop(bar);
             return;
