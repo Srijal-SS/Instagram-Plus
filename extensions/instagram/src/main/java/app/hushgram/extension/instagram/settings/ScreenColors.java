@@ -439,8 +439,7 @@ public final class ScreenColors {
             frame.addView(image, new LinearLayout.LayoutParams(dp(row, 16), dp(row, 24)));
         }
         Drawable drawn = image.getDrawable();
-        int direction = preference instanceof HushgramPreferenceFragment.Heading
-                ? ((HushgramPreferenceFragment.Heading) preference).expanded ? -1 : 1 : 0;
+        int direction = 0;
         if (!(drawn instanceof Chevron) || ((Chevron) drawn).color != summary
                 || ((Chevron) drawn).direction != direction) {
             image.setImageDrawable(new Chevron(summary, dp(row, 2), direction));

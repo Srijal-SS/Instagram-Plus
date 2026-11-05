@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +32,10 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.window.BackEvent;
+import android.window.OnBackAnimationCallback;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 
 import app.hushgram.extension.instagram.direct.MessagesLock;
 import app.hushgram.extension.shared.L10n;
@@ -104,8 +109,6 @@ public final class SettingsDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Dialog dialog = new Dialog(getActivity(), getTheme()) {
-            // Back clears an active search before dismissing settings. Android 13 and up
-            // route the gesture here too, through the dialog's own back callback.
             @Override
             @SuppressWarnings("deprecation")
             public void onBackPressed() {
@@ -115,14 +118,18 @@ public final class SettingsDialog extends DialogFragment {
         };
         Window window = dialog.getWindow();
         if (window != null) {
+            window.setWindowAnimations(android.R.style.Animation_Activity);
             window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(ScreenColors.current().background));
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            // With three-button navigation Android lays a grey scrim under the buttons; the
-            // screen is black edge to edge, so the scrim only shows as a grey band. Android 9 has
-            // no scrim to turn off.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.setNavigationBarContrastEnforced(false);
             window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
+        dialog.setOnKeyListener((d, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
+                if (closeCategory()) return true;
+            }
+            return false;
+        });
         return dialog;
     }
 
@@ -298,10 +305,166 @@ public final class SettingsDialog extends DialogFragment {
         if (bar == null) return;
         CharSequence text = title == null ? L10n.t(getContext(), "Instagram Plus Settings") : title;
         // A new text asks for a layout, which a scroll in the middle of one shouldn't.
-        if (!TextUtils.equals(text, bar.getText())) bar.setText(text);
+        if (!TextUtils.equals(text, bar.getText())) {
+            bar.animate().cancel();
+            bar.setAlpha(0.3f);
+            bar.setText(text);
+            bar.animate().alpha(1f).setDuration(160).start();
+        }
         // Invisible rather than gone, so the bar keeps its height and a search doesn't move the rows.
         int shown = title == null && pageHeader ? View.INVISIBLE : View.VISIBLE;
         if (bar.getVisibility() != shown) bar.setVisibility(shown);
+    }
+
+    private BackSupport backSupport;
+
+    void setupBackSupport() {
+        Dialog dialog = getDialog();
+        if (dialog == null) return;
+        Fragment page = getChildFragmentManager().findFragmentById(CONTAINER_ID);
+        if (page instanceof HushgramPreferenceFragment) {
+            backSupport = new BackSupport(dialog, (HushgramPreferenceFragment) page);
+            backSupport.update();
+        }
+    }
+
+    void updateBackHandler() {
+        if (backSupport != null) {
+            backSupport.update();
+        } else {
+            setupBackSupport();
+        }
+    }
+
+    static final class BackSupport {
+        private final Dialog dialog;
+        private final HushgramPreferenceFragment fragment;
+        private Object registeredCallback;
+
+        BackSupport(Dialog dialog, HushgramPreferenceFragment fragment) {
+            this.dialog = dialog;
+            this.fragment = fragment;
+        }
+
+        void update() {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+            boolean canGoBack = fragment != null && fragment.canGoBack();
+            if (canGoBack) {
+                if (registeredCallback == null) register();
+            } else {
+                if (registeredCallback != null) unregister();
+            }
+        }
+
+        private void register() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                registeredCallback = Api34BackHelper.register(dialog, fragment, this::unregister);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registeredCallback = Api33BackHelper.register(dialog, fragment, this::unregister);
+            }
+        }
+
+        void unregister() {
+            if (registeredCallback != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                try {
+                    OnBackInvokedDispatcher dispatcher = dialog.getOnBackInvokedDispatcher();
+                    if (dispatcher != null && registeredCallback instanceof OnBackInvokedCallback) {
+                        dispatcher.unregisterOnBackInvokedCallback((OnBackInvokedCallback) registeredCallback);
+                    }
+                } catch (Throwable ignored) {
+                } finally {
+                    registeredCallback = null;
+                }
+            }
+        }
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    static final class Api34BackHelper {
+        static Object register(Dialog dialog, HushgramPreferenceFragment fragment, Runnable onComplete) {
+            try {
+                OnBackInvokedDispatcher dispatcher = dialog.getOnBackInvokedDispatcher();
+                if (dispatcher == null) return null;
+                OnBackAnimationCallback callback = new OnBackAnimationCallback() {
+                    private int swipeEdge = BackEvent.EDGE_LEFT;
+
+                    @Override
+                    public void onBackStarted(BackEvent backEvent) {
+                        swipeEdge = backEvent.getSwipeEdge();
+                        View view = fragment.listView();
+                        if (view != null) {
+                            view.setPivotX(swipeEdge == BackEvent.EDGE_LEFT ? 0 : view.getWidth());
+                            view.setPivotY(view.getHeight() / 2f);
+                        }
+                    }
+
+                    @Override
+                    public void onBackProgressed(BackEvent backEvent) {
+                        View view = fragment.listView();
+                        if (view == null) return;
+                        float progress = backEvent.getProgress();
+                        float shift = progress * view.getWidth() * 0.38f;
+                        view.setTranslationX(swipeEdge == BackEvent.EDGE_LEFT ? shift : -shift);
+                        float scale = 1.0f - progress * 0.08f;
+                        view.setScaleX(scale);
+                        view.setScaleY(scale);
+                        view.setAlpha(1.0f - progress * 0.25f);
+                    }
+
+                    @Override
+                    public void onBackInvoked() {
+                        View view = fragment.listView();
+                        if (view != null) {
+                            view.animate().cancel();
+                            view.setTranslationX(0f);
+                            view.setScaleX(1.0f);
+                            view.setScaleY(1.0f);
+                            view.setAlpha(1.0f);
+                        }
+                        fragment.closeCategory();
+                        if (onComplete != null) onComplete.run();
+                    }
+
+                    @Override
+                    public void onBackCancelled() {
+                        View view = fragment.listView();
+                        if (view == null) return;
+                        view.animate()
+                                .translationX(0f)
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .alpha(1.0f)
+                                .setDuration(220)
+                                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                                .start();
+                    }
+                };
+                dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback);
+                return callback;
+            } catch (Throwable t) {
+                Logger.printException(() -> "Could not register API 34 back animation callback", t);
+                return null;
+            }
+        }
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    static final class Api33BackHelper {
+        static Object register(Dialog dialog, HushgramPreferenceFragment fragment, Runnable onComplete) {
+            try {
+                OnBackInvokedDispatcher dispatcher = dialog.getOnBackInvokedDispatcher();
+                if (dispatcher == null) return null;
+                OnBackInvokedCallback callback = () -> {
+                    fragment.closeCategory();
+                    if (onComplete != null) onComplete.run();
+                };
+                dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback);
+                return callback;
+            } catch (Throwable t) {
+                Logger.printException(() -> "Could not register API 33 back callback", t);
+                return null;
+            }
+        }
     }
 
     /** Clears a search before Back closes the dialog. Expanding a section adds no Back level. */
@@ -346,10 +509,12 @@ public final class SettingsDialog extends DialogFragment {
         super.onStart();
         watchLock();
         ShortcutCover.offOnceDrawn(getDialog());
+        setupBackSupport();
     }
 
     @Override
     public void onStop() {
+        if (backSupport != null) backSupport.unregister();
         unwatchLock();
         super.onStop();
     }

@@ -856,7 +856,21 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         return Settings.CATEGORY_PAGES.savedValue();
     }
 
-    /** Opens a dedicated subpage for this category instead of expanding inline. */
+    private float dp(float value) {
+        return getResources() != null ? value * getResources().getDisplayMetrics().density : value;
+    }
+
+    boolean canGoBack() {
+        return activeCategory != null || !searchText(searchQuery).trim().isEmpty();
+    }
+
+    private void updateBackSupport() {
+        if (getParentFragment() instanceof SettingsDialog) {
+            ((SettingsDialog) getParentFragment()).updateBackHandler();
+        }
+    }
+
+    /** Opens a dedicated subpage for this category with smooth slide animation. */
     private void openCategory(PreferenceCategory group) {
         if (!categoryPages() || !searchQuery.trim().isEmpty()) return;
         ListView list = listView();
@@ -871,12 +885,32 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         expandedCategories.add(group.getKey());
         NewRowDots.left(group);
         focusPage();
-        filterSettings();
+
         if (list != null) {
-            list.post(() -> {
-                if (list != listView()) return;
-                list.setSelection(0);
-            });
+            list.animate().cancel();
+            float offset = dp(35);
+            list.animate()
+                    .translationX(-offset)
+                    .alpha(0f)
+                    .setDuration(120)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                    .withEndAction(() -> {
+                        filterSettings();
+                        list.setSelection(0);
+                        list.setTranslationX(offset);
+                        list.setAlpha(0f);
+                        list.animate()
+                                .translationX(0f)
+                                .alpha(1f)
+                                .setDuration(220)
+                                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                                .start();
+                        updateBackSupport();
+                    })
+                    .start();
+        } else {
+            filterSettings();
+            updateBackSupport();
         }
     }
 
@@ -926,22 +960,44 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
 
     /** Back clears a search first, or navigates back from a category subpage to the main overview. */
     boolean closeCategory() {
-        if (endSearch()) return true;
+        if (endSearch()) {
+            updateBackSupport();
+            return true;
+        }
         if (activeCategory != null) {
             activeCategory = null;
             expandedCategories.clear();
             focusPage();
-            filterSettings();
             ListView list = listView();
             if (list != null) {
-                list.post(() -> {
-                    if (list != listView()) return;
-                    if (overviewScrollPosition >= 0 && overviewScrollPosition < list.getCount()) {
-                        list.setSelectionFromTop(overviewScrollPosition, overviewScrollTop);
-                    } else {
-                        list.setSelection(0);
-                    }
-                });
+                list.animate().cancel();
+                float offset = dp(35);
+                list.animate()
+                        .translationX(offset)
+                        .alpha(0f)
+                        .setDuration(120)
+                        .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                        .withEndAction(() -> {
+                            filterSettings();
+                            if (overviewScrollPosition >= 0 && overviewScrollPosition < list.getCount()) {
+                                list.setSelectionFromTop(overviewScrollPosition, overviewScrollTop);
+                            } else {
+                                list.setSelection(0);
+                            }
+                            list.setTranslationX(-offset);
+                            list.setAlpha(0f);
+                            list.animate()
+                                    .translationX(0f)
+                                    .alpha(1f)
+                                    .setDuration(220)
+                                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                                    .start();
+                            updateBackSupport();
+                        })
+                        .start();
+            } else {
+                filterSettings();
+                updateBackSupport();
             }
             return true;
         }
@@ -963,10 +1019,11 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         if (!searchQuery.isEmpty()) searchSettings("");
         ListView list = listView();
         if (list != null) list.post(() -> list.setSelection(0));
+        updateBackSupport();
         return true;
     }
 
-    @Nullable private ListView listView() {
+    @Nullable ListView listView() {
         View view = getView();
         return view == null ? null : view.findViewById(android.R.id.list);
     }
@@ -1402,6 +1459,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         searchQuery = query == null ? "" : query;
         filterSettings();
         if (starting && !searchText(searchQuery).trim().isEmpty()) searchToTop();
+        updateBackSupport();
     }
 
     /**
