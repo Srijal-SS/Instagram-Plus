@@ -15,8 +15,8 @@ class CloneNamesTest {
     @Test fun theDefaultsAreTakenAsTheyAre() {
         assertNull(clonePackageProblem(DEFAULT_PACKAGE))
         assertNull(cloneLabelProblem(DEFAULT_LABEL))
-        assertEquals("com.instagram.android.hush", DEFAULT_PACKAGE)
-        assertEquals("Instagram Clone", DEFAULT_LABEL)
+        assertEquals("com.instagram.android.plus", DEFAULT_PACKAGE)
+        assertEquals("Instagram Plus", DEFAULT_LABEL)
     }
 
     @Test fun anyValidPackageIsTaken() {

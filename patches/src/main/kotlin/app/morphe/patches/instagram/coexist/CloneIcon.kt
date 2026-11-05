@@ -27,34 +27,28 @@ internal const val CLONE_BADGE_MONO = "hushgram_clone_badge_mono"
 private val MARKED_LAYERS = linkedMapOf("foreground" to CLONE_BADGE, "monochrome" to CLONE_BADGE_MONO)
 
 /**
- * The badge: HushGram's H and ribbon, as on the launch screen's mark, on a plum disc with a white
- * edge, toward the icon's lower right. An adaptive icon's layers are 108dp, of which launchers show
- * the middle 72dp cut to their shape and promise only the 66dp circle in the middle. The disc sits
- * 12dp right of and below the middle with 14.5dp to its white edge, 31.5dp from the middle at most,
- * so no launcher's shape cuts it. A vector the size of the layer scales with it, at any icon
- * size.
+ * The badge: Instagram Plus badge, on a magenta disc with a white edge, toward the icon's lower right.
+ * An adaptive icon's layers are 108dp, of which launchers show the middle 72dp cut to their shape and
+ * promise only the 66dp circle in the middle. The disc sits 12dp right of and below the middle with 14.5dp
+ * to its white edge, 31.5dp from the middle at most, so no launcher's shape cuts it.
  */
 internal val CLONE_BADGE_XML = """
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
     <path android:fillColor="#FFFFFFFF" android:pathData="M66,51.5a14.5,14.5 0 1,1 0,29a14.5,14.5 0 1,1 0,-29z" />
-    <path android:fillColor="#FF3B0A3D" android:pathData="M66,53a13,13 0 1,1 0,26a13,13 0 1,1 0,-26z" />
-    <group android:translateX="56" android:translateY="56" android:scaleX="0.2" android:scaleY="0.2">
-        <path android:fillColor="#FFFFFFFF" android:pathData="M22,15h15a3,3 0 0 1 3,3v64a3,3 0 0 1 -3,3h-15a3,3 0 0 1 -3,-3v-64a3,3 0 0 1 3,-3z" />
-        <path android:fillColor="#FFFFFFFF" android:pathData="M63,15h15a3,3 0 0 1 3,3v64a3,3 0 0 1 -3,3h-15a3,3 0 0 1 -3,-3v-64a3,3 0 0 1 3,-3z" />
-        <path android:fillColor="#FFFF7A9E" android:pathData="M11,38C22,36 30,46 42,45C54,44 66,36 80,40C84,41 87,44 88,48L88,58C85,53 82,52 78,52C66,50 54,57 42,57C30,57 22,49 11,50Z" />
-    </group>
+    <path android:fillColor="#FFE1306C" android:pathData="M66,53a13,13 0 1,1 0,26a13,13 0 1,1 0,-26z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M64,59h4v5h5v4h-5v5h-4v-5h-5v-4h5z" />
 </vector>
 """.trimStart()
 
 /**
  * The badge for a themed icon, where Android draws only a layer's shape, in the theme's color: the
- * same disc with the H cut out of it.
+ * same disc with the plus cut out of it.
  */
 internal val CLONE_BADGE_MONO_XML = """
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:pathData="M66,51.5a14.5,14.5 0 1,1 0,29a14.5,14.5 0 1,1 0,-29z M59.8,59h4.2v5.6h4v-5.6h4.2v14h-4.2v-5.6h-4v5.6h-4.2z" />
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:pathData="M66,51.5a14.5,14.5 0 1,1 0,29a14.5,14.5 0 1,1 0,-29z M64,59h4v5h5v4h-5v5h-4v-5h-5v-4h5z" />
 </vector>
 """.trimStart()
 

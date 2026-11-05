@@ -108,11 +108,12 @@ internal const val ICON_MARK_MONO = "hushgram_icon_mark_mono"
 private fun mark(ribbon: String) = """
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <group android:translateX="26.3" android:translateY="26" android:scaleX="0.56" android:scaleY="0.56">
-        <path android:fillColor="#FFFFFFFF" android:pathData="M22,15h15a3,3 0 0 1 3,3v64a3,3 0 0 1 -3,3h-15a3,3 0 0 1 -3,-3v-64a3,3 0 0 1 3,-3z" />
-        <path android:fillColor="#FFFFFFFF" android:pathData="M63,15h15a3,3 0 0 1 3,3v64a3,3 0 0 1 -3,3h-15a3,3 0 0 1 -3,-3v-64a3,3 0 0 1 3,-3z" />
-        <path android:fillColor="$ribbon" android:pathData="M11,38C22,36 30,46 42,45C54,44 66,36 80,40C84,41 87,44 88,48L88,58C85,53 82,52 78,52C66,50 54,57 42,57C30,57 22,49 11,50Z" />
-    </group>
+    <path android:strokeWidth="5.5" android:strokeColor="#FFFFFFFF" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M32,30 h36 a13,13 0 0 1 13,13 v36 a13,13 0 0 1 -13,13 h-36 a13,13 0 0 1 -13,-13 v-36 a13,13 0 0 1 13,-13 z" />
+    <path android:strokeWidth="5" android:strokeColor="#FFFFFFFF" android:pathData="M50,41 a13,13 0 1,1 0,26 a13,13 0 1,1 0,-26 z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M69,39 a3,3 0 1,1 0,6 a3,3 0 1,1 0,-6 z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M76,64 a12,12 0 1,1 0,24 a12,12 0 1,1 0,-24 z" />
+    <path android:fillColor="$ribbon" android:pathData="M76,65.5 a10.5,10.5 0 1,1 0,21 a10.5,10.5 0 1,1 0,-21 z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M74.5,70 h3 v3 h3 v3 h-3 v3 h-3 v-3 h-3 v-3 h3 z" />
 </vector>
 """.trimStart()
 

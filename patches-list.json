@@ -2971,7 +2971,7 @@
     },
     {
       "name": "Instagram Plus launch screen",
-      "description": "Shows HushGram's logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. Starts off. Turn it on in Instagram Plus Settings > Layout.",
+      "description": "Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. Starts off. Turn it on in Instagram Plus Settings > Layout.",
       "category": "Interface",
       "use": true,
       "dependencies": [
@@ -3051,7 +3051,7 @@
     },
     {
       "name": "Install next to Instagram",
-      "description": "Installs this build as a second Instagram beside your normal one, with its own data and sign-in. Pick its package name and app name in the patch's options, and whether its icon gets a HushGram badge. Works as soon as you patch it in, with no switch.",
+      "description": "Installs this build as a second Instagram beside your normal one, with its own data and sign-in. Pick its package name and app name in the patch's options, and whether its icon gets an Instagram Plus badge. Works as soon as you patch it in, with no switch.",
       "category": "Updates",
       "use": false,
       "dependencies": [
@@ -3800,7 +3800,7 @@
     },
     {
       "name": "Pick the app icon",
-      "description": "Lets you pick the icon Instagram shows on your home screen: Instagram's own, HushGram's, Instagram's glyph on black, on plum, or in black on white, a hand-drawn Instagram glyph on white, Instagram's gradient glyph on dark, the old retro camera icon, or Instagram's glyph in pink on pale pink. The new icon shows once you leave Instagram, and you may need to add it to your home screen again from the app drawer. Starts on Instagram's own. Pick one in Instagram Plus Settings > Layout.",
+      "description": "Lets you pick the icon Instagram shows on your home screen: Instagram's own, Instagram Plus, Instagram's glyph on black, on plum, or in black on white, a hand-drawn Instagram glyph on white, Instagram's gradient glyph on dark, the old retro camera icon, or Instagram's glyph in pink on pale pink. The new icon shows once you leave Instagram, and you may need to add it to your home screen again from the app drawer. Starts on Instagram's own. Pick one in Instagram Plus Settings > Layout.",
       "category": "Interface",
       "use": true,
       "dependencies": [

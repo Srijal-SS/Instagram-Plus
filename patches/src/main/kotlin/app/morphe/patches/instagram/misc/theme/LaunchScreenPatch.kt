@@ -83,10 +83,13 @@ internal val LAUNCH_MARK_XML = """
         </shape>
     </item>
     <item android:gravity="center" android:width="64dp" android:height="64dp">
-        <vector android:width="64dp" android:height="64dp" android:viewportWidth="100" android:viewportHeight="100">
-            <path android:fillColor="#FFFFFFFF" android:pathData="M22,15h15a3,3 0 0 1 3,3v64a3,3 0 0 1 -3,3h-15a3,3 0 0 1 -3,-3v-64a3,3 0 0 1 3,-3z" />
-            <path android:fillColor="#FFFFFFFF" android:pathData="M63,15h15a3,3 0 0 1 3,3v64a3,3 0 0 1 -3,3h-15a3,3 0 0 1 -3,-3v-64a3,3 0 0 1 3,-3z" />
-            <path android:fillColor="#FFFF7A9E" android:pathData="M11,38C22,36 30,46 42,45C54,44 66,36 80,40C84,41 87,44 88,48L88,58C85,53 82,52 78,52C66,50 54,57 42,57C30,57 22,49 11,50Z" />
+        <vector android:width="64dp" android:height="64dp" android:viewportWidth="108" android:viewportHeight="108">
+            <path android:strokeWidth="5.5" android:strokeColor="#FFFFFFFF" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M32,30 h36 a13,13 0 0 1 13,13 v36 a13,13 0 0 1 -13,13 h-36 a13,13 0 0 1 -13,-13 v-36 a13,13 0 0 1 13,-13 z" />
+            <path android:strokeWidth="5" android:strokeColor="#FFFFFFFF" android:pathData="M50,41 a13,13 0 1,1 0,26 a13,13 0 1,1 0,-26 z" />
+            <path android:fillColor="#FFFFFFFF" android:pathData="M69,39 a3,3 0 1,1 0,6 a3,3 0 1,1 0,-6 z" />
+            <path android:fillColor="#FFFFFFFF" android:pathData="M76,64 a12,12 0 1,1 0,24 a12,12 0 1,1 0,-24 z" />
+            <path android:fillColor="#FFE1306C" android:pathData="M76,65.5 a10.5,10.5 0 1,1 0,21 a10.5,10.5 0 1,1 0,-21 z" />
+            <path android:fillColor="#FFFFFFFF" android:pathData="M74.5,70 h3 v3 h3 v3 h-3 v3 h-3 v-3 h-3 v-3 h3 z" />
         </vector>
     </item>
 </layer-list>
@@ -293,7 +296,7 @@ private fun Method.where(): String = "$definingClass->$name"
 @Suppress("unused")
 val launchScreenPatch = bytecodePatch(
     name = "Instagram Plus launch screen",
-    description = "Shows a custom logo instead of Instagram's on the screen you see while Instagram starts, on " +
+    description = "Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram starts, on " +
         "Android 13 and newer. Starts off. Turn it on in Instagram Plus Settings > Layout.",
     default = true,
 ) {
