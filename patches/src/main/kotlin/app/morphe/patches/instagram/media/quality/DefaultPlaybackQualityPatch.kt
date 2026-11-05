@@ -43,8 +43,8 @@ private const val STRING = "Ljava/lang/String;"
 val defaultPlaybackQualityPatch = bytecodePatch(
     name = "Default playback quality",
     description = "Plays videos, reels and video stories at the quality you choose, instead of the one Instagram " +
-        "picks as it plays. Nothing changes until you pick a quality. On by default. Turn it off in HushGram " +
-        "settings > Playback.",
+        "picks as it plays. Nothing changes until you pick a quality. On by default. Turn it off in Instagram Plus " +
+        "Settings > Playback.",
     default = true,
 ) {
     category("Playback")

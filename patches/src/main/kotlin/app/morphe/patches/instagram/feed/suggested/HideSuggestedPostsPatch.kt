@@ -70,8 +70,8 @@ val hideSuggestedPostsPatch = bytecodePatch(
         "Posts from accounts you follow stay. Extra switches can also hide the 'Are you interested in this post?' " +
         "question on Home and Reels, the caught up card, all videos, photos, carousels, posts " +
         "you've liked or posts from accounts you pick. A post's menu has Hide posts from this account to add one " +
-        "to that list, and those posts leave Home on the next refresh. On by default. Turn it off in HushGram " +
-        "settings > Feed.",
+        "to that list, and those posts leave Home on the next refresh. On by default. Turn it off in Instagram Plus " +
+        "Settings > Feed.",
 ) {
     category("Feed")
     dependsOn(settingsPatch)

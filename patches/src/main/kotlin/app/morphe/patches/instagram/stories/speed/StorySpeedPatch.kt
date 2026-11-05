@@ -68,8 +68,8 @@ private const val VIEW = "Landroid/view/View;"
 val storySpeedPatch = bytecodePatch(
     name = "Speed button on stories",
     description = "Puts a speed button at the top of a video story. Tap it to play the story at 1.5x or 2x, and " +
-        "later video stories keep that speed. Photos and ads play as usual. Starts off. Turn it on in HushGram " +
-        "settings > Stories.",
+        "later video stories keep that speed. Photos and ads play as usual. Starts off. Turn it on in Instagram Plus " +
+        "Settings > Stories.",
 ) {
     // Manager's Stories group is full at 16, and this is about how a video plays, so it sits with
     // Keep the reel speed under Playback. Its switch is still on the Stories settings page.

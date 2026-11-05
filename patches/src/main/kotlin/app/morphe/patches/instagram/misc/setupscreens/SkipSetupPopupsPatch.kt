@@ -30,8 +30,8 @@ internal const val SKIP_SETUP = "$SETUP_POPUPS->skip(Ljava/lang/String;)Z"
 val skipSetupPopupsPatch = bytecodePatch(
     name = "Skip the contacts and location popups",
     description = "Stops the screens asking you to sync your contacts and turn on location services from " +
-        "opening each time Instagram starts. Nothing else is skipped. Starts off. Turn it on in HushGram " +
-        "settings > Ads and privacy.",
+        "opening each time Instagram starts. Nothing else is skipped. Starts off. Turn it on in Instagram Plus " +
+        "Settings > Ads and privacy.",
 ) {
     category("Privacy")
     dependsOn(settingsPatch, instagramExtensionPatch)
