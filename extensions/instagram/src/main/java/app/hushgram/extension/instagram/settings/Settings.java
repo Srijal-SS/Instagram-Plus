@@ -1501,6 +1501,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushgram_glass_tab_bar_hide_on_scroll", FALSE, true);
 
     /**
+     * Under {@link #GLASS_TAB_BAR}: reduces the size of the tab bar while scrolling down,
+     * keeping it docked and visible like iOS Instagram. Off to start.
+     */
+    public static final BooleanSetting GLASS_TAB_BAR_MINIMIZE_ON_SCROLL =
+            new BooleanSetting("hushgram_glass_tab_bar_minimize_on_scroll", FALSE, true, parent(GLASS_TAB_BAR));
+
+    /**
      * A finger put on the tab bar and slid sideways carries a highlight, and lifting it opens the tab under
      * it ({@link app.hushgram.extension.instagram.misc.GlassTabSlide}, #136). On the glass pill or, with
      * {@link #GLASS_TAB_BAR} off, on Instagram's own bar (#201), so it isn't under the glass switch. Taps

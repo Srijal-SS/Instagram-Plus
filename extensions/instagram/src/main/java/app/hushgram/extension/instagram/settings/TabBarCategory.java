@@ -160,6 +160,8 @@ final class TabBarCategory {
                         L10n.t("Scrolling a list down slides the tab bar out of the way. Scrolling up, reaching the top, "
                                 + "or changing tab brings it back. It works with or without Glass tab bar. Restart "
                                 + "Instagram after changing it.")));
+                glass.addPreference(toggle(context, Settings.GLASS_TAB_BAR_MINIMIZE_ON_SCROLL, L10n.t("Minimize tab bar while you scroll"),
+                        L10n.t("Reduces the size of the tab bar while scrolling down, keeping it docked and visible like iOS Instagram.")));
                 glass.addPreference(glassReelsHideRow(context));
                 glass.addPreference(toggle(context, Settings.GLASS_TAB_BAR_FLOAT, L10n.t("Show content behind the tab bar"),
                         L10n.t("Home, Reels and the other tabs run down behind the pill, so the glass has real content "

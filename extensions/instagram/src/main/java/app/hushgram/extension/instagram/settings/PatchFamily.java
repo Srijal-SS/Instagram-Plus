@@ -152,7 +152,7 @@ public enum PatchFamily {
     PHONE_LAYOUT(FamilyNames.PHONE_LAYOUT, "phoneLayout", null, Settings.PHONE_LAYOUT),
     GLASS_TAB_BAR(FamilyNames.GLASS_TAB_BAR, "glassTabBar", null, Settings.GLASS_TAB_BAR,
             Settings.GLASS_TAB_BAR_BLUR, Settings.GLASS_TAB_BAR_FLOAT, Settings.GLASS_TAB_BAR_HAPTICS,
-            Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL, Settings.GLASS_TAB_BAR_SLIDE, Settings.GLASS_TAB_BAR_LIQUID,
+            Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL, Settings.GLASS_TAB_BAR_MINIMIZE_ON_SCROLL, Settings.GLASS_TAB_BAR_SLIDE, Settings.GLASS_TAB_BAR_LIQUID,
             Settings.GLASS_TAB_BAR_KEEP_SIZE, Settings.GLASS_TAB_BAR_REFRACT,
             Settings.GLASS_TAB_BAR_REELS_BEHIND),
     FULL_SCREEN_BARS(FamilyNames.FULL_SCREEN_BARS, "fullScreenBars", null, Settings.FULL_SCREEN_REELS,

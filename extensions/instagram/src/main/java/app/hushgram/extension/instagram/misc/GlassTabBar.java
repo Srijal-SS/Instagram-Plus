@@ -1432,14 +1432,15 @@ public final class GlassTabBar {
             this.liquid = Settings.GLASS_TAB_BAR_LIQUID.get();
             this.refract = liquid && Settings.GLASS_TAB_BAR_REFRACT.get();
             boolean hideOnScroll = Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL.get();
+            boolean minimizeOnScroll = Settings.GLASS_TAB_BAR_MINIMIZE_ON_SCROLL.get();
             // The liquid look shrinks the bar as a list scrolls down, unless a scroll is to take it away altogether
             // or the pill is to keep its full size (#256).
-            boolean shrinkOnScroll = liquid && !hideOnScroll && !Settings.GLASS_TAB_BAR_KEEP_SIZE.get();
+            boolean shrinkOnScroll = liquid && !hideOnScroll && !minimizeOnScroll && !Settings.GLASS_TAB_BAR_KEEP_SIZE.get();
             GlassReelsHide hideOnReels = Settings.GLASS_TAB_BAR_REELS_HIDE.get();
             long reelsMillis = hideOnReels == null ? 0L : hideOnReels.millis;
-            this.scrollHide = hideOnScroll || shrinkOnScroll || reelsMillis > 0
-                    ? new GlassScrollHide(bar, () -> !HushgramPause.isPaused(), hideOnScroll || shrinkOnScroll, reelsMillis,
-                            shrinkOnScroll ? this : null) : null;
+            this.scrollHide = hideOnScroll || minimizeOnScroll || shrinkOnScroll || reelsMillis > 0
+                    ? new GlassScrollHide(bar, () -> !HushgramPause.isPaused(), hideOnScroll || minimizeOnScroll || shrinkOnScroll, reelsMillis,
+                            shrinkOnScroll ? this : null, null, minimizeOnScroll) : null;
             this.slide = Settings.GLASS_TAB_BAR_SLIDE.get()
                     ? new GlassTabSlide(bar, this, () -> !HushgramPause.isPaused()) : null;
             this.base = baseColor(bar.getBackground());
@@ -3043,15 +3044,16 @@ public final class GlassTabBar {
      */
     static final class Haptics {
         /** How much of the phone's tick primitive the light tick plays. */
-        static final float SOFT_SCALE = 0.45f;
+        static final float SOFT_SCALE = 0.18f;
         /** The short pulse: how long, and how hard of 255. */
-        static final int SHORT_MS = 4;
-        static final int SHORT_AMPLITUDE = 170;
+        static final int SHORT_MS = 3;
+        static final int SHORT_AMPLITUDE = 45;
         static final long MIN_TICK_GAP_MS = 35;
 
-        private static Handler handler;
         private static long lastTick;
         private static int primitives = -1;
+        private static int lowTickSupported = -1;
+        @Nullable private static android.os.Vibrator cachedVibrator;
 
         private Haptics() {
         }
@@ -3066,52 +3068,83 @@ public final class GlassTabBar {
                 long now = android.os.SystemClock.uptimeMillis();
                 if (!farEnough(now, lastTick)) return;
                 lastTick = now;
-                if (style == HapticStyle.SYSTEM) {
-                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
-                    return;
-                }
                 Context context = view.getContext().getApplicationContext();
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && style != HapticStyle.SHORT
-                        && style != HapticStyle.SYSTEM) {
-                    view.performHapticFeedback(style == HapticStyle.FULL ? HapticFeedbackConstants.CLOCK_TICK
-                            : HapticFeedbackConstants.TEXT_HANDLE_MOVE);
-                    return;
-                }
-                handler().post(() -> play(context, style));
+                // Play synchronously on the calling thread to eliminate background thread wake-up latency.
+                // Android vibrator binder IPC is non-blocking and takes < 0.1 ms.
+                play(view, context, style);
             } catch (Throwable failure) {
                 diagnose("haptic failed", failure);
             }
         }
 
-        private static void play(Context context, HapticStyle style) {
-            try {
-                android.os.Vibrator vibrator = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+        private static android.os.Vibrator vibrator(Context context) {
+            if (cachedVibrator == null) {
+                cachedVibrator = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                         ? context.getSystemService(android.os.VibratorManager.class).getDefaultVibrator()
                         : (android.os.Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-                if (vibrator == null || !vibrator.hasVibrator()) return;
+            }
+            return cachedVibrator;
+        }
+
+        private static void play(View view, Context context, HapticStyle style) {
+            try {
+                android.os.Vibrator vibrator = vibrator(context);
+                if (vibrator == null || !vibrator.hasVibrator()) {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                    return;
+                }
+
                 android.os.VibrationEffect effect = null;
-                // Before Android 10 the system tick never gets here: tick() plays it through the view.
-                if (style == HapticStyle.SYSTEM && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    effect = android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK);
-                } else if (style == HapticStyle.SHORT && vibrator.hasAmplitudeControl()) {
-                    effect = android.os.VibrationEffect.createOneShot(SHORT_MS, SHORT_AMPLITUDE);
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+                // Android 12+ (API 31): PRIMITIVE_LOW_TICK gives the crispest, most subtle iPhone-like tap
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (lowTickSupported < 0) {
+                        lowTickSupported = vibrator.areAllPrimitivesSupported(
+                                android.os.VibrationEffect.Composition.PRIMITIVE_LOW_TICK) ? 1 : 0;
+                    }
+                    if (lowTickSupported == 1) {
+                        float scale = style == HapticStyle.FULL ? 0.55f
+                                : style == HapticStyle.SOFT ? 0.16f
+                                : style == HapticStyle.SHORT ? 0.22f
+                                : 0.26f; // SYSTEM
+                        effect = android.os.VibrationEffect.startComposition()
+                                .addPrimitive(android.os.VibrationEffect.Composition.PRIMITIVE_LOW_TICK, scale)
+                                .compose();
+                    }
+                }
+
+                // Android 11+ (API 30): PRIMITIVE_TICK
+                if (effect == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     if (primitives < 0) {
                         primitives = vibrator.areAllPrimitivesSupported(
                                 android.os.VibrationEffect.Composition.PRIMITIVE_TICK) ? 1 : 0;
                     }
                     if (primitives == 1) {
-                        effect = android.os.VibrationEffect.startComposition().addPrimitive(
-                                android.os.VibrationEffect.Composition.PRIMITIVE_TICK,
-                                style == HapticStyle.FULL ? 1f : SOFT_SCALE).compose();
+                        float scale = style == HapticStyle.FULL ? 0.45f
+                                : style == HapticStyle.SOFT ? 0.14f
+                                : style == HapticStyle.SHORT ? 0.20f
+                                : 0.22f; // SYSTEM
+                        effect = android.os.VibrationEffect.startComposition()
+                                .addPrimitive(android.os.VibrationEffect.Composition.PRIMITIVE_TICK, scale)
+                                .compose();
                     }
                 }
-                // Android 9 has no predefined effects, so a motor without amplitude control gets the short pulse.
-                if (effect == null) {
-                    effect = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                            ? android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_TICK)
-                            : android.os.VibrationEffect.createOneShot(SHORT_MS, android.os.VibrationEffect.DEFAULT_AMPLITUDE);
+
+                // Amplitude-controlled gentle single pulse
+                if (effect == null && vibrator.hasAmplitudeControl()) {
+                    int amp = style == HapticStyle.FULL ? 80
+                            : style == HapticStyle.SOFT ? 28
+                            : style == HapticStyle.SHORT ? 45
+                            : 38; // SYSTEM
+                    effect = android.os.VibrationEffect.createOneShot(SHORT_MS, amp);
                 }
+
+                if (effect == null) {
+                    // Fallback: subtle micro-tick
+                    view.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE);
+                    return;
+                }
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     vibrator.vibrate(effect, android.os.VibrationAttributes.createForUsage(
                             android.os.VibrationAttributes.USAGE_TOUCH));
@@ -3121,15 +3154,6 @@ public final class GlassTabBar {
             } catch (Throwable failure) {
                 diagnose("haptic failed", failure);
             }
-        }
-
-        private static synchronized Handler handler() {
-            if (handler == null) {
-                android.os.HandlerThread thread = new android.os.HandlerThread("hushgram-haptics");
-                thread.start();
-                handler = new Handler(thread.getLooper());
-            }
-            return handler;
         }
     }
 

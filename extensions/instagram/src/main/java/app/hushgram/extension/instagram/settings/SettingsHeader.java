@@ -5,6 +5,7 @@
 package app.hushgram.extension.instagram.settings;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.preference.Preference;
@@ -58,17 +59,25 @@ final class SettingsHeader extends Preference {
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
         // The name under it says the same.
         icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        int size = Math.round(64 * density);
+        int size = Math.round(68 * density);
+        android.graphics.drawable.GradientDrawable iconCard = new android.graphics.drawable.GradientDrawable();
+        iconCard.setCornerRadius(Math.round(18 * density));
+        iconCard.setColor(0xFF1E1E24);
+        iconCard.setStroke(Math.round(1 * density), 0x26FFFFFF);
+        icon.setBackground(iconCard);
+        int pad = Math.round(8 * density);
+        icon.setPadding(pad, pad, pad, pad);
         column.addView(icon, new LinearLayout.LayoutParams(size, size));
 
         TextView name = new TextView(context);
         name.setTag(NAME);
         name.setText("Instagram Plus");
         name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
-        name.setTextColor(colors.title);
+        name.setTextColor(Color.WHITE);
         name.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         name.setGravity(Gravity.CENTER);
         name.setAccessibilityHeading(true);
+        ShimmerTitle.wear(name);
         LinearLayout.LayoutParams nameSpace = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         nameSpace.topMargin = Math.round(12 * density);
@@ -76,14 +85,22 @@ final class SettingsHeader extends Preference {
 
         TextView version = new TextView(context);
         version.setTag(VERSION);
-        version.setText(L10n.f("Version %1$s for Instagram %2$s",
+        version.setText(L10n.f("Version %1$s • Instagram %2$s",
                 L10n.isolate(Utils.getPatchesReleaseVersion()), L10n.isolate(Utils.getAppVersionName())));
-        version.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        version.setTextColor(colors.summary);
+        version.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        version.setTextColor(0xFF8E8E93);
         version.setGravity(Gravity.CENTER);
+        android.graphics.drawable.GradientDrawable versionBg = new android.graphics.drawable.GradientDrawable();
+        versionBg.setColor(0xFF1C1C22);
+        versionBg.setCornerRadius(Math.round(12 * density));
+        versionBg.setStroke(Math.round(1 * density), 0x1AFFFFFF);
+        version.setBackground(versionBg);
+        int vPadH = Math.round(12 * density);
+        int vPadV = Math.round(4 * density);
+        version.setPadding(vPadH, vPadV, vPadH, vPadV);
         LinearLayout.LayoutParams versionSpace = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        versionSpace.topMargin = Math.round(4 * density);
+        versionSpace.topMargin = Math.round(8 * density);
         column.addView(version, versionSpace);
         return column;
     }

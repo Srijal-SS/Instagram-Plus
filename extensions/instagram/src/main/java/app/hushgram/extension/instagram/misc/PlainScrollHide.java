@@ -46,7 +46,8 @@ final class PlainScrollHide implements GlassScrollHide.Room {
 
     PlainScrollHide(View bar) {
         this.bar = bar;
-        this.hide = new GlassScrollHide(bar, () -> !HushgramPause.isPaused(), true, 0L, null, this);
+        boolean minimize = Settings.GLASS_TAB_BAR_MINIMIZE_ON_SCROLL.get();
+        this.hide = new GlassScrollHide(bar, () -> !HushgramPause.isPaused(), true, 0L, null, this, minimize);
     }
 
     /**
@@ -55,7 +56,7 @@ final class PlainScrollHide implements GlassScrollHide.Room {
      */
     static void apply(Activity activity) {
         try {
-            if (!Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL.get()) return;
+            if (!Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL.get() && !Settings.GLASS_TAB_BAR_MINIMIZE_ON_SCROLL.get()) return;
             View found = GlassTabBar.find(activity.getWindow().getDecorView(), GlassTabBar.TAB_BAR);
             // Glass turned off without the restart it asks for: the pill keeps the glass's own hiding.
             if (!(found instanceof ViewGroup) || GlassTabBar.wearsGlass(found)) return;

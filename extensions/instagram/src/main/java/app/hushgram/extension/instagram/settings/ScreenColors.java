@@ -99,21 +99,20 @@ public final class ScreenColors {
     ScreenColors(boolean pureBlack) {
         light = false;
         background = Color.BLACK;
-        dialog = pureBlack ? Color.BLACK : 0xFF18161D;
-        title = 0xFFF8F5F8;
-        summary = 0xFFAAA5AF;
-        hint = 0xFF8C8792;
-        // Instagram's own blues (AccentColor.role): its link on a dark screen, 7:1 on the charcoal,
-        // and its Prism indigo button fill, which white text reads on at 5:1.
-        heading = 0xFF85A1FF;
-        accent = 0xFF4A5DF9;
-        // At least 3:1 against either charcoal surface, with a white thumb above 5:1.
-        switchOff = 0xFF696370;
-        card = pureBlack ? Color.BLACK : 0xFF151419;
-        outline = 0xFF2D2832;
-        iconSurface = 0xFF211D27;
+        dialog = pureBlack ? Color.BLACK : 0xFF16161A;
+        title = 0xFFFFFFFF;
+        summary = 0xFF8E8E93;
+        hint = 0xFF636366;
+        // Instagram vibrant electric blue and clean iOS-style system accents
+        heading = 0xFF0095F6;
+        accent = 0xFF0095F6;
+        // iOS off-state neutral switch track
+        switchOff = 0xFF36363E;
+        card = pureBlack ? Color.BLACK : 0xFF18181C;
+        outline = 0xFF282830;
+        iconSurface = 0xFF222228;
         onAccent = Color.WHITE;
-        error = 0xFFFFB4AB;
+        error = 0xFFFF453A;
     }
 
     /** A switch's white thumb remains distinct from either track. */
@@ -194,7 +193,7 @@ public final class ScreenColors {
         if (title != null) {
             title.setTextColor(dimmedWhenDisabled(this.title));
             title.setTextSize(TypedValue.COMPLEX_UNIT_SP,
-                    "hushgram_status".equals(preference.getKey()) ? 14 : overview ? 15 : 16);
+                    "hushgram_status".equals(preference.getKey()) ? 15 : overview ? 15 : 16);
             title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             if (title.getParent() instanceof View) {
                 View text = (View) title.getParent();
@@ -206,7 +205,7 @@ public final class ScreenColors {
         if (summary != null) {
             summary.setTextColor(readableWhenDisabled(this.summary));
             summary.setTextSize(TypedValue.COMPLEX_UNIT_SP, overview ? 12 : 13);
-            summary.setLineSpacing(0, 1);
+            summary.setLineSpacing(0, 1.15f);
         }
         View widget = row.findViewById(android.R.id.switch_widget);
         if (widget instanceof Switch) {
@@ -214,17 +213,17 @@ public final class ScreenColors {
                     {-android.R.attr.state_enabled}, {android.R.attr.state_checked}, {}};
             Switch toggle = (Switch) widget;
             GradientDrawable thumb = new GradientDrawable();
-            thumb.setShape(GradientDrawable.RECTANGLE);
-            thumb.setCornerRadius(dp(row, 4));
-            thumb.setSize(dp(row, 20), dp(row, 20));
+            thumb.setShape(GradientDrawable.OVAL);
+            thumb.setSize(dp(row, 24), dp(row, 24));
             thumb.setColor(Color.WHITE);
             GradientDrawable track = new GradientDrawable();
-            track.setCornerRadius(dp(row, 6));
-            track.setSize(dp(row, 40), dp(row, 24));
+            track.setShape(GradientDrawable.RECTANGLE);
+            track.setCornerRadius(dp(row, 15));
+            track.setSize(dp(row, 48), dp(row, 28));
             track.setColor(Color.WHITE);
             toggle.setThumbDrawable(thumb);
             toggle.setTrackDrawable(track);
-            toggle.setSwitchMinWidth(dp(row, 40));
+            toggle.setSwitchMinWidth(dp(row, 48));
             toggle.setSplitTrack(false);
             toggle.setThumbTintList(new ColorStateList(states, new int[]{half(onAccent), half(offThumb()), onAccent, offThumb()}));
             toggle.setTrackTintList(new ColorStateList(states, new int[]{half(accent), half(switchOff), accent, switchOff}));
@@ -234,23 +233,74 @@ public final class ScreenColors {
         // Decoration: the row's title already says what it is, so a screen reader skips the icon.
         if (icon != null) icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         if (icon != null && preference.getIcon() != null) {
+            boolean isCategory = overview || opensPage(preference);
+            int badgeSize = dp(row, isCategory ? 34 : 28);
+            int pad = dp(row, isCategory ? 7 : 5);
+            GradientDrawable badge = new GradientDrawable();
+            badge.setShape(GradientDrawable.RECTANGLE);
+            badge.setCornerRadius(dp(row, isCategory ? 9 : 7));
+            int badgeBg = isCategory ? categoryBadgeColor(preference) : 0xFF24242A;
+            badge.setColor(badgeBg);
+            icon.setBackground(badge);
+            icon.setPadding(pad, pad, pad, pad);
             ViewGroup.LayoutParams imageSize = icon.getLayoutParams();
-            imageSize.width = dp(row, 24);
-            imageSize.height = dp(row, 24);
+            imageSize.width = badgeSize;
+            imageSize.height = badgeSize;
             icon.setLayoutParams(imageSize);
-            icon.setPadding(0, 0, 0, 0);
-            icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            icon.setImageTintList(dimmedWhenDisabled(heading));
-            icon.setBackground(null);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            icon.setImageTintList(ColorStateList.valueOf(isCategory ? Color.WHITE : heading));
             if (icon.getParent() instanceof ViewGroup) {
                 ViewGroup frame = (ViewGroup) icon.getParent();
                 frame.setPaddingRelative(0, 0, dp(row, 14), 0);
                 ViewGroup.LayoutParams size = frame.getLayoutParams();
-                size.width = dp(row, 38);
+                size.width = badgeSize + dp(row, 14);
                 frame.setLayoutParams(size);
             }
         }
         paintSurface(row, preference, opensCard(preference), closesCard(preference));
+    }
+
+    /** Themed squircle container colors for categories, matching iOS / modern Instagram style. */
+    static int categoryBadgeColor(Preference preference) {
+        String key = preference.getKey();
+        if (key == null) return 0xFF0095F6;
+        String lower = key.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("privacy") || lower.contains("ghost") || lower.contains("lock")) {
+            return 0xFF34C759; // Apple / iOS Green
+        } else if (lower.contains("feed") || lower.contains("following")) {
+            return 0xFF0095F6; // Instagram Electric Blue
+        } else if (lower.contains("meta") || lower.contains("ai")) {
+            return 0xFFAF52DE; // Violet / Purple
+        } else if (lower.contains("explore") || lower.contains("search")) {
+            return 0xFFFF9500; // Orange
+        } else if (lower.contains("message") || lower.contains("direct") || lower.contains("chat")) {
+            return 0xFF0A84FF; // Electric Blue
+        } else if (lower.contains("reel") || lower.contains("clips")) {
+            return 0xFFE1306C; // Instagram Magenta / Reels Pink
+        } else if (lower.contains("story") || lower.contains("stories")) {
+            return 0xFFFF2D55; // Sunset Pink
+        } else if (lower.contains("playback") || lower.contains("video")) {
+            return 0xFF5856D6; // Indigo
+        } else if (lower.contains("download") || lower.contains("save")) {
+            return 0xFF30B0C7; // Teal
+        } else if (lower.contains("tab") || lower.contains("glass")) {
+            return 0xFFBF5AF2; // Fuchsia / Purple
+        } else if (lower.contains("layout") || lower.contains("accent") || lower.contains("emoji")) {
+            return 0xFF64D2FF; // Sky Blue
+        } else if (lower.contains("battery") || lower.contains("pause")) {
+            return 0xFF32D74B; // Mint
+        } else if (lower.contains("backup") || lower.contains("storage")) {
+            return 0xFFFF9F0A; // Amber
+        } else if (lower.contains("update") || lower.contains("notification")) {
+            return 0xFF007AFF; // Royal Blue
+        } else if (lower.contains("about") || lower.contains("status")) {
+            return 0xFFD62976; // Rose / Gradient Accent
+        } else if (lower.contains("share") || lower.contains("network")) {
+            return 0xFF5AC8FA; // Light Blue
+        } else if (lower.contains("comment")) {
+            return 0xFFFF3B30; // Coral Red
+        }
+        return 0xFF0095F6;
     }
 
     /**
@@ -302,12 +352,11 @@ public final class ScreenColors {
     }
 
     /**
-     * Group boundaries follow the visible rows, including a filtered search result. The card's
-     * height is the row's: its text wraps at any font size and the row grows to fit.
+     * Group boundaries follow the visible rows, including a filtered search result. Modern inset
+     * grouped card presentation with smooth rounded corners and clean dividers.
      */
     void paintSurface(View row, Preference preference, boolean first, boolean last) {
-        boolean overview = preference.getParent() instanceof PreferenceScreen;
-        float radius = overview ? 0 : dp(row, 10);
+        float radius = dp(row, 16);
         GradientDrawable surface = new GradientDrawable();
         surface.setColor(card);
         surface.setStroke(dp(row, 1), preference.isSelectable() ? interactionOutline(outline)
@@ -317,34 +366,32 @@ public final class ScreenColors {
                 first ? radius : 0, first ? radius : 0,
                 last ? radius : 0, last ? radius : 0,
                 last ? radius : 0, last ? radius : 0});
-        // Full-bleed rows push their side strokes off the screen as they do the top one, so the
-        // main page has no hairline down either edge.
-        int side = overview ? -dp(row, 1) : dp(row, 18);
-        Drawable inset = new InsetDrawable(surface, side, overview ? -dp(row, 1) : first ? dp(row, 4) : -dp(row, 1),
-                side, !overview && last ? dp(row, 4) : 0);
+        int side = dp(row, 16);
+        int topGap = first ? dp(row, 6) : -dp(row, 1);
+        int bottomGap = last ? dp(row, 6) : 0;
+        Drawable inset = new InsetDrawable(surface, side, topGap, side, bottomGap);
         row.setBackground(preference.isSelectable()
                 ? new RippleDrawable(interactionRipple(heading), inset, null).mutate() : inset);
-        // Explicit padding after the inset background prevents its padding from moving the text.
-        int horizontal = overview ? 20 : 30;
-        int vertical = overview ? 6 : 10;
-        row.setPaddingRelative(dp(row, horizontal), dp(row, vertical + (!overview && first ? 4 : 0)),
-                dp(row, horizontal), dp(row, vertical + (!overview && last ? 4 : 0)));
+        int start = side + dp(row, 14);
+        int vertical = dp(row, 12);
+        row.setPaddingRelative(start, vertical + (first ? 2 : 0),
+                start, vertical + (last ? 2 : 0));
         row.setMinimumHeight(dp(row, "hushgram_view_toggle".equals(preference.getKey())
                 || "hushgram_grid_toggle".equals(preference.getKey()) ? 48
-                : "hushgram_status".equals(preference.getKey()) ? 56 : overview ? 52 : 64));
+                : "hushgram_status".equals(preference.getKey()) ? 56 : 58));
     }
 
     /** A section title. */
     void paintHeading(View row) {
         TextView title = row.findViewById(android.R.id.title);
         if (title != null) {
-            title.setTextColor(heading);
-            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-            title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            title.setLetterSpacing(0.055f);
+            title.setTextColor(summary);
+            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+            title.setLetterSpacing(0.04f);
             title.setAllCaps(true);
         }
-        row.setPaddingRelative(dp(row, 22), dp(row, 20), dp(row, 22), dp(row, 8));
+        row.setPaddingRelative(dp(row, 24), dp(row, 18), dp(row, 24), dp(row, 6));
     }
 
     /** Marks the chevron a row was given, so a recycled row's can be found and taken off. */

@@ -2811,7 +2811,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             row.setGravity(android.view.Gravity.CENTER_VERTICAL);
             int touch = Math.round(48 * context.getResources().getDisplayMetrics().density);
             float density = context.getResources().getDisplayMetrics().density;
-            int inset = Math.round(18 * density);
+            int inset = Math.round(16 * density);
             int gap = Math.round(4 * density);
             paint(row);
             row.setAddStatesFromChildren(true);
@@ -2908,13 +2908,13 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             ScreenColors colors = ScreenColors.current();
             row.setTag(colors.card);
             float density = row.getResources().getDisplayMetrics().density;
-            int inset = Math.round(18 * density);
+            int inset = Math.round(16 * density);
             int gap = Math.round(4 * density);
             android.graphics.drawable.StateListDrawable states = new android.graphics.drawable.StateListDrawable();
             for (boolean focused : new boolean[]{true, false}) {
                 android.graphics.drawable.GradientDrawable surface = new android.graphics.drawable.GradientDrawable();
                 surface.setColor(colors.card);
-                surface.setCornerRadius(Math.round(10 * density));
+                surface.setCornerRadius(Math.round(14 * density));
                 surface.setStroke(Math.round(density), focused ? colors.heading : colors.outline);
                 states.addState(focused ? new int[]{android.R.attr.state_focused} : new int[]{},
                         new android.graphics.drawable.InsetDrawable(surface, inset, gap, inset, gap));
