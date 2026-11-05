@@ -218,11 +218,15 @@ public final class ModernSettingsView extends FrameLayout {
 
         initCategories();
 
+        float density = context.getResources().getDisplayMetrics().density;
+
         // 1. Overview Page
         overviewScroll = new ScrollView(context);
+        overviewScroll.setBackgroundColor(COLOR_BG);
         overviewScroll.setVerticalScrollBarEnabled(false);
         overviewScroll.setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
         overviewContent = new LinearLayout(context);
+        overviewContent.setBackgroundColor(COLOR_BG);
         overviewContent.setOrientation(LinearLayout.VERTICAL);
         overviewScroll.addView(overviewContent, new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -231,9 +235,12 @@ public final class ModernSettingsView extends FrameLayout {
 
         // 2. Subpage Container
         subpageScroll = new ScrollView(context);
+        subpageScroll.setBackgroundColor(COLOR_BG);
         subpageScroll.setVerticalScrollBarEnabled(false);
         subpageScroll.setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
+        subpageScroll.setElevation(16 * density);
         subpageContent = new LinearLayout(context);
+        subpageContent.setBackgroundColor(COLOR_BG);
         subpageContent.setOrientation(LinearLayout.VERTICAL);
         subpageScroll.addView(subpageContent, new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -243,9 +250,12 @@ public final class ModernSettingsView extends FrameLayout {
 
         // 3. Search Results Container
         searchScroll = new ScrollView(context);
+        searchScroll.setBackgroundColor(COLOR_BG);
         searchScroll.setVerticalScrollBarEnabled(false);
         searchScroll.setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
+        searchScroll.setElevation(16 * density);
         searchContent = new LinearLayout(context);
+        searchContent.setBackgroundColor(COLOR_BG);
         searchContent.setOrientation(LinearLayout.VERTICAL);
         searchScroll.addView(searchContent, new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -1021,26 +1031,31 @@ public final class ModernSettingsView extends FrameLayout {
             subpageContent.addView(createSettingRow(getContext(), item));
         }
 
-        float offset = 40 * getResources().getDisplayMetrics().density;
+        int width = getWidth();
+        if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
+
+        subpageScroll.setVisibility(View.VISIBLE);
+        subpageScroll.scrollTo(0, 0);
+        subpageScroll.setTranslationX(width);
+        subpageScroll.setScaleX(1.0f);
+        subpageScroll.setScaleY(1.0f);
+        subpageScroll.setAlpha(1.0f);
+
         overviewScroll.animate().cancel();
         overviewScroll.animate()
-                .translationX(-offset)
-                .alpha(0f)
-                .setDuration(120)
-                .setInterpolator(new AccelerateInterpolator())
-                .withEndAction(() -> {
-                    overviewScroll.setVisibility(View.GONE);
-                    subpageScroll.setVisibility(View.VISIBLE);
-                    subpageScroll.scrollTo(0, 0);
-                    subpageScroll.setTranslationX(offset);
-                    subpageScroll.setAlpha(0f);
-                    subpageScroll.animate()
-                            .translationX(0f)
-                            .alpha(1f)
-                            .setDuration(220)
-                            .setInterpolator(new DecelerateInterpolator())
-                            .start();
-                })
+                .translationX(-width * 0.25f)
+                .alpha(1.0f)
+                .setDuration(220)
+                .setInterpolator(new DecelerateInterpolator())
+                .withEndAction(() -> overviewScroll.setVisibility(View.GONE))
+                .start();
+
+        subpageScroll.animate().cancel();
+        subpageScroll.animate()
+                .translationX(0f)
+                .alpha(1.0f)
+                .setDuration(220)
+                .setInterpolator(new DecelerateInterpolator())
                 .start();
     }
 
@@ -1050,25 +1065,33 @@ public final class ModernSettingsView extends FrameLayout {
         dialog.showTitle(L10n.t("Instagram Plus"), false);
         dialog.updateBackHandler(); // Immediately update back callback state
 
-        float offset = 40 * getResources().getDisplayMetrics().density;
+        int width = getWidth();
+        if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
+
+        overviewScroll.setVisibility(View.VISIBLE);
+        overviewScroll.scrollTo(0, overviewScrollY);
+        overviewScroll.setTranslationX(-width * 0.25f);
+        overviewScroll.setScaleX(1.0f);
+        overviewScroll.setScaleY(1.0f);
+        overviewScroll.setAlpha(1.0f);
+
+        overviewScroll.animate().cancel();
+        overviewScroll.animate()
+                .translationX(0f)
+                .alpha(1.0f)
+                .setDuration(200)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
+
         subpageScroll.animate().cancel();
         subpageScroll.animate()
-                .translationX(offset)
-                .alpha(0f)
-                .setDuration(120)
+                .translationX(width)
+                .alpha(1.0f)
+                .setDuration(200)
                 .setInterpolator(new AccelerateInterpolator())
                 .withEndAction(() -> {
                     subpageScroll.setVisibility(View.GONE);
-                    overviewScroll.setVisibility(View.VISIBLE);
-                    overviewScroll.scrollTo(0, overviewScrollY);
-                    overviewScroll.setTranslationX(-offset);
-                    overviewScroll.setAlpha(0f);
-                    overviewScroll.animate()
-                            .translationX(0f)
-                            .alpha(1f)
-                            .setDuration(220)
-                            .setInterpolator(new DecelerateInterpolator())
-                            .start();
+                    subpageScroll.setTranslationX(0f);
                 })
                 .start();
         return true;
@@ -1160,16 +1183,21 @@ public final class ModernSettingsView extends FrameLayout {
         int width = getWidth();
         if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
 
-        // Reveal overview underneath so user sees previous window/page preview!
+        // Reveal overview underneath so user sees previous page preview cleanly!
         overviewScroll.setVisibility(View.VISIBLE);
-        overviewScroll.setTranslationX(-width * 0.30f);
-        overviewScroll.setAlpha(0.6f);
+        overviewScroll.scrollTo(0, overviewScrollY);
+        overviewScroll.setTranslationX(-width * 0.25f);
+        overviewScroll.setScaleX(1.0f);
+        overviewScroll.setScaleY(1.0f);
+        overviewScroll.setAlpha(1.0f);
 
         View activeView = getActiveBackView();
         if (activeView != null) {
             activeView.animate().cancel();
-            activeView.setPivotX(backEvent.getSwipeEdge() == BackEvent.EDGE_LEFT ? 0 : width);
-            activeView.setPivotY(activeView.getHeight() / 2f);
+            activeView.setTranslationX(0f);
+            activeView.setScaleX(1.0f);
+            activeView.setScaleY(1.0f);
+            activeView.setAlpha(1.0f);
         }
     }
 
@@ -1182,16 +1210,15 @@ public final class ModernSettingsView extends FrameLayout {
         float progress = backEvent.getProgress();
         View activeView = getActiveBackView();
         if (activeView != null) {
+            // As user pulls back from either edge, top subpage slides right to uncover overview underneath
             float shift = progress * width * 0.85f;
-            activeView.setTranslationX(backEvent.getSwipeEdge() == BackEvent.EDGE_LEFT ? shift : -shift);
-            float scale = 1.0f - progress * 0.07f;
-            activeView.setScaleX(scale);
-            activeView.setScaleY(scale);
-            activeView.setAlpha(1.0f - progress * 0.20f);
+            activeView.setTranslationX(shift);
+            activeView.setAlpha(1.0f); // ALWAYS 100% OPAQUE - NO OVERLAPPING TEXT!
         }
 
-        overviewScroll.setTranslationX(-width * 0.30f * (1.0f - progress));
-        overviewScroll.setAlpha(0.6f + 0.4f * progress);
+        // Overview slides in from left proportionally
+        overviewScroll.setTranslationX(-width * 0.25f * (1.0f - progress));
+        overviewScroll.setAlpha(1.0f); // ALWAYS 100% OPAQUE
     }
 
     public void onBackInvoked() {
@@ -1203,15 +1230,12 @@ public final class ModernSettingsView extends FrameLayout {
             activeView.animate().cancel();
             activeView.animate()
                     .translationX(width)
-                    .alpha(0f)
-                    .setDuration(160)
+                    .alpha(1.0f)
+                    .setDuration(180)
                     .setInterpolator(new AccelerateInterpolator())
                     .withEndAction(() -> {
                         activeView.setVisibility(View.GONE);
                         activeView.setTranslationX(0f);
-                        activeView.setScaleX(1.0f);
-                        activeView.setScaleY(1.0f);
-                        activeView.setAlpha(1.0f);
                     })
                     .start();
         }
@@ -1219,8 +1243,8 @@ public final class ModernSettingsView extends FrameLayout {
         overviewScroll.animate().cancel();
         overviewScroll.animate()
                 .translationX(0f)
-                .alpha(1f)
-                .setDuration(160)
+                .alpha(1.0f)
+                .setDuration(180)
                 .setInterpolator(new DecelerateInterpolator())
                 .withEndAction(() -> {
                     activeCategory = null;
@@ -1251,11 +1275,14 @@ public final class ModernSettingsView extends FrameLayout {
         if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
         overviewScroll.animate().cancel();
         overviewScroll.animate()
-                .translationX(-width * 0.30f)
-                .alpha(0f)
+                .translationX(-width * 0.25f)
+                .alpha(1.0f)
                 .setDuration(200)
                 .setInterpolator(new DecelerateInterpolator())
-                .withEndAction(() -> overviewScroll.setVisibility(View.GONE))
+                .withEndAction(() -> {
+                    overviewScroll.setVisibility(View.GONE);
+                    overviewScroll.setTranslationX(0f);
+                })
                 .start();
     }
 
@@ -1280,8 +1307,9 @@ public final class ModernSettingsView extends FrameLayout {
                         int width = getWidth();
                         if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
                         overviewScroll.setVisibility(View.VISIBLE);
-                        overviewScroll.setTranslationX(-width * 0.30f);
-                        overviewScroll.setAlpha(0.6f);
+                        overviewScroll.scrollTo(0, overviewScrollY);
+                        overviewScroll.setTranslationX(-width * 0.25f);
+                        overviewScroll.setAlpha(1.0f);
                         return true;
                     }
                 }
@@ -1313,18 +1341,19 @@ public final class ModernSettingsView extends FrameLayout {
                 if (!isSwipingBack && touchDownX <= 40 * density && dx > 20 * density && dx > dy * 1.5f) {
                     isSwipingBack = true;
                     overviewScroll.setVisibility(View.VISIBLE);
-                    overviewScroll.setTranslationX(-width * 0.30f);
-                    overviewScroll.setAlpha(0.6f);
+                    overviewScroll.scrollTo(0, overviewScrollY);
+                    overviewScroll.setTranslationX(-width * 0.25f);
+                    overviewScroll.setAlpha(1.0f);
                 }
                 if (isSwipingBack) {
                     float shift = Math.max(0, dx);
                     View activeView = getActiveBackView();
                     if (activeView != null) {
                         activeView.setTranslationX(shift);
+                        activeView.setAlpha(1.0f);
                         float p = Math.min(1.0f, shift / width);
-                        activeView.setAlpha(1.0f - p * 0.20f);
-                        overviewScroll.setTranslationX(-width * 0.30f * (1.0f - p));
-                        overviewScroll.setAlpha(0.6f + 0.4f * p);
+                        overviewScroll.setTranslationX(-width * 0.25f * (1.0f - p));
+                        overviewScroll.setAlpha(1.0f);
                     }
                     return true;
                 }
