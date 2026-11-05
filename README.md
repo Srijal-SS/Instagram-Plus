@@ -1,4 +1,4 @@
-![HushGram. Keep the moments. Cut the noise.](assets/readme-hero.png)
+![Instagram Plus. Keep the moments. Cut the noise.](assets/readme-hero.png)
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.0.18-E1306C" alt="Version 0.0.18">
@@ -15,16 +15,16 @@
 </p>
 
 <p align="center">
-  <sub><em>If HushGram makes Instagram better for you, a coffee helps me keep testing patches and maintaining them as Instagram changes.</em></sub>
+  <sub><em>If Instagram Plus makes Instagram better for you, a coffee helps me keep testing patches and maintaining them as Instagram changes.</em></sub>
 </p>
 
-# <img src="assets/icon.png" width="36" alt=""> HushGram
+# <img src="assets/icon.png" width="36" alt=""> Instagram Plus
 
-HushGram is a set of [Morphe](https://morphe.software) patches for Instagram on Android. You bring the Instagram APK, Morphe Manager patches it on your phone, and you get an Instagram with a settings screen full of switches the stock app doesn't have. Hide ads, suggested posts and Meta AI. Strip tracking tags from the links you share. Watch stories and lives without landing on the viewer list. Save reels, stories, photos and voice messages, lock your chats, rearrange the tab bar and a lot more.
+Instagram Plus is a set of [Morphe](https://morphe.software) patches for Instagram on Android. You bring the Instagram APK, Morphe Manager patches it on your phone, and you get an Instagram with a settings screen full of switches the stock app doesn't have. Hide ads, suggested posts and Meta AI. Strip tracking tags from the links you share. Watch stories and lives without landing on the viewer list. Save reels, stories, photos and voice messages, lock your chats, rearrange the tab bar and a lot more.
 
-Most switches start off, so a freshly patched Instagram looks like Instagram until you turn something on. It's the Instagram member of a small family. [Hushfacebook](https://github.com/SysAdminDoc/Hushfacebook) does the same job for Facebook, and HushGram is built on its foundation.
+Most switches start off, so a freshly patched Instagram looks like Instagram until you turn something on. It's the Instagram member of a small family. [Hushfacebook](https://github.com/SysAdminDoc/Hushfacebook) does the same job for Facebook, and Instagram Plus is built on its foundation.
 
-The latest release is [v0.0.18](https://github.com/SysAdminDoc/HushGram/releases/tag/v0.0.18), with 139 patches. Add it to Morphe Manager with [this link](https://morphe.software/add-source?github=SysAdminDoc%2FHushGram).
+The latest release is [v0.0.18](https://github.com/Srijal-SS/HushGram/releases/tag/v0.0.18), with 139 patches. Add it to Morphe Manager with [this link](https://morphe.software/add-source?github=Srijal-SS%2FHushGram).
 
 What changed in each version is in the [changelog](CHANGELOG.md).
 
@@ -33,13 +33,13 @@ This project has no connection to Meta or to the Morphe project. Neither endorse
 ## Install
 
 1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.4.0 or newer.
-2. Add HushGram as a patch source by opening [this link](https://morphe.software/add-source?github=SysAdminDoc%2FHushGram) on your phone. Or in Manager open **Sources**, tap **+**, choose **Remote** and enter `github.com/SysAdminDoc/HushGram`. Use HushGram as your only Instagram source, since mixing in another one can stop patching.
+2. Add Instagram Plus as a patch source by opening [this link](https://morphe.software/add-source?github=Srijal-SS%2FHushGram) on your phone. Or in Manager open **Sources**, tap **+**, choose **Remote** and enter `github.com/Srijal-SS/HushGram`. Use Instagram Plus as your only Instagram source, since mixing in another one can stop patching.
 3. Get Instagram 454.0.0.54.77 from APKMirror. Take [the bundle labelled (arm64-v8a) (480dpi) (Android 9.0+), build 386014758](https://www.apkmirror.com/apk/instagram/instagram-instagram/instagram-454-0-0-54-77-release/). APKMirror lists three arm64 480dpi bundles for this version, so check the build number. The version's other builds work too (see [Supported Instagram builds](#supported-instagram-builds)).
-4. Uninstall the Instagram you got from the Play Store. The patched app is signed with your own key, so Android won't install it over Meta's. Uninstalling signs you out, so have your password and two-factor codes ready. On a rooted phone, Manager's Root Mount can lay HushGram over the Play Store app instead, and you stay signed in.
+4. Uninstall the Instagram you got from the Play Store. The patched app is signed with your own key, so Android won't install it over Meta's. Uninstalling signs you out, so have your password and two-factor codes ready. On a rooted phone, Manager's Root Mount can lay Instagram Plus over the Play Store app instead, and you stay signed in.
 5. In Morphe Manager, pick the Instagram file, keep the default patch selection or change it, and patch.
 6. Open Instagram Plus Settings and turn on what you want. It's at the top of Instagram's Settings and activity. A long press on the Instagram logo at the top of your feed opens it too.
 
-Prefer a local source? Download the `.mpp` file from the [latest release](https://github.com/SysAdminDoc/HushGram/releases/latest) and add it through **Sources > + > Local**. It won't update itself, and it's a patch bundle, not an Instagram APK.
+Prefer a local source? Download the `.mpp` file from the [latest release](https://github.com/Srijal-SS/HushGram/releases/latest) and add it through **Sources > + > Local**. It won't update itself, and it's a patch bundle, not an Instagram APK.
 
 When a patch can't find its target in your Instagram file, patching stops with a message saying what's missing instead of handing you an app that quietly does nothing. Please report a stop like that.
 
@@ -54,7 +54,7 @@ Android's developer verification doesn't touch a patched Instagram yet. Since Se
 > - **Try a spare account first** if you'd rather not put the one you care about on the line. People whose accounts were suspended on patched Instagram often describe a new or long-idle account signing in on a fresh install. That's what they saw, not a proven cause.
 > - **Keep the sign-in you have.** Update over the top with the same signing key, or use Root Mount on a rooted phone, rather than starting fresh each time.
 >
-> HushGram doesn't post, like, follow or message for you, and it doesn't change how you sign in. It also leaves out Instagram Plus, saving deleted messages, saving the Instants people send you and keeping copies of stories after they expire. Other Instagram mods offer those. People using piko's Instagram patches have reported banned accounts, and I suspect features like these may be part of the reason. Nobody has proven it, so leaving them out is a precaution.
+> Instagram Plus doesn't post, like, follow or message for you, and it doesn't change how you sign in. It also leaves out paywall bypasses, saving deleted messages, saving the Instants people send you and keeping copies of stories after they expire. Other Instagram mods offer those. People using piko's Instagram patches have reported banned accounts, and I suspect features like these may be part of the reason. Nobody has proven it, so leaving them out is a precaution.
 
 ## Keep your signing key
 
@@ -68,7 +68,7 @@ There are 154 patches for `com.instagram.android`, checked against Instagram 454
 
 Four patches stay out of simple mode. Tick them in Manager's patch list (Expert mode, then **Choose patches**) if you want them:
 
-- **Change version code** raises the version code for good. Going back means uninstalling Instagram, and every later HushGram build needs it too.
+- **Change version code** raises the version code for good. Going back means uninstalling Instagram, and every later Instagram Plus build needs it too.
 - **Install next to Instagram** makes the build a second app with its own package, data and sign-in (see [Two Instagrams on one phone](#two-instagrams-on-one-phone)).
 - **Pure black dark mode** rewrites Instagram's colors when you patch and has no switch to turn it off.
 - **View DM photos and videos anonymously** is a test feature until the sender's side is checked with two accounts.
@@ -88,7 +88,7 @@ In Expert mode the patches are grouped under Ads, Ghost mode, Privacy, Messages,
 | `Blur the bars around Reels` | Shows a blurred copy of a reel above and below it, or beside it, where Instagram would leave black bars. Starts off. Turn it on in Instagram Plus Settings > Reels. | Included |
 | `Carousel arrows` | Puts a back and a next arrow on a post's carousel in Home and Following, so a tap moves to the next photo or video without a swipe, and can move its page dots onto a round pill over the photo. The pill can be solid, see-through or frosted glass. Both start off. Turn them on in Instagram Plus Settings > Feed. | Included |
 | `Change the like animation` | Lets you pick the animation that plays when you double tap a post to like it. The choices are animations Instagram made for its Rings creators. Starts off. Turn it on in Instagram Plus Settings > Reels. | Included |
-| `Change version code` | Stops Google Play from offering Meta's updates over your patched Instagram. Going back to the normal Instagram later means uninstalling first, which deletes its data. Later HushGram builds need this patch too. Works as soon as you patch it in, with no switch. | Opt-in |
+| `Change version code` | Stops Google Play from offering Meta's updates over your patched Instagram. Going back to the normal Instagram later means uninstalling first, which deletes its data. Later Instagram Plus builds need this patch too. Works as soon as you patch it in, with no switch. | Opt-in |
 | `Clean up Reels` | Hides extra buttons and prompts on reels, such as Follow, Edits, templates, Meta AI, Ray-Ban Meta glasses, friends' activity, the Add a comment bar, the reply bar on reels from chats, the Save button, the Create and Your algorithm buttons, the Friends tab and the Reels tab's top bar. Each one has its own switch, and Burn-in guard can dim a reel's buttons, and a story's, while you aren't touching the screen. Keep clear mode on carries Instagram's clear mode to the next reels, and can start every reel in it. Starts off. Turn it on in Instagram Plus Settings > Reels. | Included |
 | `Clear the media cache` | Frees storage by deleting Instagram's saved copies of photos and videos once they pass 500 MB. Your sign-in, drafts and settings stay. A row clears them right away. Starts off. Turn it on in Instagram Plus Settings > Storage. | Included |
 | `Control taps and volume on Reels` | Lets you choose what a single tap on a reel does: Instagram's default, pause, or mute. Can also keep a reel muted when you press volume up. Both start at Instagram's behavior. Choose them in Instagram Plus Settings > Playback. | Included |
@@ -150,7 +150,7 @@ In Expert mode the patches are grouped under Ads, Ghost mode, Privacy, Messages,
 | `Hide your active status` | Stops people from seeing Active now for you while you use Instagram. You still see when they're active. Ghost mode, at the top of Ads and privacy, turns it on with the others. Starts off. Turn it on in Instagram Plus Settings > Messages. | Included |
 | `Instagram Plus launch screen` | Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. Starts off. Turn it on in Instagram Plus Settings > Layout. | Included |
 | `Home header text` | Puts words of your own, or a picture, at the top of Home in place of Instagram's logo. Nothing changes until you set one in Instagram Plus Settings > Layout. | Included |
-| `Instagram Plus Settings` | Adds a Instagram Plus Settings page to Instagram. Open it by long-pressing the Instagram logo at the top of your feed or Instagram's icon, or from the top of Settings and activity. Turn features on or off there, pause HushGram and save diagnostics. Works as soon as you patch it in, with no switch. | Included |
+| `Instagram Plus Settings` | Adds an Instagram Plus settings page to Instagram. Open it by long-pressing the Instagram logo at the top of your feed or Instagram's icon, or from the top of Settings and activity. Turn features on or off there, pause Instagram Plus and save diagnostics. Works as soon as you patch it in, with no switch. | Included |
 | `Install next to Instagram` | Installs this build as a second Instagram beside your normal one, with its own data and sign-in. Pick its package name and app name in the patch's options, and whether its icon gets an Instagram Plus badge. Works as soon as you patch it in, with no switch. | Opt-in |
 | `Keep a seek bar on Reels` | Keeps a seek bar under every reel, short ones too, with the time played and the reel's length above it, like 0:10 / 0:55. Starts off. Turn it on in Instagram Plus Settings > Reels. | Included |
 | `Keep Home's top bar` | Keeps the Instagram logo and the buttons beside it at the top of Home while you scroll. A second switch shows your feed blurred under them. Both start off. Turn them on in Instagram Plus Settings > Feed. | Included |
@@ -240,7 +240,7 @@ Watched-story sorting leaves your own story and Instagram's special tray entries
 
 ## Settings
 
-Inside Instagram, long-press the Instagram logo at the top of your feed. A tap still does what Instagram made it do, and the long press works while HushGram is paused. From your home screen, long-press Instagram's icon and tap **Instagram Plus Settings**. Or open **Settings and activity** from the menu on your profile and tap **Instagram Plus Settings** at the top. The shortcut works before you sign in too. Under **Settings entry** you can also pick a tab, or your profile's menu button, whose long press opens HushGram. Every way in has a switch there, so you can keep just the one you like. The last one still on can't be turned off.
+Inside Instagram, long-press the Instagram logo at the top of your feed. A tap still does what Instagram made it do, and the long press works while Instagram Plus is paused. From your home screen, long-press Instagram's icon and tap **Instagram Plus Settings**. Or open **Settings and activity** from the menu on your profile and tap **Instagram Plus Settings** at the top. The shortcut works before you sign in too. Under **Settings entry** you can also pick a tab, or your profile's menu button, whose long press opens Instagram Plus Settings. Every way in has a switch there, so you can keep just the one you like. The last one still on can't be turned off.
 
 <p>
   <img src="assets/settings-switches.png" alt="HushGram's main settings page with its header, search and the Feed category open" width="270">
@@ -256,17 +256,17 @@ PIN forms keep their labels visible and scroll above the keyboard. Next moves to
 
 A few rows to know about:
 
-- **Pause** turns off every feature a switch controls, all at once, without losing your choices. It's the quickest way to tell whether HushGram is behind a problem. Patch-time changes like the removed advertising ID stay in.
+- **Pause** turns off every feature a switch controls, all at once, without losing your choices. It's the quickest way to tell whether Instagram Plus is behind a problem. Patch-time changes like the removed advertising ID stay in.
 - **Ghost mode**, at the top of Ads and privacy, turns the seven switches that keep what you do to yourself on or off together. Each keeps its own switch too. Pressing and holding New message at the top of your inbox does the same.
 - **Downloads** go to Movies and Pictures, each in an Instagram folder unless you name another, and voice messages to Recordings (Music before Android 12). **Skip what's already saved** remembers your newest 15,000 saves so the same post isn't saved twice.
 - **Download file name** accepts `{shortcode}` for the post's code from its link. Including it applies the template to photos too. Stories and saves without a known post leave that token out.
 - **Settings backup** exports your choices to a JSON file and brings them back later, on this install or another. Accounts, signing keys and playback history aren't included.
 - **Descriptions behind an info button**, under Settings entry, keeps each switch to its name. Tap the small i beside a name to read what it does. It starts off, and a screen reader always gets the full text.
-- **Black settings page**, also under Settings entry, makes the cards and dialogs black, puts HushGram's name and version at the top and cuts each category to one line. It starts on, and turning it off brings back the old charcoal page.
+- **Black settings page**, also under Settings entry, makes the cards and dialogs black, puts Instagram Plus's name and version at the top and cuts each category to one line. It starts on, and turning it off brings back the old charcoal page.
 - **Date in backup file names**, under Settings backup, adds the current date and time to the suggested export name. It starts off.
 - **Pause and diagnostics** copies a quick report or saves the full one to Download/Morphe. Links, IDs, cookies and sign-in tokens are left out, but read it over for other private text before you share it. A source build also shows an `hg1:` build identity under Version in About and in the report.
 
-If Instagram crashes within a minute of starting three times in a row, HushGram pauses itself and the status card says why. Turn it back on once you've patched again or left out the patch at fault. A crash in that first minute is kept, so the full report you save under Pause and diagnostics shows what crashed and which patches were on.
+If Instagram crashes within a minute of starting three times in a row, Instagram Plus pauses itself and the status card says why. Turn it back on once you've patched again or left out the patch at fault. A crash in that first minute is kept, so the full report you save under Pause and diagnostics shows what crashed and which patches were on.
 
 ## Help
 
@@ -276,11 +276,11 @@ If Instagram crashes within a minute of starting three times in a row, HushGram 
 - **Switches do nothing.** Refreshing a source only downloads patches. The switches live inside the patched app, so patch and install again. Some switches need Instagram restarted, and their description says so.
 - **Package conflict or App not installed.** Android won't replace an app with one signed by a different key. Update with the key the installed build used, or uninstall the differently signed app first. That deletes its data, so make sure you can sign in again.
 - **Unsupported Version.** Manager is told one 454.0.0.54.77 build per kind of phone (the codes in [Supported Instagram builds](#supported-instagram-builds)), so it says this for a build meant for another kind of phone or any other version. The other screen density builds listed there patch cleanly in HushGram's tests even though Manager calls them unsupported. Anything else may work, but nobody has checked it.
-- **Patching stops on one patch.** Check that you're patching a supported build, and if several patch sources are enabled, try HushGram alone. If it still stops, open an issue naming the patch, your Manager version and the error.
+- **Patching stops on one patch.** Check that you're patching a supported build, and if several patch sources are enabled, try Instagram Plus alone. If it still stops, open an issue naming the patch, your Manager version and the error.
 - **Patching runs out of memory.** Turn on **Use embedded VM** in Manager's settings and patch again. Instagram's DEX index and resource table can exceed a 256 MB heap before HushGram's patches run. Desktop 1.19.1 passed with a 512 MB heap. That desktop result hasn't been verified on Android.
 - **Instagram won't stay open long enough to reach settings.** Create an empty file named `hushgram-safe-mode` in `Android/data/com.instagram.android/files` (a computer or a file manager can reach it). HushGram starts paused until you delete it.
 - **The Play Store keeps offering an Instagram update.** Open Instagram's page in the Play Store, tap the three dots at the top right and untick **Enable auto update**. **Change version code** stops the offers for good on a standard install, but read its warning in [Patches](#patches) first.
-- **Slow right after a Root Mount install.** Android's compiled copy of Instagram was made from Meta's code, so it runs Instagram uncompiled until it's compiled again. Run this in a root shell (`adb shell` then `su`, or Termux with `su`), reopen Instagram, and run it again whenever you mount a new HushGram build:
+- **Slow right after a Root Mount install.** Android's compiled copy of Instagram was made from Meta's code, so it runs Instagram uncompiled until it's compiled again. Run this in a root shell (`adb shell` then `su`, or Termux with `su`), reopen Instagram, and run it again whenever you mount a new Instagram Plus build:
 
   ```
   cmd package compile -m speed-profile -f com.instagram.android
@@ -290,7 +290,7 @@ If Instagram crashes within a minute of starting three times in a row, HushGram 
 
 `Install next to Instagram` builds a second Instagram that installs beside the one you have, say for a second account. Switch Manager to Expert mode, open **Choose patches** and tick it under Updates. Its options hold the package name (`com.instagram.android.plus` unless you change it), the name under its icon (`Instagram Plus`) and **Mark the icon**, which puts a small Instagram Plus badge on the copy's icon. Keep the package name you picked, because patching again with another one makes a third app instead of updating the second.
 
-The copy has its own data and its own sign-in, and HushGram's settings and downloads come along. Instagram's servers can see its package name when it signs in, and HushGram doesn't hide that.
+The copy has its own data and its own sign-in, and Instagram Plus settings and downloads come along. Instagram's servers can see its package name when it signs in, and Instagram Plus doesn't hide that.
 
 ### Getting help
 
@@ -311,7 +311,7 @@ For something that's broken, use the [bug form](https://github.com/SysAdminDoc/H
 
 Other Instagram versions haven't been checked. Meta can publish different APKs under one version name, so go by the build number too.
 
-Patching raises the minimum to Android 9 for the armeabi-v7a and x86 builds, which Instagram ships with an Android 8 minimum. HushGram's settings use Android 9 APIs.
+Patching raises the minimum to Android 9 for the armeabi-v7a and x86 builds, which Instagram ships with an Android 8 minimum. Instagram Plus settings use Android 9 APIs.
 
 Meta signs genuine Instagram builds with one of two certificates, and Morphe Manager warns before it patches an APK signed with any other key. To check a file yourself, run `apksigner verify --print-certs` (from Android's build tools) on the base APK and look for one of these certificate SHA-256 digests:
 
@@ -332,11 +332,11 @@ On Windows, `Get-FileHash -Algorithm SHA256 .\patches-<version>.mpp` prints the 
 
 ## Privacy
 
-HushGram doesn't collect anything and has no server. It opens connections itself in two places. One fetches media you ask for, like a save, a picture you open with View profile picture or the small pictures in See who a story mentions. That all comes over HTTPS from Meta's media servers (`cdninstagram.com`, `fbcdn.net` and `fbsbx.com`), and an address anywhere else is refused. The other downloads an emoji pack when you pick one under Emoji style, once, from its maker's own release on GitHub, and keeps it only if its size and SHA-256 match the file HushGram names. Apart from that, its code names four addresses:
+Instagram Plus doesn't collect anything and has no server. It opens connections itself in two places. One fetches media you ask for, like a save, a picture you open with View profile picture or the small pictures in See who a story mentions. That all comes over HTTPS from Meta's media servers (`cdninstagram.com`, `fbcdn.net` and `fbsbx.com`), and an address anywhere else is refused. The other downloads an emoji pack when you pick one under Emoji style, once, from its maker's own release on GitHub, and keeps it only if its size and SHA-256 match the file Instagram Plus names. Apart from that, its code names four addresses:
 
 - `github.com`, for the link to this page in settings. It opens in your browser, only when you tap it. The Twemoji and Blobmoji packs download from their release pages there.
 - `raw.githubusercontent.com`, where the OpenMoji pack downloads from, only when you pick it.
-- `ko-fi.com`, for the Support HushGram row at the end of settings, again only when you tap it.
+- `ko-fi.com`, for the Support Instagram Plus row at the end of settings, again only when you tap it.
 - `www.instagram.com`, in the link Send downloads to another app hands to the app you pick, and in the profile links See who a story mentions opens inside Instagram.
 
 The diagnostic report stays on your phone until you copy or share it yourself.
@@ -374,9 +374,9 @@ To walk an already installed candidate, pass `-SkipPatch -SignedApk <signed.apk>
 
 ### Establishing a factory baseline
 
-When a patch depends on how Instagram behaves on its own, compare against the original Meta-signed package for the exact build. Check the version name and build code, verify the base APK's certificate with `apksigner verify --print-certs` against the digests in [Supported Instagram builds](#supported-instagram-builds), and install it with its matching splits on a clean emulator profile with no Morphe bundle applied. Record the Android version, ABI, display density, Instagram build, locale and signed-in state with each observation, and keep those results separate from anything seen on a HushGram build. Turning every HushGram switch off still leaves the patches' hooks in the app, so it isn't a stand-in.
+When a patch depends on how Instagram behaves on its own, compare against the original Meta-signed package for the exact build. Check the version name and build code, verify the base APK's certificate with `apksigner verify --print-certs` against the digests in [Supported Instagram builds](#supported-instagram-builds), and install it with its matching splits on a clean emulator profile with no Morphe bundle applied. Record the Android version, ABI, display density, Instagram build, locale and signed-in state with each observation, and keep those results separate from anything seen on an Instagram Plus build. Turning every Instagram Plus switch off still leaves the patches' hooks in the app, so it isn't a stand-in.
 
-### Translating HushGram
+### Translating Instagram Plus
 
 Translations live in UTF-8 TSV files under `extensions/shared/library/src/main/l10n`, with the English text as the lookup key. `scripts/crowdin-l10n.py` prepares review worksheets, `scripts/sync-l10n.py import` brings a reviewed file back, and `scripts/gen-l10n.py` regenerates the class the extension carries. They need Python 3.12 or newer. The [translation guide](docs/translations.md) has the whole workflow and the review rules.
 
@@ -393,7 +393,7 @@ The tables cover German, Spanish, Indonesian, Italian, Korean, Brazilian Portugu
 
 The patches themselves, and the Instagram side of the ported features, were written here. Every source file says where it came from in its header, and [provenance.json](provenance.json) maps each file to the project and commit it came from, with its licence. [docs/sources.md](docs/sources.md) covers the other Instagram patch sources and what each one does, and its ledger, [sources/instagram-sources.json](sources/instagram-sources.json), pins each source's licence.
 
-The emoji packs in `Emoji pack` aren't part of HushGram. Each one downloads from its maker when you pick it, and HushGram checks it against the exact file before using it. [Twemoji](https://github.com/mozilla/twemoji-colr) is Twitter's art under CC BY 4.0, made into a font by Mozilla. [OpenMoji](https://github.com/hfg-gmuend/openmoji) is CC BY-SA 4.0 and [Blobmoji](https://github.com/C1710/blobmoji) is Apache 2.0.
+The emoji packs in `Emoji pack` aren't part of Instagram Plus. Each one downloads from its maker when you pick it, and HushGram checks it against the exact file before using it. [Twemoji](https://github.com/mozilla/twemoji-colr) is Twitter's art under CC BY 4.0, made into a font by Mozilla. [OpenMoji](https://github.com/hfg-gmuend/openmoji) is CC BY-SA 4.0 and [Blobmoji](https://github.com/C1710/blobmoji) is Apache 2.0.
 
 ## License
 
