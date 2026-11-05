@@ -65,6 +65,7 @@ public final class SettingsDialog extends DialogFragment {
     private Button retry;
     private TextView heading;
     private TextView restart;
+    private ModernSettingsView modernView;
     /** The lock's checks on this dialog's window while it's started. */
     private Window lockWindow;
     private ViewTreeObserver.OnPreDrawListener lockDraw;
@@ -278,8 +279,21 @@ public final class SettingsDialog extends DialogFragment {
             }
         });
         bar.setOnClickListener(v -> {
-            Fragment page = getChildFragmentManager().findFragmentById(CONTAINER_ID);
-            if (page instanceof HushgramPreferenceFragment) ((HushgramPreferenceFragment) page).restartNow();
+            Activity act = getActivity();
+            if (act != null && !act.isFinishing()) {
+                switch (RestartNow.restart(act)) {
+                    case BUSY:
+                        app.hushgram.extension.shared.Utils.showToastLong(
+                                L10n.t(act, "Still saving or exporting. Restart once it's done."));
+                        break;
+                    case FAILED:
+                        app.hushgram.extension.shared.Utils.showToastLong(
+                                L10n.t(act, "Couldn't restart Instagram. Close it and open it again."));
+                        break;
+                    default:
+                        break;
+                }
+            }
         });
         bar.setVisibility(View.GONE);
         return bar;
@@ -323,11 +337,8 @@ public final class SettingsDialog extends DialogFragment {
     void setupBackSupport() {
         Dialog dialog = getDialog();
         if (dialog == null) return;
-        Fragment page = getChildFragmentManager().findFragmentById(CONTAINER_ID);
-        if (page instanceof HushgramPreferenceFragment) {
-            backSupport = new BackSupport(dialog, (HushgramPreferenceFragment) page);
-            backSupport.update();
-        }
+        backSupport = new BackSupport(dialog, this);
+        backSupport.update();
     }
 
     void updateBackHandler() {
@@ -340,17 +351,17 @@ public final class SettingsDialog extends DialogFragment {
 
     static final class BackSupport {
         private final Dialog dialog;
-        private final HushgramPreferenceFragment fragment;
+        private final SettingsDialog settingsDialog;
         private Object registeredCallback;
 
-        BackSupport(Dialog dialog, HushgramPreferenceFragment fragment) {
+        BackSupport(Dialog dialog, SettingsDialog settingsDialog) {
             this.dialog = dialog;
-            this.fragment = fragment;
+            this.settingsDialog = settingsDialog;
         }
 
         void update() {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
-            boolean canGoBack = fragment != null && fragment.canGoBack();
+            boolean canGoBack = settingsDialog != null && settingsDialog.canGoBack();
             if (canGoBack) {
                 if (registeredCallback == null) register();
             } else {
@@ -360,9 +371,9 @@ public final class SettingsDialog extends DialogFragment {
 
         private void register() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                registeredCallback = Api34BackHelper.register(dialog, fragment, this::unregister);
+                registeredCallback = Api34BackHelper.register(dialog, settingsDialog, this::unregister);
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registeredCallback = Api33BackHelper.register(dialog, fragment, this::unregister);
+                registeredCallback = Api33BackHelper.register(dialog, settingsDialog, this::unregister);
             }
         }
 
@@ -383,7 +394,7 @@ public final class SettingsDialog extends DialogFragment {
 
     @androidx.annotation.RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     static final class Api34BackHelper {
-        static Object register(Dialog dialog, HushgramPreferenceFragment fragment, Runnable onComplete) {
+        static Object register(Dialog dialog, SettingsDialog settingsDialog, Runnable onComplete) {
             try {
                 OnBackInvokedDispatcher dispatcher = dialog.getOnBackInvokedDispatcher();
                 if (dispatcher == null) return null;
@@ -393,7 +404,7 @@ public final class SettingsDialog extends DialogFragment {
                     @Override
                     public void onBackStarted(BackEvent backEvent) {
                         swipeEdge = backEvent.getSwipeEdge();
-                        View view = fragment.listView();
+                        View view = settingsDialog.getActiveBackView();
                         if (view != null) {
                             view.setPivotX(swipeEdge == BackEvent.EDGE_LEFT ? 0 : view.getWidth());
                             view.setPivotY(view.getHeight() / 2f);
@@ -402,7 +413,7 @@ public final class SettingsDialog extends DialogFragment {
 
                     @Override
                     public void onBackProgressed(BackEvent backEvent) {
-                        View view = fragment.listView();
+                        View view = settingsDialog.getActiveBackView();
                         if (view == null) return;
                         float progress = backEvent.getProgress();
                         float shift = progress * view.getWidth() * 0.38f;
@@ -415,7 +426,7 @@ public final class SettingsDialog extends DialogFragment {
 
                     @Override
                     public void onBackInvoked() {
-                        View view = fragment.listView();
+                        View view = settingsDialog.getActiveBackView();
                         if (view != null) {
                             view.animate().cancel();
                             view.setTranslationX(0f);
@@ -423,13 +434,13 @@ public final class SettingsDialog extends DialogFragment {
                             view.setScaleY(1.0f);
                             view.setAlpha(1.0f);
                         }
-                        fragment.closeCategory();
+                        settingsDialog.closeCategory();
                         if (onComplete != null) onComplete.run();
                     }
 
                     @Override
                     public void onBackCancelled() {
-                        View view = fragment.listView();
+                        View view = settingsDialog.getActiveBackView();
                         if (view == null) return;
                         view.animate()
                                 .translationX(0f)
@@ -452,12 +463,12 @@ public final class SettingsDialog extends DialogFragment {
 
     @androidx.annotation.RequiresApi(Build.VERSION_CODES.TIRAMISU)
     static final class Api33BackHelper {
-        static Object register(Dialog dialog, HushgramPreferenceFragment fragment, Runnable onComplete) {
+        static Object register(Dialog dialog, SettingsDialog settingsDialog, Runnable onComplete) {
             try {
                 OnBackInvokedDispatcher dispatcher = dialog.getOnBackInvokedDispatcher();
                 if (dispatcher == null) return null;
                 OnBackInvokedCallback callback = () -> {
-                    fragment.closeCategory();
+                    settingsDialog.closeCategory();
                     if (onComplete != null) onComplete.run();
                 };
                 dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback);
@@ -470,9 +481,18 @@ public final class SettingsDialog extends DialogFragment {
     }
 
     /** Clears a search before Back closes the dialog. Expanding a section adds no Back level. */
-    private boolean closeCategory() {
-        Fragment page = getChildFragmentManager().findFragmentById(CONTAINER_ID);
-        return page instanceof HushgramPreferenceFragment && ((HushgramPreferenceFragment) page).closeCategory();
+    boolean closeCategory() {
+        if (modernView != null && modernView.handleBack()) return true;
+        return false;
+    }
+
+    boolean canGoBack() {
+        return modernView != null && modernView.canGoBack();
+    }
+
+    @androidx.annotation.Nullable
+    View getActiveBackView() {
+        return modernView != null ? modernView.getActiveBackView() : null;
     }
 
     @Override
@@ -485,13 +505,6 @@ public final class SettingsDialog extends DialogFragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // Keep the restored child's identity and pending activity result, but defer its view
-        // until openPage can catch construction failures. Framework restoration would otherwise
-        // build that view after this callback and before onResume, outside the recovery boundary.
-        FragmentManager manager = getChildFragmentManager();
-        Fragment restored = manager.findFragmentById(CONTAINER_ID);
-        if (restored != null && !restored.isDetached()) manager.beginTransaction().detach(restored).commitNow();
-        // Closing over an unthemed screen: the failure page's text would throw the same way.
         if (failed && !closing) showFailure(view);
     }
 
@@ -560,12 +573,6 @@ public final class SettingsDialog extends DialogFragment {
      */
     private void guard(Activity activity, Window window) {
         if (!MessagesLock.guardSettings(activity, window)) return;
-        try {
-            Fragment page = getChildFragmentManager().findFragmentById(CONTAINER_ID);
-            if (page instanceof HushgramPreferenceFragment) ((HushgramPreferenceFragment) page).closeDialogs();
-        } catch (Exception failure) {
-            Logger.printException(() -> "Settings: could not close what was open over them", failure);
-        }
     }
 
     private void unwatchLock() {
@@ -615,6 +622,7 @@ public final class SettingsDialog extends DialogFragment {
         retry = null;
         heading = null;
         restart = null;
+        modernView = null;
         super.onDestroyView();
     }
 
@@ -622,60 +630,26 @@ public final class SettingsDialog extends DialogFragment {
         return owner != null && owner == getView() && !closing && isAdded() && isResumed()
                 && !isRemoving() && !isDetached() && getActivity() != null
                 && !getActivity().isFinishing() && !getActivity().isDestroyed()
-                && getDialog() != null && getDialog().isShowing()
-                && !getFragmentManager().isStateSaved()
-                && !getChildFragmentManager().isStateSaved()
-                && !getChildFragmentManager().isDestroyed();
+                && getDialog() != null && getDialog().isShowing();
     }
 
     private void openPage(View owner) {
         if (loading || !canOpenPage(owner)) return;
         loading = true;
-        boolean recovering = failed;
         FrameLayout container = owner.findViewById(CONTAINER_ID);
-        FragmentManager manager = getChildFragmentManager();
         try {
-            Fragment child = manager.findFragmentById(CONTAINER_ID);
-            if (failed && child != null) {
-                manager.beginTransaction().remove(child).commitNow();
-                child = null;
-            }
-            if (child == null) {
+            if (modernView == null) {
                 container.removeAllViews();
-                manager.beginTransaction()
-                        .replace(CONTAINER_ID, new HushgramPreferenceFragment())
-                        .commitNow();
-            } else if (child.isDetached()) {
-                manager.beginTransaction().attach(child).commitNow();
+                modernView = new ModernSettingsView(getActivity(), this);
+                container.addView(modernView, new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                modernView.openStartPage(startPage());
             }
             failed = false;
             retry = null;
-            if (recovering) {
-                View list = container.findViewById(android.R.id.list);
-                if (list != null) list.requestFocus();
-                TextView barTitle = heading;
-                owner.post(() -> {
-                    if (!canOpenPage(owner) || failed || heading != barTitle) return;
-                    // The bar's title, or the header's name while the page shows it in its place.
-                    View pageHeading = barTitle.getVisibility() == View.VISIBLE
-                            ? barTitle : container.findViewWithTag(SettingsHeader.NAME);
-                    if (pageHeading != null) {
-                        pageHeading.performAccessibilityAction(
-                                AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
-                    }
-                });
-            }
         } catch (Exception ex) {
             failed = true;
-            Logger.printException(() -> "Could not show the preference list", ex);
-            try {
-                Fragment partial = manager.findFragmentById(CONTAINER_ID);
-                if (partial != null) manager.beginTransaction().remove(partial).commitNow();
-            } catch (Exception cleanup) {
-                Logger.printException(() -> "Could not remove the failed preference list", cleanup);
-            }
-            // A throw from onViewCreated can leave a view attached before the fragment has
-            // reached ACTIVITY_CREATED, so removal alone doesn't necessarily remove that view.
+            Logger.printException(() -> "Could not show the settings view", ex);
             container.removeAllViews();
             showFailure(owner);
         } finally {
