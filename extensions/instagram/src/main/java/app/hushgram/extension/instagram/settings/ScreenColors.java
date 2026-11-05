@@ -17,6 +17,7 @@ import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.InsetDrawable;
@@ -233,81 +234,28 @@ public final class ScreenColors {
         // Decoration: the row's title already says what it is, so a screen reader skips the icon.
         if (icon != null) icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         if (icon != null && preference.getIcon() != null) {
-            boolean isCategory = overview || opensPage(preference);
-            int badgeSize = dp(row, isCategory ? 34 : 28);
-            int pad = dp(row, isCategory ? 7 : 5);
-            GradientDrawable badge = new GradientDrawable();
-            badge.setShape(GradientDrawable.RECTANGLE);
-            badge.setCornerRadius(dp(row, isCategory ? 9 : 7));
-            int badgeBg = isCategory ? categoryBadgeColor(preference) : 0xFF24242A;
-            badge.setColor(badgeBg);
-            icon.setBackground(badge);
-            icon.setPadding(pad, pad, pad, pad);
+            int iconSize = dp(row, 24);
+            icon.setBackground(null);
+            icon.setPadding(0, 0, 0, 0);
             ViewGroup.LayoutParams imageSize = icon.getLayoutParams();
-            imageSize.width = badgeSize;
-            imageSize.height = badgeSize;
+            imageSize.width = iconSize;
+            imageSize.height = iconSize;
             icon.setLayoutParams(imageSize);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            icon.setImageTintList(ColorStateList.valueOf(isCategory ? Color.WHITE : heading));
+            icon.setImageTintList(ColorStateList.valueOf(this.title));
             if (icon.getParent() instanceof ViewGroup) {
                 ViewGroup frame = (ViewGroup) icon.getParent();
-                frame.setPaddingRelative(0, 0, dp(row, 14), 0);
+                frame.setPaddingRelative(0, 0, dp(row, 16), 0);
                 ViewGroup.LayoutParams size = frame.getLayoutParams();
-                size.width = badgeSize + dp(row, 14);
+                size.width = iconSize + dp(row, 16);
                 frame.setLayoutParams(size);
             }
         }
         paintSurface(row, preference, opensCard(preference), closesCard(preference));
     }
 
-    /** Themed squircle container colors for categories, matching iOS / modern Instagram style. */
-    static int categoryBadgeColor(Preference preference) {
-        String key = preference.getKey();
-        if (key == null) return 0xFF0095F6;
-        String lower = key.toLowerCase(java.util.Locale.ROOT);
-        if (lower.contains("privacy") || lower.contains("ghost") || lower.contains("lock")) {
-            return 0xFF34C759; // Apple / iOS Green
-        } else if (lower.contains("feed") || lower.contains("following")) {
-            return 0xFF0095F6; // Instagram Electric Blue
-        } else if (lower.contains("meta") || lower.contains("ai")) {
-            return 0xFFAF52DE; // Violet / Purple
-        } else if (lower.contains("explore") || lower.contains("search")) {
-            return 0xFFFF9500; // Orange
-        } else if (lower.contains("message") || lower.contains("direct") || lower.contains("chat")) {
-            return 0xFF0A84FF; // Electric Blue
-        } else if (lower.contains("reel") || lower.contains("clips")) {
-            return 0xFFE1306C; // Instagram Magenta / Reels Pink
-        } else if (lower.contains("story") || lower.contains("stories")) {
-            return 0xFFFF2D55; // Sunset Pink
-        } else if (lower.contains("playback") || lower.contains("video")) {
-            return 0xFF5856D6; // Indigo
-        } else if (lower.contains("download") || lower.contains("save")) {
-            return 0xFF30B0C7; // Teal
-        } else if (lower.contains("tab") || lower.contains("glass")) {
-            return 0xFFBF5AF2; // Fuchsia / Purple
-        } else if (lower.contains("layout") || lower.contains("accent") || lower.contains("emoji")) {
-            return 0xFF64D2FF; // Sky Blue
-        } else if (lower.contains("battery") || lower.contains("pause")) {
-            return 0xFF32D74B; // Mint
-        } else if (lower.contains("backup") || lower.contains("storage")) {
-            return 0xFFFF9F0A; // Amber
-        } else if (lower.contains("update") || lower.contains("notification")) {
-            return 0xFF007AFF; // Royal Blue
-        } else if (lower.contains("about") || lower.contains("status")) {
-            return 0xFFD62976; // Rose / Gradient Accent
-        } else if (lower.contains("share") || lower.contains("network")) {
-            return 0xFF5AC8FA; // Light Blue
-        } else if (lower.contains("comment")) {
-            return 0xFFFF3B30; // Coral Red
-        }
-        return 0xFF0095F6;
-    }
-
     /**
-     * Whether [preference] is the top row of the card it sits in. A section's rows share one card.
-     * On the page itself, the rows that open each category's page share one too, and Report a
-     * problem and Support HushGram join the About row they follow; every other row there is a card
-     * of its own.
+     * Whether [preference] is the top row of the card it sits in.
      */
     static boolean opensCard(Preference preference) {
         PreferenceGroup parent = preference.getParent();
@@ -352,33 +300,21 @@ public final class ScreenColors {
     }
 
     /**
-     * Group boundaries follow the visible rows, including a filtered search result. Modern inset
-     * grouped card presentation with smooth rounded corners and clean dividers.
+     * Native Instagram list row presentation: edge-to-edge seamless rows with subtle touch ripple.
      */
     void paintSurface(View row, Preference preference, boolean first, boolean last) {
-        float radius = dp(row, 16);
-        GradientDrawable surface = new GradientDrawable();
-        surface.setColor(card);
-        surface.setStroke(dp(row, 1), preference.isSelectable() ? interactionOutline(outline)
-                : ColorStateList.valueOf(outline));
-        surface.setCornerRadii(new float[]{
-                first ? radius : 0, first ? radius : 0,
-                first ? radius : 0, first ? radius : 0,
-                last ? radius : 0, last ? radius : 0,
-                last ? radius : 0, last ? radius : 0});
-        int side = dp(row, 16);
-        int topGap = first ? dp(row, 6) : -dp(row, 1);
-        int bottomGap = last ? dp(row, 6) : 0;
-        Drawable inset = new InsetDrawable(surface, side, topGap, side, bottomGap);
-        row.setBackground(preference.isSelectable()
-                ? new RippleDrawable(interactionRipple(heading), inset, null).mutate() : inset);
-        int start = side + dp(row, 14);
-        int vertical = dp(row, 12);
-        row.setPaddingRelative(start, vertical + (first ? 2 : 0),
-                start, vertical + (last ? 2 : 0));
-        row.setMinimumHeight(dp(row, "hushgram_view_toggle".equals(preference.getKey())
-                || "hushgram_grid_toggle".equals(preference.getKey()) ? 48
-                : "hushgram_status".equals(preference.getKey()) ? 56 : 58));
+        if (preference.isSelectable()) {
+            ColorStateList rippleColor = ColorStateList.valueOf(0x18FFFFFF);
+            ColorDrawable content = new ColorDrawable(Color.TRANSPARENT);
+            RippleDrawable ripple = new RippleDrawable(rippleColor, content, new ColorDrawable(Color.WHITE));
+            row.setBackground(ripple);
+        } else {
+            row.setBackground(null);
+        }
+        int horizontal = dp(row, 16);
+        int vertical = dp(row, 13);
+        row.setPaddingRelative(horizontal, vertical, horizontal, vertical);
+        row.setMinimumHeight(dp(row, 52));
     }
 
     /** A section title. */
@@ -392,7 +328,7 @@ public final class ScreenColors {
             title.setLetterSpacing(0.04f);
             title.setAllCaps(true);
         }
-        row.setPaddingRelative(dp(row, 24), dp(row, 18), dp(row, 24), dp(row, 6));
+        row.setPaddingRelative(dp(row, 16), dp(row, 24), dp(row, 16), dp(row, 8));
     }
 
     /** Marks the chevron a row was given, so a recycled row's can be found and taken off. */
@@ -436,13 +372,13 @@ public final class ScreenColors {
             image.setTag(CHEVRON);
             // The row already tells a screen reader it's a button; the shape adds nothing to hear.
             image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            frame.addView(image, new LinearLayout.LayoutParams(dp(row, 16), dp(row, 24)));
+            frame.addView(image, new LinearLayout.LayoutParams(dp(row, 14), dp(row, 20)));
         }
         Drawable drawn = image.getDrawable();
         int direction = 0;
-        if (!(drawn instanceof Chevron) || ((Chevron) drawn).color != summary
+        if (!(drawn instanceof Chevron) || ((Chevron) drawn).color != 0xFF737373
                 || ((Chevron) drawn).direction != direction) {
-            image.setImageDrawable(new Chevron(summary, dp(row, 2), direction));
+            image.setImageDrawable(new Chevron(0xFF737373, dp(row, 2), direction));
         }
         image.setEnabled(preference.isEnabled());
         frame.setVisibility(View.VISIBLE);

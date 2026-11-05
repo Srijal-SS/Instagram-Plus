@@ -300,6 +300,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
     @Nullable private Row support;
     /** Report a problem, right above Support HushGram. */
     @Nullable private Row report;
+    @Nullable private Preference footer;
     /** Keep the actual row objects, including their values and listeners, while filtering. */
     private final Map<PreferenceCategory, List<Preference>> searchableRows = new LinkedHashMap<>();
     private final Map<Preference, String> searchAliases = new HashMap<>();
@@ -667,6 +668,25 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             return true;
         });
         mark(donate, SettingsIcons.OPENING);
+
+        Preference footerRow = footer = new Preference(context) {
+            @Override
+            protected View onCreateView(android.view.ViewGroup parent) {
+                TextView view = new TextView(getContext());
+                view.setText(L10n.f("Instagram Plus %1$s • Instagram %2$s",
+                        L10n.isolate(Utils.getPatchesReleaseVersion()), L10n.isolate(Utils.getAppVersionName())));
+                view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+                view.setTextColor(0xFF737373);
+                view.setGravity(android.view.Gravity.CENTER);
+                float density = getContext().getResources().getDisplayMetrics().density;
+                view.setPadding(0, Math.round(24 * density), 0, Math.round(36 * density));
+                return view;
+            }
+        };
+        footerRow.setKey("hushgram_footer");
+        footerRow.setPersistent(false);
+        footerRow.setSelectable(false);
+        footerRow.setOrder(Integer.MAX_VALUE / 2 + 10);
         for (int i = 0; i < screen.getPreferenceCount(); i++) {
             Preference section = screen.getPreference(i);
             if (!(section instanceof PreferenceCategory)) continue;
@@ -1506,8 +1526,8 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             // A tap hid the notice for good and took it off the screen. It stays off.
             if (top == beforeSignIn && Settings.SIGN_IN_NOTICE_HIDDEN.savedValue()) continue;
             // In a subpage, all top overview elements are hidden.
-            boolean hidden = inSubpage || (top == statusCard ? !HushgramPause.isPaused()
-                    : top == gridToggle ? !listing : top == header && !black);
+            boolean hidden = inSubpage || top == viewToggle || top == gridToggle || top == header
+                    || (top == statusCard && !HushgramPause.isPaused());
             if (hidden) {
                 if (top.getParent() == screen) screen.removePreference(top);
             } else if (top.getParent() != screen) screen.addPreference(top);
@@ -1598,6 +1618,14 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             if (shown) {
                 if (row.getParent() != screen) screen.addPreference(row);
             } else if (row.getParent() == screen) screen.removePreference(row);
+        }
+        if (footer != null) {
+            boolean showFooter = !inSubpage && terms.length == 0;
+            if (showFooter) {
+                if (footer.getParent() != screen) screen.addPreference(footer);
+            } else if (footer.getParent() == screen) {
+                screen.removePreference(footer);
+            }
         }
         // removePreference notifies even when absent. No-op changes mustn't rebind live Cancel.
         if (terms.length > 0 && matches == 0) {
@@ -2878,17 +2906,20 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
 
         @Override protected View onCreateView(android.view.ViewGroup parent) {
             Context context = getContext();
+            float density = context.getResources().getDisplayMetrics().density;
+            FrameLayout wrapper = new FrameLayout(context);
+            int padH = Math.round(16 * density);
+            int padV = Math.round(8 * density);
+            wrapper.setPaddingRelative(padH, padV, padH, padV);
+
             LinearLayout row = new LinearLayout(context);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(android.view.Gravity.CENTER_VERTICAL);
-            int touch = Math.round(48 * context.getResources().getDisplayMetrics().density);
-            float density = context.getResources().getDisplayMetrics().density;
-            int inset = Math.round(16 * density);
-            int gap = Math.round(4 * density);
+            int touch = Math.round(42 * density);
             paint(row);
             row.setAddStatesFromChildren(true);
-            row.setPaddingRelative(inset + Math.round(14 * density), gap, inset + Math.round(4 * density), gap);
-            row.setMinimumHeight(touch + 2 * gap);
+            row.setPaddingRelative(Math.round(12 * density), 0, Math.round(8 * density), 0);
+            row.setMinimumHeight(touch);
             // Its children own the accessible actions; the row only anchors ListView selection.
             row.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             // Legacy ListView refocuses a row during layout. Keep focus on its typing field.
@@ -2897,45 +2928,44 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             field.setTag("hushgram-settings-search");
             field.setSaveEnabled(false);
             field.setSingleLine(true);
-            field.setTextSize(16);
+            field.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
             ScreenColors.styleField(field);
             // The whole search row owns the surface, including its clear action.
             field.setBackground(null);
-            field.setPaddingRelative(0, Math.round(10 * density), 0, Math.round(10 * density));
-            field.setTextColor(ScreenColors.DEFAULT.title);
+            field.setPaddingRelative(0, 0, 0, 0);
+            field.setTextColor(Color.WHITE);
+            field.setHintTextColor(0xFF8E8E93);
             field.setHint(L10n.t("Search settings"));
             field.setContentDescription(L10n.t("Search settings"));
             // The hint and the query start by the magnifier, on the right in a right-to-left layout.
             field.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-            // A magnifier at the field's start, as every row starts with an icon. A screen reader
-            // already hears the field's name, and a compound drawable isn't read.
+            // A magnifier at the field's start, as every row starts with an icon.
             android.graphics.drawable.Drawable glass = SettingsIcons.icon(context, SettingsIcons.SEARCH,
-                    ScreenColors.DEFAULT.summary);
-            int glassSize = Math.round(20 * context.getResources().getDisplayMetrics().density);
+                    0xFF8E8E93);
+            int glassSize = Math.round(18 * density);
             glass.setBounds(0, 0, glassSize, glassSize);
             field.setCompoundDrawablesRelative(glass, null, null, null);
-            field.setCompoundDrawablePadding(Math.round(12 * context.getResources().getDisplayMetrics().density));
+            field.setCompoundDrawablePadding(Math.round(10 * density));
             field.setMinimumHeight(touch);
             field.setText(searchQuery);
             SearchFocus focus = new SearchFocus(this, row);
             field.setAccessibilityDelegate(focus);
             row.addOnAttachStateChangeListener(focus);
-            row.addView(field, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            row.addView(field, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
             Button clear = new Button(context);
             clear.setText("");
             clear.setAllCaps(false);
-            clear.setTextSize(24);
-            clear.setTextColor(ScreenColors.DEFAULT.heading);
+            clear.setTextSize(20);
+            clear.setTextColor(0xFF8E8E93);
             android.graphics.drawable.Drawable cross = SettingsIcons.icon(context, SettingsIcons.CLOSE,
-                    ScreenColors.DEFAULT.heading);
-            int crossSize = Math.round(20 * density);
+                    0xFF8E8E93);
+            int crossSize = Math.round(18 * density);
             cross.setBounds(0, 0, crossSize, crossSize);
             clear.setCompoundDrawablesRelative(cross, null, null, null);
             ScreenColors.styleIconAction(clear);
             clear.setContentDescription(L10n.t("Clear search"));
             clear.setTooltipText(L10n.t("Clear search"));
-            int crossPadding = (touch - crossSize) / 2;
-            clear.setPaddingRelative(crossPadding, 0, crossPadding, 0);
+            clear.setPaddingRelative(0, 0, 0, 0);
             clear.setMinimumWidth(touch);
             clear.setMinimumHeight(touch);
             clear.setEnabled(!searchQuery.isEmpty());
@@ -2959,7 +2989,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             clear.setOnClickListener(view -> {
                 if (SearchFocus.canAct(this, row, view)) field.setText("");
             });
-            row.addView(clear, new LinearLayout.LayoutParams(touch, LinearLayout.LayoutParams.WRAP_CONTENT));
+            row.addView(clear, new LinearLayout.LayoutParams(touch, touch));
             field.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
                 @Override public void onTextChanged(CharSequence text, int start, int before, int count) { }
@@ -2969,33 +2999,19 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
                     clear.setVisibility(text.length() == 0 ? View.INVISIBLE : View.VISIBLE);
                 }
             });
-            return row;
+            wrapper.addView(row, new FrameLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, touch));
+            return wrapper;
         }
 
         /**
-         * The field's card in the colours on show, outlined in the heading blue while it has focus. The
-         * row keeps the card colour in its tag, so a bind while typing keeps its drawable.
+         * Native Instagram rounded search pill.
          */
         private void paint(View row) {
-            ScreenColors colors = ScreenColors.current();
-            row.setTag(colors.card);
             float density = row.getResources().getDisplayMetrics().density;
-            int inset = Math.round(16 * density);
-            int gap = Math.round(4 * density);
-            android.graphics.drawable.StateListDrawable states = new android.graphics.drawable.StateListDrawable();
-            for (boolean focused : new boolean[]{true, false}) {
-                android.graphics.drawable.GradientDrawable surface = new android.graphics.drawable.GradientDrawable();
-                surface.setColor(colors.card);
-                surface.setCornerRadius(Math.round(14 * density));
-                surface.setStroke(Math.round(density), focused ? colors.heading : colors.outline);
-                states.addState(focused ? new int[]{android.R.attr.state_focused} : new int[]{},
-                        new android.graphics.drawable.InsetDrawable(surface, inset, gap, inset, gap));
-            }
-            // An inset background sets the view's padding to its insets. Keep the row's own.
-            int start = row.getPaddingStart(), top = row.getPaddingTop();
-            int end = row.getPaddingEnd(), bottom = row.getPaddingBottom();
-            row.setBackground(states);
-            row.setPaddingRelative(start, top, end, bottom);
+            android.graphics.drawable.GradientDrawable surface = new android.graphics.drawable.GradientDrawable();
+            surface.setColor(0xFF262626);
+            surface.setCornerRadius(Math.round(10 * density));
+            row.setBackground(surface);
         }
 
         /**

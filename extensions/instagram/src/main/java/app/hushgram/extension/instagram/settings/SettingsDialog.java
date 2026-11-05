@@ -163,19 +163,19 @@ public final class SettingsDialog extends DialogFragment {
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         // Start and end, not left and right: in a right-to-left language the bar is mirrored.
-        bar.setPaddingRelative(dp(4), dp(4), dp(18), dp(4));
+        bar.setPaddingRelative(dp(4), dp(2), dp(16), dp(2));
 
         ImageButton back = new ImageButton(getContext());
         android.graphics.drawable.Drawable arrow = SettingsIcons.icon(getContext(), SettingsIcons.BACK, palette.title);
         arrow.setBounds(0, 0, dp(24), dp(24));
         arrow.setLayoutDirection(rightToLeft() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         back.setImageDrawable(arrow);
-        back.setPadding(dp(12), dp(12), dp(12), dp(12));
+        back.setPadding(dp(10), dp(10), dp(10), dp(10));
         back.setBackground(new android.graphics.drawable.RippleDrawable(
-                android.content.res.ColorStateList.valueOf(ScreenColors.half(palette.heading)), null,
+                android.content.res.ColorStateList.valueOf(0x22FFFFFF), null,
                 new android.graphics.drawable.ColorDrawable(Color.WHITE)));
-        back.setMinimumWidth(dp(48));
-        back.setMinimumHeight(dp(48));
+        back.setMinimumWidth(dp(44));
+        back.setMinimumHeight(dp(44));
         back.setContentDescription(L10n.t(getContext(), "Back"));
         // A screen reader calls it a button, as it would the back arrow of any other screen.
         back.setAccessibilityDelegate(new View.AccessibilityDelegate() {
@@ -190,11 +190,11 @@ public final class SettingsDialog extends DialogFragment {
             SettingsEntry.onClosedByUser();
             dismissAllowingStateLoss();
         });
-        bar.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        bar.addView(back, new LinearLayout.LayoutParams(dp(44), dp(44)));
 
         TextView title = new TextView(getContext());
         heading = title;
-        title.setText(L10n.t(getContext(), "Instagram Plus Settings"));
+        title.setText(L10n.t(getContext(), "Instagram Plus"));
         title.setTextColor(palette.title);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
@@ -203,7 +203,11 @@ public final class SettingsDialog extends DialogFragment {
         title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         title.setAccessibilityHeading(true);
         bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        root.addView(bar);
+        root.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
+
+        View divider = new View(getContext());
+        divider.setBackgroundColor(0xFF1F1F1F);
+        root.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
 
         FrameLayout container = new FrameLayout(getContext());
         container.setId(CONTAINER_ID);
@@ -303,7 +307,7 @@ public final class SettingsDialog extends DialogFragment {
     void showTitle(@androidx.annotation.Nullable CharSequence title, boolean pageHeader) {
         TextView bar = heading;
         if (bar == null) return;
-        CharSequence text = title == null ? L10n.t(getContext(), "Instagram Plus Settings") : title;
+        CharSequence text = title == null ? L10n.t(getContext(), "Instagram Plus") : title;
         // A new text asks for a layout, which a scroll in the middle of one shouldn't.
         if (!TextUtils.equals(text, bar.getText())) {
             bar.animate().cancel();
@@ -311,9 +315,7 @@ public final class SettingsDialog extends DialogFragment {
             bar.setText(text);
             bar.animate().alpha(1f).setDuration(160).start();
         }
-        // Invisible rather than gone, so the bar keeps its height and a search doesn't move the rows.
-        int shown = title == null && pageHeader ? View.INVISIBLE : View.VISIBLE;
-        if (bar.getVisibility() != shown) bar.setVisibility(shown);
+        bar.setVisibility(View.VISIBLE);
     }
 
     private BackSupport backSupport;
