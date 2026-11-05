@@ -91,11 +91,11 @@ final class TabBarCategory {
                                     + "to see the change.")));
                 }
                 glass.addPreference(toggle(context, Settings.SETTINGS_BUTTON_ON_HOME, L10n.t("Settings button on Home's header"),
-                        L10n.t("Adds a gear at the top of Home that opens HushGram settings. Restart Instagram "
+                        L10n.t("Adds a gear at the top of Home that opens Instagram Plus Settings. Restart Instagram "
                                 + "to see the change.")));
                 glass.addPreference(toggle(context, Settings.MENU_BUTTON_ON_HOME, L10n.t("Menu button on Home's header"),
                         L10n.t("Adds a menu button at the top of Home with your viewing history, Ghost mode and "
-                                + "HushGram settings. Restart Instagram to see the change.")));
+                                + "Instagram Plus Settings. Restart Instagram to see the change.")));
                 glass.addPreference(toggle(context, Settings.CENTER_HOME_LOGO, L10n.t("Center the logo on Home's header"),
                         L10n.t("Puts Instagram's logo in the middle of the top of Home, even with header buttons hidden "
                                 + "or added. A feed's name shown there is centered too. Restart Instagram to see the change.")));
@@ -148,6 +148,12 @@ final class TabBarCategory {
                         L10n.t("A light tick each time the highlight slides past a tab, so it follows the bar as you tap "
                                 + "or swipe between screens.")));
                 glass.addPreference(hapticStyleRow(context));
+                glass.addPreference(toggle(context, Settings.IOS_TAB_BOUNCE, L10n.t("iOS tab bounce animation"),
+                        L10n.t("Subtle spring bounce on tab icons when tapped, matching iOS Instagram's tactile feel.")));
+                glass.addPreference(toggle(context, Settings.IOS_TAB_HAIRLINE, L10n.t("iOS tab bar top border"),
+                        L10n.t("Draws a subtle 0.5dp translucent hairline divider along the top of the tab bar.")));
+                glass.addPreference(toggle(context, Settings.IOS_TAB_RECLICK_SCROLL, L10n.t("Tap active tab to scroll to top"),
+                        L10n.t("Tapping the currently active tab smoothly scrolls the current feed or list to the top.")));
                 glass.addPreference(glassHeightRow(context));
                 glass.addPreference(glassCornersRow(context));
                 glass.addPreference(toggle(context, Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL, L10n.t("Hide the tab bar as you scroll"),

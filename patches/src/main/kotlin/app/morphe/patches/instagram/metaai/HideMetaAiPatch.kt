@@ -99,7 +99,7 @@ val hideMetaAiPatch = bytecodePatch(
     name = "Hide Meta AI",
     description = "Removes Meta AI from Instagram's search bars, messages, home top bar, reels menus, share sheet " +
         "and feed. Each part has its own switch. The search one and the Meta AI posts one start on, the rest " +
-        "start off. Change them in HushGram settings > Meta AI.",
+        "start off. Change them in Instagram Plus Settings > Meta AI.",
 ) {
     category("Interface")
     dependsOn(settingsPatch, instagramExtensionPatch)

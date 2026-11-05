@@ -77,7 +77,7 @@ internal val GESTURE_PARAMETERS = listOf(MOTION_EVENT, MOTION_EVENT, "Ljava/lang
 val stopSwipeReplyPatch = bytecodePatch(
     name = "Stop swipe up to reply",
     description = "Stops a swipe up on someone's story from opening the reply box and its reactions. Tapping " +
-        "Send message still replies. Starts off. Turn it on in HushGram settings > Stories.",
+        "Send message still replies. Starts off. Turn it on in Instagram Plus Settings > Stories.",
     default = true,
 ) {
     category("Stories")

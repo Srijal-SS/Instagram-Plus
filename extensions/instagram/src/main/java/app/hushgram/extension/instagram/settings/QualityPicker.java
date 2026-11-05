@@ -71,7 +71,7 @@ final class QualityPicker {
             if (Settings.PLAYBACK_QUALITY.save(quality)) {
                 Utils.showToastShort(L10n.f("Playback quality: %1$s. The next video uses it.", label));
             } else {
-                Utils.showToastShort(L10n.t("Couldn't save the quality. Set it in HushGram settings."));
+                Utils.showToastShort(L10n.t("Couldn't save the quality. Set it in Instagram Plus Settings."));
             }
         } catch (Throwable t) {
             Logger.printException(() -> "Quality picker: could not save the pick", t);

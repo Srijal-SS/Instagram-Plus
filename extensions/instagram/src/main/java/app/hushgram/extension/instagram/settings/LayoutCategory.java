@@ -82,8 +82,8 @@ final class LayoutCategory {
                 layout.addPreference(mark(hint, SettingsIcons.MOON));
             }
             if (build.contains(PatchFamily.LAUNCH_SCREEN)) {
-                layout.addPreference(toggle(context, Settings.LAUNCH_SCREEN, L10n.t("HushGram launch screen"),
-                        L10n.t("Shows HushGram's logo instead of Instagram's on the screen you see while Instagram "
+                layout.addPreference(toggle(context, Settings.LAUNCH_SCREEN, L10n.t("Instagram Plus launch screen"),
+                        L10n.t("Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram "
                                 + "starts, on Android 13 and newer. It shows from the next start.")));
             }
             if (build.contains(PatchFamily.HEADER_TEXT)) {

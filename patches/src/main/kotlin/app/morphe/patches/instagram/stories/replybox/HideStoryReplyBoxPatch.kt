@@ -49,7 +49,7 @@ private const val VIEW_STUB = "(Ljava/lang/Object;)$VIEW"
 val hideStoryReplyBoxPatch = bytecodePatch(
     name = "Hide the reply box on stories",
     description = "Takes the Send message box off the bottom of other people's stories. The like and share " +
-        "buttons next to it stay where they are. Starts off. Turn it on in HushGram settings > Stories.",
+        "buttons next to it stay where they are. Starts off. Turn it on in Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
     dependsOn(settingsPatch, instagramExtensionPatch)

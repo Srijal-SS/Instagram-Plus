@@ -1555,7 +1555,7 @@ public final class MediaSave {
             Feedback.show(application, L10n.t(application, "Saving..."), false);
         } else {
             Feedback.show(application,
-                L10n.t(application, "Saving... You can cancel from Downloads in HushGram settings."), true);
+                L10n.t(application, "Saving... You can cancel from Downloads in Instagram Plus Settings."), true);
         }
     }
 

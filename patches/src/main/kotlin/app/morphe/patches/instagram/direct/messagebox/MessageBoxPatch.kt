@@ -67,7 +67,7 @@ internal val BOX_BUTTON_IDS = listOf(0x7f0b3833, 0x7f0b383d, 0x7f0b3857)
 val messageBoxPatch = bytecodePatch(
     name = "Message box buttons",
     description = "Lets you take the gallery, sticker and voice message buttons off the message box of a chat, and " +
-        "keep the text box and Send. Starts with every button showing. Pick which to hide in HushGram settings > Messages.",
+        "keep the text box and Send. Starts with every button showing. Pick which to hide in Instagram Plus Settings > Messages.",
     default = true,
 ) {
     category("Messages")

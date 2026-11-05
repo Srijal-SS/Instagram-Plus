@@ -57,7 +57,7 @@ internal const val ZOOM_GESTURE_FLAG = 0x208105d100021b37L
 val pinchZoomReelsPatch = bytecodePatch(
     name = "Pinch to zoom on Reels",
     description = "Lets you zoom into a playing reel with two fingers, the way a photo zooms. Lift your fingers " +
-        "and it goes back. Restart Instagram to see the change. Starts off. Turn it on in HushGram settings > Reels.",
+        "and it goes back. Restart Instagram to see the change. Starts off. Turn it on in Instagram Plus Settings > Reels.",
 ) {
     category("Reels")
     dependsOn(settingsPatch, instagramExtensionPatch)

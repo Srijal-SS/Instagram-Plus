@@ -57,7 +57,7 @@ private const val BOOLEAN = "Ljava/lang/Boolean;"
 val hideLowViewReelsPatch = bytecodePatch(
     name = "Hide reels with few views",
     description = "Leaves out reels in the Reels tab with fewer views or likes than numbers you pick. " +
-        "Accounts you follow stay. Starts off. Turn it on in HushGram settings > Reels.",
+        "Accounts you follow stay. Starts off. Turn it on in Instagram Plus Settings > Reels.",
 ) {
     category("Reels")
     dependsOn(settingsPatch, instagramExtensionPatch)

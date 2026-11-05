@@ -72,7 +72,7 @@ val tabBarLayoutPatch = bytecodePatch(
     name = "Tab bar layout",
     description = "Lets you keep the newer tab bar, where you swipe between every tab, or the classic one, " +
         "instead of the one Instagram picks for your account. Starts on Instagram's choice. Pick one in " +
-        "HushGram settings > Tab bar.",
+        "Instagram Plus Settings > Tab bar.",
     default = true,
 ) {
     category("Interface")

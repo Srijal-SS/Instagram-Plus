@@ -46,7 +46,7 @@ val markViewOncePatch = bytecodePatch(
     name = "Mark one-time photos and videos",
     description = "Puts a border and Instagram's own view once icon on a one-time photo or video in a chat, so " +
         "you can tell it before you open it. Only how the chat looks changes. Nothing is saved, replayed, " +
-        "marked seen or sent. Starts off. Turn it on in HushGram settings > Messages.",
+        "marked seen or sent. Starts off. Turn it on in Instagram Plus Settings > Messages.",
     default = true,
 ) {
     category("Messages")

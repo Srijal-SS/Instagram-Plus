@@ -782,7 +782,7 @@ public final class ChatPager {
                         }
                         Utils.showToastShort(ChatExport.appFolderOnly()
                                 ? L10n.t("Chat saved in the app's Download folder.")
-                                : L10n.t("Chat saved in Downloads/HushGram."));
+                                : L10n.t("Chat saved in Downloads/Instagram."));
                         Utils.showToastShort(name);
                     }
                 });

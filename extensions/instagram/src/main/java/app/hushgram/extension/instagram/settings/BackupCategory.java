@@ -25,20 +25,20 @@ final class BackupCategory {
 
     static void add(HushgramPreferenceFragment page, PreferenceScreen screen, Context context, Set<PatchFamily> build) {
         PreferenceCategory backup = category(screen, L10n.t("Settings backup"), SettingsIcons.TOOLS,
-                L10n.t("Save your HushGram choices to a file, or bring them back."));
+                L10n.t("Save your Instagram Plus choices to a file, or bring them back."));
         page.exportConfiguration = new Row(context);
         page.exportConfiguration.setKey("hushgram_export_configuration");
         page.exportConfiguration.setPersistent(false);
-        page.exportConfiguration.setTitle(L10n.t("Export HushGram settings"));
+        page.exportConfiguration.setTitle(L10n.t("Export settings"));
         page.exportConfiguration.setSummary(L10n.t("Choose a file for your installed patches' settings. Accounts and history stay on this device."));
         page.exportConfiguration.setOnPreferenceClickListener(p -> { page.pickConfiguration(false); return true; });
         backup.addPreference(mark(page.exportConfiguration, SettingsIcons.EXPORT));
         backup.addPreference(toggle(context, Settings.DATE_SETTINGS_EXPORT, L10n.t("Date in backup file names"),
-                L10n.t("Add the current date and time when exporting settings. Off keeps HushGram-settings.json.")));
+                L10n.t("Add the current date and time when exporting settings. Off keeps settings.json.")));
         page.importConfiguration = new Row(context);
         page.importConfiguration.setKey("hushgram_import_configuration");
         page.importConfiguration.setPersistent(false);
-        page.importConfiguration.setTitle(L10n.t("Import HushGram settings"));
+        page.importConfiguration.setTitle(L10n.t("Import settings"));
         page.importConfiguration.setSummary(L10n.t("Choose a settings file. All valid choices apply together, and ones "
                 + "this version doesn't know are skipped. The Undo row shows how long you can undo."));
         page.importConfiguration.setOnPreferenceClickListener(p -> { page.pickConfiguration(true); return true; });

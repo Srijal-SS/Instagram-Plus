@@ -72,7 +72,7 @@ internal class PlusMenuSite(
 val chatPlusMenuPatch = bytecodePatch(
     name = "Chat plus menu",
     description = "Lets you take Saved, AI images and Draw off the plus menu in a chat's message bar, and move the " +
-        "gallery and microphone buttons into that menu. Starts with every switch off. Turn them on in HushGram settings > Messages.",
+        "gallery and microphone buttons into that menu. Starts with every switch off. Turn them on in Instagram Plus Settings > Messages.",
 ) {
     category("Messages")
     dependsOn(settingsPatch, instagramExtensionPatch)

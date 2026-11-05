@@ -51,7 +51,7 @@ internal fun BytecodePatchContext.headerLogoHooked(): Boolean = listOf(LOGO_BAR,
 val homeHeaderTextPatch = bytecodePatch(
     name = "Home header text",
     description = "Puts words of your own, or a picture, at the top of Home in place of Instagram's logo. " +
-        "Nothing changes until you set one in HushGram settings > Layout.",
+        "Nothing changes until you set one in Instagram Plus Settings > Layout.",
     default = true,
 ) {
     category("Interface")

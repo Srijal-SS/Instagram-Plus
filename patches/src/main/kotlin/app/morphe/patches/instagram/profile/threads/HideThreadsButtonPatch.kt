@@ -116,7 +116,7 @@ val hideThreadsButtonPatch = bytecodePatch(
     name = "Hide the Threads button",
     description = "Takes the Threads button off the top of profiles, with switches for the Create button and Share " +
         "profile on your own, and Subscribe and the arrow after the buttons on creators' profiles. The menu and " +
-        "the other buttons stay. Each starts off. Turn them on in HushGram settings > Profiles.",
+        "the other buttons stay. Each starts off. Turn them on in Instagram Plus Settings > Profiles.",
     default = true,
 ) {
     category("Profiles")

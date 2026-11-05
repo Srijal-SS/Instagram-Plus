@@ -242,7 +242,7 @@ private const val HIDDEN_REDRAW_NAME = "redraw"
  * The redraw bridge's body: the two steps Instagram's subscriber takes when the inbox's state hands
  * the holder a list, the write of the holder's list and the call of its starter on the holder. The
  * starter does nothing while the inbox is paused and the inbox calls it again when it resumes, so a
- * list handed over while you're in HushGram settings is drawn when you're back. 454's starter also
+ * list handed over while you're in Instagram Plus Settings is drawn when you're back. 454's starter also
  * takes the reason it logs and a callback, which the bridge hands as the subscriber does: the
  * subscriber's own reason and no callback.
  */

@@ -7,7 +7,7 @@
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. 패치할 때 적용되었기 때문에 HushGram 일시 정지로는 비활성화할 수 없습니다. 이 기능이 원인인지 확인하려면 다시 패치하면서 해당 패치를 제외하세요
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. 패치할 때 적용되었기 때문에 HushGram 일시 정지로는 비활성화할 수 없습니다. 이 중 하나가 원인인지 확인하려면 다시 패치하면서 뒤에 괄호로 표시된 해당 패치를 제외하세요
 A diagnostic report is already being saved.	진단 보고서를 이미 저장하고 있습니다
-A file named %1$s in %2$s paused HushGram.	%2$s에 있는 %1$s 파일 때문에 HushGram이 일시 정지되었습니다
+A file named %1$s in %2$s paused Instagram Plus.	%2$s에 있는 %1$s 파일 때문에 Instagram Plus이 일시 정지되었습니다
 About	정보
 Add the source to saved photos and videos	저장한 사진과 동영상에 출처 추가
 Ads and privacy	광고 및 개인정보 보호
@@ -15,7 +15,7 @@ Asks Android to run Instagram at your screen's fastest refresh rate, at the same
 Back	뒤로
 Before you sign in	로그인 전에 읽어보세요
 Cancel	취소
-Chat saved in Downloads/HushGram.	Download/HushGram에 저장했어요.
+Chat saved in Downloads/Instagram.	Download/Instagram Plus에 저장했어요.
 Chat saved in the app's Download folder.	앱의 Download 폴더에 저장했어요.
 Clear diagnostic data	진단 데이터 지우기
 Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in details are left out. Check it for other private text before you share it.	간단한 보고서를 복사하거나 전체 보고서를 %1$s에 저장하세요. 링크, ID, 쿠키, 로그인 정보는 제외됩니다. 공유하기 전에 다른 개인 정보가 없는지 확인하세요.
@@ -26,7 +26,7 @@ Couldn't find this chat's messages.	채팅 메시지를 찾지 못했어요.
 Couldn't put back the diagnostic data. Try again.	진단 데이터를 복원할 수 없습니다. 다시 시도하세요
 Couldn't save the chat.	채팅을 저장하지 못했어요.
 Couldn't start the report export. Try again shortly.	보고서 내보내기를 시작할 수 없습니다. 잠시 후 다시 시도하세요
-Couldn't turn HushGram back on. Try again.	HushGram을 다시 활성화할 수 없습니다. 다시 시도하세요
+Couldn't turn Instagram Plus back on. Try again.	Instagram Plus을 다시 활성화할 수 없습니다. 다시 시도하세요
 Debug logging	디버그 로그
 Diagnostic data cleared. Tap again to put it back.	진단 데이터가 지워졌습니다. 다시 탭하여 복원하세요
 Diagnostic data put back.	진단 데이터가 복원되었습니다
@@ -78,16 +78,16 @@ GPL-3.0, with the notices of the projects this is built on	GPL-3.0 라이선스�
 Gray out stories you've watched	이미 본 스토리 회색으로 표시
 Hide ads	광고 숨기기
 How far a photo or video you're saving has got, with a button to cancel it	저장 중인 사진 또는 동영상의 진행 상황을 보여주며, 취소할 수 있는 버튼을 표시합니다
-HushGram %1$s on Instagram %2$s	Instagram %2$s의 HushGram %1$s
-HushGram is on	HushGram 실행 중
-HushGram is paused	HushGram 일시 정지됨
-HushGram pauses when Instagram restarts.	Instagram을 다시 시작하면 HushGram이 일시 정지됩니다
-HushGram saves	HushGram 저장
-HushGram settings	HushGram 설정
-HushGram settings couldn't open	HushGram 설정을 열 수 없습니다
-HushGram settings are locked	HushGram 설정이 잠겨 있습니다
-HushGram turns back on when Instagram restarts.	Instagram을 다시 시작하면 HushGram이 다시 실행됩니다
-Instagram crashed or froze within a minute of starting three times in a row, so HushGram paused itself.	Instagram이 시작한 지 1분 이내에 연속으로 세 번 충돌하거나 멈춰서 HushGram이 일시적으로 작동을 정지하였습니다
+Instagram Plus %1$s on Instagram %2$s	Instagram %2$s의 Instagram Plus %1$s
+Instagram Plus is on	Instagram Plus 실행 중
+Instagram Plus is paused	Instagram Plus 일시 정지됨
+Instagram Plus pauses when Instagram restarts.	Instagram을 다시 시작하면 Instagram Plus이 일시 정지됩니다
+Instagram Plus saves	Instagram Plus 저장
+Instagram Plus Settings	Instagram Plus 설정
+Instagram Plus Settings couldn't open	Instagram Plus 설정을 열 수 없습니다
+Instagram Plus Settings are locked	Instagram Plus 설정이 잠겨 있습니다
+Instagram Plus turns back on when Instagram restarts.	Instagram을 다시 시작하면 Instagram Plus이 다시 실행됩니다
+Instagram crashed or froze within a minute of starting three times in a row, so Instagram Plus paused itself.	Instagram이 시작한 지 1분 이내에 연속으로 세 번 충돌하거나 멈춰서 Instagram Plus이 일시적으로 작동을 정지하였습니다
 Instagram stops showing the screen that says this version is too old. A patched build doesn't update on its own, so this keeps it usable.	Instagram에서 이 버전이 만료되었다라는 화면이 더 이상 표시되지 않습니다. 패치된 빌드는 자동으로 업데이트되지 않으므로, 이 설정을 통해 계속 사용할 수 있습니다
 Instagram's own checks of who signed the app keep passing on this patched build.	앱에 누가 서명했는지 확인하는 Instagram의 자체 검사가 패치된 이 빌드에서도 계속 통과합니다.
 Joining the picture and sound	사진과 소리가 결합하는 중
@@ -101,7 +101,7 @@ No app can open the bug report.	버그 신고를 열 수 있는 앱이 없습니
 Not saved: that isn't an Instagram photo or video	저장되지 않음: Instagram 사진 또는 동영상이 아님
 Not saved: the file is over 512 MB	저장되지 않음: 파일 크기가 512MB를 초과함
 OK	확인
-Pause HushGram	HushGram 일시 정지
+Pause Instagram Plus	Instagram Plus 일시 정지
 Pause and diagnostics	일시 정지 및 진단
 Instagram accepts this build	Instagram에서 이 빌드 허용
 Record patch activity and show errors for a bug report. Leave off during normal use.	패치 작업을 기록하고 버그 신고를 위한 오류를 표시합니다. 일반적으로 사용할 때는 비활성화하세요
@@ -119,7 +119,7 @@ Saved. Restart Instagram to apply this change.	저장되었습니다. 변경 사
 Saving a photo	사진을 저장하는 중
 Saving a video	동영상을 저장하는 중
 Saving...	저장하는 중…
-Saving... You can cancel from Downloads in HushGram settings.	저장 중... HushGram 설정의 다운로드에서 취소할 수 있습니다.
+Saving... You can cancel from Downloads in Instagram Plus Settings.	저장 중... Instagram Plus 설정의 다운로드에서 취소할 수 있습니다.
 Set when you patched	패치할 때 설정되는 기능
 Settings couldn't open	설정을 열 수 없습니다
 Settings couldn't refresh completely. Reopen settings and try again.	설정이 완전히 새로 고쳐지지 않았습니다. 설정을 다시 열고 다시 시도하세요
@@ -132,7 +132,7 @@ Couldn't hide this notice. Try again.	이 알림을 숨길 수 없습니다. 다
 Tap to turn it back on.	탭하여 이것을 다시 활성화하세요
 The report isn't saved yet. Try again in a moment.	아직 진단 보고서를 저장할 수 없습니다. 잠시 후 다시 시도하세요
 Couldn't save the diagnostic report. Try again.	진단 보고서를 저장할 수 없습니다. 다시 시도하세요
-The file %1$s couldn't be removed. Delete it from %2$s to turn HushGram back on.	%1$s 파일을 삭제할 수 없습니다. HushGram을 다시 활성화하려면 %2$s에서 해당 파일을 삭제하세요
+The file %1$s couldn't be removed. Delete it from %2$s to turn Instagram Plus back on.	%1$s 파일을 삭제할 수 없습니다. Instagram Plus을 다시 활성화하려면 %2$s에서 해당 파일을 삭제하세요
 Couldn't finish that change. Showing what's saved.	설정 업데이트를 완료하지 못하였습니다. 저장된 값이 표시됩니다
 There's no diagnostic data to clear.	삭제할 진단 데이터가 없습니다
 There's no diagnostic data to put back.	복원할 진단 데이터가 없습니다
@@ -143,7 +143,7 @@ Version %1$s for Instagram %2$s	Instagram %2$s용 버전 %1$s
 While you view anonymously, a story you've watched turns gray and moves to the end of the row, on this phone only. Instagram still isn't told you watched it.	스토리를 몰래 보는 동안 이미 본 스토리가 회색으로 바뀌고 줄의 맨 끝으로 이동합니다. 이 변화는 이 휴대폰에서만 보이며, Instagram에는 여전히 시청 사실이 전달되지 않습니다
 Writes the account that posted, the post date and a link to the post into a saved photo or video, in the EXIF or MP4 tags a gallery or exiftool reads. JPEG photos and MP4 videos only, and only what the save knows. The picture and the sound are unchanged.	저장한 사진이나 동영상의 EXIF 또는 MP4 태그, 즉 갤러리나 exiftool이 읽는 정보에 게시한 계정과 게시 날짜, 게시물 링크를 기록합니다. JPEG 사진과 MP4 동영상만 해당하며, 저장이 아는 정보만 기록합니다. 이미지와 소리는 바뀌지 않습니다.
 You	나
-You paused HushGram.	HushGram이 일시 정지되었습니다
+You paused Instagram Plus.	Instagram Plus이 일시 정지되었습니다
 the re-signed build fix	다시 서명된 빌드 수정
 Don't send reel watch history	릴스 시청 기록 전송하지 않기
 Stops telling Instagram which reels you watched or how far you got. Instagram uses that to pick your Reels. Watched reels may come back.	어떤 릴스를 봤는지, 어디까지 봤는지 Instagram에 알리지 않습니다. Instagram은 이 정보로 릴스를 고릅니다. 이미 본 릴스가 다시 나올 수 있습니다.
@@ -364,7 +364,7 @@ Pure black dark mode isn't in this build	이 빌드에는 순수 검정 어두�
 To make dark mode pure black instead of dark gray, which can save battery on an OLED screen, pick Pure black dark mode in Morphe Manager the next time you patch Instagram.	어두운 모드를 짙은 회색 대신 순수 검정으로 바꾸려면(OLED 화면에서 배터리를 아낄 수 있음) 다음에 Instagram을 패치할 때 Morphe Manager에서 순수 검정 어두운 모드를 선택하세요.
 the pure black dark mode	순수 검정 어두운 모드
 No Play Store updates	Play 스토어 업데이트 없음
-Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later HushGram builds need Change version code too, or they won't install over this one.	Google Play가 이 빌드 위에 Meta의 업데이트를 제안하지 않습니다. 일반 Instagram으로 돌아가려면 먼저 이 앱을 삭제해야 하며, 이 휴대폰의 Instagram 데이터가 지워집니다. 이후의 HushGram 빌드에도 Change version code가 필요하며, 없으면 이 빌드 위에 설치되지 않습니다.
+Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later Instagram Plus builds need Change version code too, or they won't install over this one.	Google Play가 이 빌드 위에 Meta의 업데이트를 제안하지 않습니다. 일반 Instagram으로 돌아가려면 먼저 이 앱을 삭제해야 하며, 이 휴대폰의 Instagram 데이터가 지워집니다. 이후의 Instagram Plus 빌드에도 Change version code가 필요하며, 없으면 이 빌드 위에 설치되지 않습니다.
 the raised version code	높인 버전 코드
 Sharing	공유
 Hide group buttons	그룹 버튼 숨기기
@@ -430,23 +430,23 @@ Updating remembered positions...	저장된 위치를 업데이트하는 중...
 Undo cleared positions	위치 지우기 실행 취소
 Clear remembered positions	저장된 위치 지우기
 Undo is available until %1$s.	%1$s까지 실행 취소할 수 있습니다
-HushGram remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	HushGram은 최대 200개 동영상에서 멈춘 위치를 30일 동안 기억합니다. 탭하면 이 기기에서 지웁니다.
+Instagram Plus remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	Instagram Plus은 최대 200개 동영상에서 멈춘 위치를 30일 동안 기억합니다. 탭하면 이 기기에서 지웁니다.
 Remembered playback positions restored.	저장된 재생 위치가 복원되었습니다
 Undo has expired.	실행 취소가 만료되었습니다
 You cleared the remembered playback positions.	저장된 재생 위치를 삭제하였습니다
 Couldn't update remembered playback positions.	저장된 재생 위치를 업데이트할 수 없습니다
 Settings backup	설정 백업
-Export HushGram settings	HushGram 설정 내보내기
+Export settings	설정 내보내기
 Choose a file for your installed patches' settings. Accounts and history stay on this device.	설치된 패치의 설정이 들어 있는 파일을 선택하세요. 계정과 기록은 이 기기에 그대로 유지됩니다
-Import HushGram settings	HushGram 설정 가져오기
+Import settings	설정 가져오기
 Choose a settings file. All valid choices apply together, and ones this version doesn't know are skipped. The Undo row shows how long you can undo.	설정 파일을 선택하세요. 유효한 선택은 모두 함께 적용되고, 이 버전이 모르는 항목은 건너뜁니다. 되돌리기 항목에 되돌릴 수 있는 시간이 표시됩니다.
 Undo settings import	설정 가져오기 실행 취소
 Undo is available until %1$s. Restarting Instagram discards Undo.	%1$s까지 실행 취소할 수 있습니다. Instagram을 다시 시작하면 실행 취소할 수 없습니다
 No settings import to undo.	실행 취소할 설정 가져오기가 없습니다
 There's no file picker. Your settings haven't changed.	이 휴대폰에는 파일 선택기가 없습니다. 설정은 바뀌지 않았습니다.
 Couldn't use that file. Your settings haven't changed.	해당 설정 파일을 사용할 수 없습니다. 설정은 변경되지 않았습니다
-HushGram settings exported.	HushGram 설정을 내보냈습니다
-Couldn't export HushGram settings. Try another file.	HushGram 설정을 내보낼 수 없습니다. 다른 파일을 사용해 보세요
+Settings exported.	설정을 내보냈습니다.
+Couldn't export settings. Try another file.	Instagram Plus 설정을 내보낼 수 없습니다. 다른 파일을 사용해 보세요
 Settings restored.	설정이 복원되었습니다
 Imported %1$d settings. Skipped %2$d that this version doesn't know.	설정 %1$d개를 가져왔습니다. 이 버전이 모르는 %2$d개는 건너뛰었습니다.
 Imported %1$d settings.	설정 %1$d개를 가져왔습니다.
@@ -500,7 +500,7 @@ Preparing diagnostic report...	진단 보고서를 준비하는 중...
 Saving diagnostic report...	진단 보고서를 저장하는 중...
 Diagnostic report saved.	진단 보고서가 저장되었습니다.
 Choose a file for the settings export.	설정을 내보낼 파일을 선택하세요.
-Exporting HushGram settings...	HushGram 설정 내보내는 중...
+Exporting settings...	설정 내보내는 중...
 Settings export canceled.	설정 내보내기가 취소되었습니다.
 Round handle on the seek bar	릴스 탐색 핸들 표시
 Settings entry	설정 열기
@@ -516,8 +516,8 @@ Creator tools	크리에이터 도구
 Home feed picker	홈 피드 선택기
 Custom tab	사용자 정의 탭
 Off	사용 안함
-Tab long presses keep Instagram's own action. Choose one to open HushGram instead.	탭을 길게 탭하면 Instagram의 기본 동작이 실행됩니다. HushGram을 대신 열 탭을 하나 선택하세요
-Long press %1$s to open HushGram instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	%1$s 탭을 길게 탭하면 해당 탭의 기본 동작 대신 HushGram이 열립니다. 일반 탭 동작과 다른 탭은 그대로 유지됩니다. 계정에 표시되는 탭만 사용할 수 있습니다.
+Tab long presses keep Instagram's own action. Choose one to open Instagram Plus instead.	탭을 길게 탭하면 Instagram의 기본 동작이 실행됩니다. Instagram Plus을 대신 열 탭을 하나 선택하세요
+Long press %1$s to open Instagram Plus instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	%1$s 탭을 길게 탭하면 해당 탭의 기본 동작 대신 Instagram Plus이 열립니다. 일반 탭 동작과 다른 탭은 그대로 유지됩니다. 계정에 표시되는 탭만 사용할 수 있습니다.
 Adds a white round handle to the seek bar that you can drag. Ads keep their own bar.	탐색 막대에 끌 수 있는 흰색 원형 손잡이를 추가합니다. 광고는 자체 막대를 유지합니다.
 Bigger seek bar on reels	릴스 탐색 바 크게
 Makes the seek bar thicker, with a round white handle and the time above it, over a soft dark fade so it shows on any video. Drag it to seek. It also keeps the bar on short reels.	탐색 바를 더 두껍게 만들고, 둥근 흰색 핸들과 위쪽 시간 표시를 넣고, 어떤 영상에서도 보이도록 부드러운 어두운 그라데이션을 깝니다. 드래그해서 이동하세요. 짧은 릴스에서도 바를 유지합니다.
@@ -561,8 +561,8 @@ New message	새 메시지
 Notifications	알림
 Puts every notification from Instagram in one group that shows how many it holds, so they don't fill your notification shade. Tapping one still opens it.	Instagram의 모든 알림을 개수가 표시되는 하나의 그룹에 넣어 알림 창을 채우지 않게 합니다. 알림을 누르면 그대로 열립니다.
 Right away	바로
-Set a phone screen lock so HushGram can lock Instagram.	HushGram이 Instagram을 잠글 수 있도록 휴대폰에 화면 잠금을 설정하세요.
-Set a phone screen lock so HushGram can lock messages.	HushGram이 메시지를 잠글 수 있도록 휴대폰에 화면 잠금을 설정하세요.
+Set a phone screen lock so Instagram Plus can lock Instagram.	Instagram Plus이 Instagram을 잠글 수 있도록 휴대폰에 화면 잠금을 설정하세요.
+Set a phone screen lock so Instagram Plus can lock messages.	Instagram Plus이 메시지를 잠글 수 있도록 휴대폰에 화면 잠금을 설정하세요.
 Hides the cards between posts that ask you to rate what you saw.	본 내용을 평가해 달라고 요청하는 게시물 사이의 카드를 숨깁니다.
 Hides the rows of products to shop and live shopping that Instagram puts between posts, and the shop tiles in Explore. Posts with tagged products don't show the shopping bag.	Instagram이 게시물 사이에 넣는 쇼핑 상품 목록과 라이브 쇼핑, 그리고 탐색의 쇼핑 타일을 숨깁니다. 제품이 태그된 게시물에 쇼핑백이 표시되지 않습니다.
 Unlock	잠금 해제
@@ -572,7 +572,7 @@ Your inbox and chats stay covered until your fingerprint, face or screen lock sa
 Your messages are locked	메시지가 잠겨 있습니다
 Allow screenshots	스크린샷 허용
 Ghost mode partly changed. Check the switches below.	고스트 모드 스위치를 모두 바꾸지 못했습니다. 아래에서 확인하세요.
-Ghost mode partly changed. Check HushGram settings.	고스트 모드 스위치를 모두 바꾸지 못했습니다. HushGram 설정에서 확인하세요.
+Ghost mode partly changed. Check Instagram Plus Settings.	고스트 모드 스위치를 모두 바꾸지 못했습니다. Instagram Plus 설정에서 확인하세요.
 Don't report screenshots	스크린샷 알리지 않기
 Ghost mode	고스트 모드
 Ghost mode is off, and so is each of its switches.	고스트 모드가 꺼졌고 각 스위치도 모두 꺼졌습니다.
@@ -655,14 +655,14 @@ Descriptions behind an info button	정보 버튼 뒤에 설명 숨기기
 Shows each switch by its name alone. Tap the i next to a name to read what it does.	각 스위치를 이름만으로 표시합니다. 이름 옆의 i를 탭하면 기능 설명을 볼 수 있습니다.
 Expanded	펼쳐짐
 Collapsed	접힘
-Hide the HushGram row in Instagram's menu	Instagram 메뉴에서 HushGram 항목 숨기기
+Hide the Instagram Plus row in Instagram's menu	Instagram 메뉴에서 Instagram Plus 항목 숨기기
 Settings shortcut on the app icon	앱 아이콘의 설정 바로가기
 Open settings from the logo	로고에서 설정 열기
-Puts HushGram settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	Instagram 아이콘을 길게 탭하면 나오는 메뉴에 HushGram 설정을 넣습니다. 끄면 그 메뉴에서 빠집니다.
+Puts Instagram Plus Settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	Instagram 아이콘을 길게 탭하면 나오는 메뉴에 Instagram Plus 설정을 넣습니다. 끄면 그 메뉴에서 빠집니다.
 A long press on the Instagram logo at the top of Home opens these settings. Off, the long press goes back to Instagram.	홈 상단의 Instagram 로고를 길게 탭하면 이 설정이 열립니다. 끄면 길게 탭하기가 다시 Instagram으로 돌아갑니다.
 The last way into these settings stays on.	이 설정으로 들어오는 마지막 방법은 켜진 상태로 유지됩니다.
-No other way into HushGram is on, so the row stays in Instagram's menu.	HushGram을 여는 다른 방법이 켜져 있지 않으므로 항목이 Instagram 메뉴에 남습니다.
-Instagram's Settings and activity screen leaves out the HushGram row while another way here opens HushGram. With every other way off, the row comes back.	다른 방법으로 HushGram을 여는 동안에는 Instagram의 설정 및 활동 화면에 HushGram 항목이 표시되지 않습니다. 다른 방법을 모두 끄면 항목이 다시 나타납니다.
+No other way into Instagram Plus is on, so the row stays in Instagram's menu.	Instagram Plus을 여는 다른 방법이 켜져 있지 않으므로 항목이 Instagram 메뉴에 남습니다.
+Instagram's Settings and activity screen leaves out the Instagram Plus row while another way here opens Instagram Plus. With every other way off, the row comes back.	다른 방법으로 Instagram Plus을 여는 동안에는 Instagram의 설정 및 활동 화면에 Instagram Plus 항목이 표시되지 않습니다. 다른 방법을 모두 끄면 항목이 다시 나타납니다.
 Stop loading stories and highlights	스토리 및 하이라이트 불러오기 중지
 Takes the Comment button and the comment count off the posts in your feed.	피드 게시물에서 댓글 버튼과 댓글 수를 없앱니다.
 # context: Comments: the switch that hides the row of quick emoji above the comment box (#248). Comment box is the field where you type a comment.
@@ -778,8 +778,8 @@ Bio copied	소개를 복사했습니다
 Copy bio	소개 복사
 Copy username and bio	사용자 이름과 소개 복사
 Profile extras button	프로필 추가 버튼
-Puts a button next to the three dots on profiles that opens HushGram's profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	프로필에서 점 세 개 옆에 HushGram의 프로필 동작을 여는 버튼을 놓습니다. 프로필 사진 저장, 프로필 사진 보기, 사용자 이름과 소개 복사 중 하나가 켜져 있어야 합니다. 점 세 개 메뉴의 항목도 그대로 유지됩니다.
-HushGram profile actions	HushGram 프로필 동작
+Puts a button next to the three dots on profiles that opens Instagram Plus profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	프로필에서 점 세 개 옆에 Instagram Plus의 프로필 동작을 여는 버튼을 놓습니다. 프로필 사진 저장, 프로필 사진 보기, 사용자 이름과 소개 복사 중 하나가 켜져 있어야 합니다. 점 세 개 메뉴의 항목도 그대로 유지됩니다.
+Instagram Plus profile actions	Instagram Plus 프로필 동작
 Nothing to do for this profile	이 프로필에서 할 수 있는 동작이 없습니다
 Couldn't copy the bio	소개를 복사할 수 없습니다
 Couldn't open the picture	사진을 열 수 없습니다
@@ -833,8 +833,8 @@ Teal	청록색
 Material You	Material You
 Material You needs Android 12 or newer, so Instagram's blue stays.	Material You는 Android 12 이상이 필요해서 Instagram 파란색이 그대로 유지됩니다.
 # context: Layout switch; it puts HushGram's logo on the screen Android shows while Instagram starts
-HushGram launch screen	HushGram 시작 화면
-Shows HushGram's logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	Instagram이 시작되는 동안 보이는 화면에 Instagram 로고 대신 HushGram 로고를 표시합니다. Android 13 이상에서 작동하며, 다음 시작부터 적용됩니다.
+Instagram Plus launch screen	Instagram Plus 시작 화면
+Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	Instagram이 시작되는 동안 보이는 화면에 Instagram 로고 대신 Instagram Plus 로고를 표시합니다. Android 13 이상에서 작동하며, 다음 시작부터 적용됩니다.
 # context: Downloads switch under Download feed videos; it adds Download cover to a feed video post's menu
 Download video covers	동영상 커버 다운로드
 Adds Download cover to the menu of a feed post with a video, and of a carousel showing one. It saves the still picture shown before the video plays, at its largest size.	동영상이 있는 피드 게시물과 동영상을 보여 주는 캐러셀의 메뉴에 커버 다운로드를 추가합니다. 동영상이 재생되기 전에 보이는 정지 이미지를 가장 큰 크기로 저장합니다.
@@ -913,10 +913,10 @@ Open a chat in Instagram, then come back here to pin it.	Instagram에서 채팅�
 %1$s is shown again	%1$s 채팅을 다시 표시합니다
 Pick the playback quality with a tab long press	탭을 길게 탭하여 재생 화질 선택
 Tab long presses keep Instagram's own action. Choose one to pick the playback quality instead.	탭을 길게 탭하면 Instagram의 기본 동작이 실행됩니다. 재생 화질을 대신 선택할 탭을 하나 고르세요.
-Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens HushGram, that comes first.	%1$s 탭을 길게 탭하면 해당 탭의 기본 동작 대신 재생 화질을 선택합니다. 일반 탭과 다른 탭은 그대로입니다. 기본 재생 화질이 켜져 있어야 합니다. 같은 탭이 HushGram을 여는 경우 그쪽이 우선합니다.
+Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens Instagram Plus, that comes first.	%1$s 탭을 길게 탭하면 해당 탭의 기본 동작 대신 재생 화질을 선택합니다. 일반 탭과 다른 탭은 그대로입니다. 기본 재생 화질이 켜져 있어야 합니다. 같은 탭이 Instagram Plus을 여는 경우 그쪽이 우선합니다.
 Playback quality: %1$s. The next video uses it.	재생 화질: %1$s. 다음에 여는 동영상부터 적용됩니다.
-Couldn't save the quality. Set it in HushGram settings.	재생 화질을 저장하지 못했습니다. HushGram 설정에서 직접 지정하세요.
-Support HushGram	HushGram 후원하기
+Couldn't save the quality. Set it in Instagram Plus Settings.	재생 화질을 저장하지 못했습니다. Instagram Plus 설정에서 직접 지정하세요.
+Support	후원하기
 Hide the Home tab	홈 탭 숨기기
 Takes Home off the tab bar. Your Start tab opens wherever Home would, so pick one other than Home that's on the bar, or Home stays. Restart Instagram to see the change.	하단바에서 홈 탭을 제거합니다. 홈이 열릴 자리에 시작 탭이 열리므로 홈이 아니면서 하단바에 있는 시작 탭을 고르세요. 그렇지 않으면 홈이 남습니다. 변경 사항을 보려면 Instagram을 다시 시작하세요.
 Hide the Search tab	검색 탭 숨기기
@@ -1038,7 +1038,7 @@ Hides the status bar and the navigation bar while your messages or a chat shows.
 Hide Notes on profile pictures	프로필 사진의 노트 숨기기
 Takes the Notes bubble off profile pictures, yours included. Notes in Messages stay as they are.	프로필 사진에서 노트 말풍선을 없앱니다. 내 프로필도 포함됩니다. 메시지의 노트는 그대로 유지됩니다.
 # context: the line that opens a category's page in HushGram settings, under the page title
-How you open HushGram and lay out settings.	HushGram을 여는 방법과 설정 배치.
+How you open Instagram Plus and lay out settings.	Instagram Plus을 여는 방법과 설정 배치.
 Hide ads and share less with Instagram.	광고를 숨기고 Instagram에 공유하는 정보를 줄이세요.
 Choose what Home shows and how it behaves.	홈에 표시되는 내용과 동작 방식을 선택합니다.
 Control where Meta AI appears.	Meta AI가 표시되는 위치를 정하세요.
@@ -1058,10 +1058,10 @@ Save photos, videos and more, and choose where they go.	사진, 동영상 등을
 Stop background work Instagram doesn't need.	Instagram에 필요 없는 백그라운드 작업을 멈춥니다.
 Stop Instagram from saying this version is too old.	Instagram이 이 버전이 너무 오래되었다고 알리지 않게 합니다.
 Chosen when you patched, so Pause leaves them on. Patch again to change them.	패치할 때 선택한 항목이라 일시 정지해도 꺼지지 않습니다. 변경하려면 다시 패치하세요.
-Save your HushGram choices to a file, or bring them back.	HushGram 설정을 파일로 저장하거나 다시 불러옵니다.
+Save your Instagram Plus choices to a file, or bring them back.	Instagram Plus 설정을 파일로 저장하거나 다시 불러옵니다.
 Your version, the source code and licenses.	사용 중인 버전, 소스 코드, 라이선스입니다.
 Open settings with a long press on your profile's menu	프로필 메뉴를 길게 탭하여 설정 열기
-A long press on the menu button, the three lines at the top right of your own profile, opens HushGram. A tap still opens Instagram's menu, and other profiles stay the same.	내 프로필 오른쪽 위에 있는 세 줄 메뉴 버튼을 길게 탭하면 HushGram이 열립니다. 탭하면 여전히 Instagram 메뉴가 열리고, 다른 프로필은 그대로입니다.
+A long press on the menu button, the three lines at the top right of your own profile, opens Instagram Plus. A tap still opens Instagram's menu, and other profiles stay the same.	내 프로필 오른쪽 위에 있는 세 줄 메뉴 버튼을 길게 탭하면 Instagram Plus이 열립니다. 탭하면 여전히 Instagram 메뉴가 열리고, 다른 프로필은 그대로입니다.
 Hide the top bar on the Reels tab	릴스 탭의 상단 바 숨기기
 Takes away the row at the top of the Reels tab, with the Reels title, the camera button and anything else Instagram puts there. Reels you open from a profile, a post or a chat keep theirs. The camera still opens from Home.	릴스 탭 맨 위에 있는 줄을 숨깁니다. 릴스 제목, 카메라 버튼, 그 밖에 Instagram이 그곳에 두는 모든 항목이 포함됩니다. 프로필, 게시물, 채팅에서 연 릴스에는 그대로 남습니다. 카메라는 홈에서 계속 열 수 있습니다.
 Hide the Create button on reels	릴스의 만들기 버튼 숨기기
@@ -1091,14 +1091,14 @@ Don't vibrate in clear mode	클리어 모드에서 진동 끄기
 Stops the short buzz Instagram plays when a reel opens in clear mode. With Keep clear mode on, that's every swipe.	릴스가 클리어 모드로 열릴 때 Instagram이 내는 짧은 진동을 끕니다. 클리어 모드 유지가 켜져 있으면 넘길 때마다 진동합니다.
 Unlock with	잠금 해제 방법
 Phone lock	휴대폰 잠금
-HushGram PIN	HushGram PIN
+Settings PIN	설정 PIN
 A PIN you set here unlocks your messages, in place of your screen lock. It can't be recovered, only cleared by clearing Instagram's storage.	여기서 정한 PIN으로 화면 잠금 대신 메시지 잠금을 풉니다. PIN은 복구할 수 없고, Instagram 저장소를 지워야만 없앨 수 있습니다.
 Your fingerprint, face or screen lock unlocks your messages.	휴대폰의 지문, 얼굴 또는 화면 잠금으로 메시지 잠금을 풉니다.
 Fingerprint or face only	지문 또는 얼굴만
 Only your fingerprint or face unlocks your messages. If the phone has none set up, your screen lock does.	지문 또는 얼굴로만 메시지 잠금을 풉니다. 휴대폰에 설정된 것이 없으면 화면 잠금으로 풉니다.
 Add a fingerprint or face in your phone's settings first.	먼저 휴대폰 설정에서 지문이나 얼굴을 등록하세요.
 This phone has no fingerprint or face unlock to use.	이 휴대폰에는 사용할 수 있는 지문이나 얼굴 잠금 해제가 없습니다.
-Your phone won't let HushGram use your fingerprint or face right now. Check its fingerprint and face settings.	지금은 휴대폰에서 HushGram이 지문이나 얼굴을 쓸 수 없습니다. 휴대폰의 지문 및 얼굴 설정을 확인하세요.
+Your phone won't let Instagram Plus use your fingerprint or face right now. Check its fingerprint and face settings.	지금은 휴대폰에서 Instagram Plus이 지문이나 얼굴을 쓸 수 없습니다. 휴대폰의 지문 및 얼굴 설정을 확인하세요.
 Set or change the 4 to 8 digit PIN. It stays on this phone and isn't in a backup.	4~8자리 PIN을 정하거나 바꿉니다. 이 휴대폰에만 저장되고 백업에는 들어가지 않습니다.
 PIN saved.	PIN을 저장했습니다.
 PIN	PIN
@@ -1112,7 +1112,7 @@ Set a PIN	PIN 설정
 Use 4 to 8 digits.	4~8자리 숫자를 사용하세요.
 The PINs don't match.	PIN이 서로 다릅니다.
 Couldn't save the PIN.	PIN을 저장하지 못했습니다.
-The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets HushGram's settings. A saved settings backup brings the rest back, but not the PIN.	PIN은 복구할 수 없습니다. 없애려면 Android 앱 설정에서 Instagram 저장소를 지우세요. 로그아웃되고 HushGram 설정이 초기화됩니다. 저장해 둔 설정 백업으로 나머지는 되돌릴 수 있지만 PIN은 돌아오지 않습니다.
+The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets Instagram Plus settings. A saved settings backup brings the rest back, but not the PIN.	PIN은 복구할 수 없습니다. 없애려면 Android 앱 설정에서 Instagram 저장소를 지우세요. 로그아웃되고 Instagram Plus 설정이 초기화됩니다. 저장해 둔 설정 백업으로 나머지는 되돌릴 수 있지만 PIN은 돌아오지 않습니다.
 Open app info	앱 정보 열기
 Hide 'Are you interested?' bubbles	'이 게시물에 관심이 있으신가요?' 질문 숨기기
 Hides the bubble under a post that asks 'Are you interested in this post?' with Not interested and Interested buttons. Nothing is answered for you.	게시물 아래에 '이 게시물에 관심이 있으신가요?'라고 묻고 관심 없음과 관심 있음 버튼이 있는 말풍선을 숨깁니다. 대신 답해 주지는 않습니다.
@@ -1142,9 +1142,9 @@ A carousel post's page sits a little in from the edges, with the start of the ne
 Large	크게
 Small	작게
 # context: a toast shown once when safe mode has paused HushGram on its own after crashes at start
-Instagram kept crashing, so HushGram paused itself.	Instagram이 계속 멈춰서 HushGram이 일시 중지되었습니다.
+Instagram kept crashing, so Instagram Plus paused itself.	Instagram이 계속 멈춰서 Instagram Plus이 일시 중지되었습니다.
 # context: the second toast after safe mode paused HushGram, saying where to turn it back on
-Turn it back on in HushGram settings.	HushGram 설정에서 다시 켜세요.
+Turn it back on in Instagram Plus Settings.	Instagram Plus 설정에서 다시 켜세요.
 # context: a toast when a save couldn't reach Instagram's servers or the connection dropped
 Download failed. Check your connection and try again.	다운로드에 실패했습니다. 연결을 확인하고 다시 시도하세요.
 # context: a toast when a save arrived incomplete or couldn't be written to the phone
@@ -1272,7 +1272,7 @@ Ghost mode needs at least one switch to turn.	고스트 모드에는 바꿀 스�
 # context: Ghost mode: turning it on or off with a long press on a tab (#255). %1$s is a tab's name
 Turn Ghost mode on or off with a tab long press	탭을 길게 탭하여 고스트 모드 켜고 끄기
 Tab long presses keep Instagram's own action. Choose one to turn Ghost mode on or off instead.	탭을 길게 탭하면 Instagram의 기본 동작이 실행됩니다. 고스트 모드를 대신 켜고 끌 탭을 하나 고르세요.
-Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens HushGram or picks the playback quality, that comes first.	%1$s 탭을 길게 탭하면 해당 탭의 기본 동작 대신 고스트 모드를 켜거나 끄고, 짧은 메시지로 어느 쪽으로 바뀌었는지 알려 줍니다. 일반 탭과 다른 탭은 그대로입니다. 같은 탭이 HushGram을 열거나 재생 화질을 선택하는 경우 그쪽이 우선합니다.
+Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens Instagram Plus or picks the playback quality, that comes first.	%1$s 탭을 길게 탭하면 해당 탭의 기본 동작 대신 고스트 모드를 켜거나 끄고, 짧은 메시지로 어느 쪽으로 바뀌었는지 알려 줍니다. 일반 탭과 다른 탭은 그대로입니다. 같은 탭이 Instagram Plus을 열거나 재생 화질을 선택하는 경우 그쪽이 우선합니다.
 Buttons on the share sheet	공유 시트의 버튼
 Every button under the people on the share sheet shows. Untick the ones you don't use.	공유 시트에서 사람 목록 아래의 버튼이 모두 표시됩니다. 쓰지 않는 버튼은 체크를 해제하세요.
 Left off the share sheet: %1$s.	공유 시트에서 숨김: %1$s.
@@ -1372,7 +1372,7 @@ Every row of Instagram's Settings and activity shows. Untick the ones you don't 
 %1$d rows are left off Instagram's Settings and activity.	Instagram 설정 및 활동에서 항목 %1$d개를 뺐습니다.
 Open Settings and activity in Instagram once, then come back here. Its rows show up in this list to untick.	Instagram에서 설정 및 활동을 한 번 연 다음 여기로 돌아오세요. 그 화면의 항목이 이 목록에 나타나 체크를 해제할 수 있습니다.
 Date in backup file names	백업 파일 이름에 날짜 넣기
-Add the current date and time when exporting settings. Off keeps HushGram-settings.json.	설정을 내보낼 때 현재 날짜와 시간을 덧붙입니다. 끄면 HushGram-settings.json을 유지합니다.
+Add the current date and time when exporting settings. Off keeps settings.json.	설정을 내보낼 때 현재 날짜와 시간을 덧붙입니다. 끄면 settings.json을 유지합니다.
 %1$s is the post's shortcode. Stories and unknown posts leave it out. Using it also names photos.	%1$s는 게시물의 단축 코드입니다. 스토리나 알 수 없는 게시물에서는 생략됩니다. 이 토큰을 넣으면 사진 이름에도 템플릿이 적용됩니다.
 Videos and photos use %1$s. Unknown codes are left out.	동영상과 사진에 %1$s를 사용합니다. 알 수 없는 코드는 생략됩니다.
 Tab bar layout	탭 바 레이아웃
@@ -1385,11 +1385,11 @@ Instagram picks the tab bar for your account, and it can switch between the two 
 Group or mute Instagram's notifications, and take suggestions off the Notifications page.	Instagram 알림을 묶거나 무음으로 하고, 알림 페이지에서 추천을 없앱니다.
 Take suggestions and Featured off the Notifications page.	알림 페이지에서 추천과 주요 항목을 없앱니다.
 Version warnings	버전 경고
-Pause HushGram, lock these settings, or make a report when something breaks.	HushGram을 일시 정지하거나, 이 설정을 잠그거나, 문제가 생기면 보고서를 만듭니다.
+Pause Instagram Plus, lock these settings, or make a report when something breaks.	Instagram Plus을 일시 정지하거나, 이 설정을 잠그거나, 문제가 생기면 보고서를 만듭니다.
 Choose a folder	폴더 선택
 Saves go to Movies and Pictures. Pick any folder instead, a hidden one too, and every photo and video goes there.	저장한 항목은 Movies와 Pictures에 들어갑니다. 대신 숨겨진 폴더를 포함해 아무 폴더나 선택하면 모든 사진과 동영상이 그곳에 저장됩니다.
 Photos and videos go to %1$s. Tap to pick another folder.	사진과 동영상이 %1$s에 저장됩니다. 탭해서 다른 폴더를 선택하세요.
-HushGram can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	HushGram이 더 이상 %1$s에 접근할 수 없어서 저장한 항목이 Movies와 Pictures에 들어갑니다. 폴더를 다시 선택하세요.
+Instagram Plus can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	Instagram Plus이 더 이상 %1$s에 접근할 수 없어서 저장한 항목이 Movies와 Pictures에 들어갑니다. 폴더를 다시 선택하세요.
 Use Movies and Pictures	Movies와 Pictures 사용
 Stop using the folder you picked. Saves go back to Movies and Pictures.	선택한 폴더를 더 이상 사용하지 않습니다. 저장한 항목이 다시 Movies와 Pictures에 들어갑니다.
 Couldn't use that folder. Saves go where they did.	그 폴더를 사용할 수 없습니다. 저장한 항목은 원래 위치에 계속 저장됩니다.
@@ -1413,7 +1413,7 @@ Stops the notification types you tick, even ones Instagram's own notification se
 Instagram hasn't set up its notification types on this phone yet. Open Instagram once, then come back here.	Instagram이 아직 이 휴대전화에 알림 유형을 만들지 않았습니다. Instagram을 한 번 연 다음 여기로 돌아오세요.
 Unmute all	모두 무음 해제
 Settings button on Home's header	홈 상단의 설정 버튼
-Adds a gear at the top of Home that opens HushGram settings. Restart Instagram to see the change.	홈 상단에 HushGram 설정을 여는 톱니바퀴를 추가합니다. 변경 사항을 보려면 Instagram을 다시 시작하세요.
+Adds a gear at the top of Home that opens Instagram Plus Settings. Restart Instagram to see the change.	홈 상단에 Instagram Plus 설정을 여는 톱니바퀴를 추가합니다. 변경 사항을 보려면 Instagram을 다시 시작하세요.
 Download button on stories	스토리의 다운로드 버튼
 Puts a Download button at the top of a story, beside the three dots. One tap saves the photo or video in front, the same as Download in the menu.	스토리 상단의 점 세 개 옆에 다운로드 버튼을 추가합니다. 한 번 탭하면 메뉴의 다운로드와 똑같이 보고 있는 사진이나 동영상을 저장합니다.
 Start reels muted	릴스를 음소거로 시작
@@ -1534,8 +1534,8 @@ Tap to see all %1$d, by kind or by search.	눌러서 %1$d개 전체를 종류별
 Instagram gradient on dark	어두운 배경의 Instagram 그라데이션
 Retro Instagram	레트로 Instagram
 Menu button on Home's header	홈 상단의 메뉴 버튼
-Adds a menu button at the top of Home with your viewing history, Ghost mode and HushGram settings. Restart Instagram to see the change.	홈 상단에 본 기록, 고스트 모드, HushGram 설정이 담긴 메뉴 버튼을 추가합니다. 변경 사항을 보려면 Instagram을 다시 시작하세요.
-HushGram menu	HushGram 메뉴
+Adds a menu button at the top of Home with your viewing history, Ghost mode and Instagram Plus Settings. Restart Instagram to see the change.	홈 상단에 본 기록, 고스트 모드, Instagram Plus 설정이 담긴 메뉴 버튼을 추가합니다. 변경 사항을 보려면 Instagram을 다시 시작하세요.
+Instagram Plus menu	Instagram Plus 메뉴
 Seek bar button on feed videos	피드 동영상 탐색 막대 버튼
 Adds a small button at the bottom left of a feed video that shows or hides its seek bar. It works with Seek bar on feed videos on or off.	피드 동영상 왼쪽 아래에 탐색 막대를 보이거나 숨기는 작은 버튼을 추가합니다. 피드 동영상 탐색 막대가 켜져 있어도 꺼져 있어도 작동합니다.
 Seek bar	탐색 막대
@@ -1602,10 +1602,10 @@ That isn't a picture.	이미지가 아닙니다.
 That picture is over %1$d MB.	이미지가 %1$dMB를 넘습니다.
 Couldn't save the picture.	이미지를 저장하지 못했습니다.
 Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Jump to the first message or Jump to a date. The chat loads its older messages on its own, with a count and a Cancel button.	채팅을 열고 위쪽 통화 버튼 옆의 시계 버튼을 누르거나 채팅 이름을 길게 누른 뒤 첫 메시지로 이동 또는 날짜로 이동을 고르세요. 채팅이 이전 메시지를 스스로 불러오며, 개수와 취소 버튼이 표시됩니다.
-Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, HushGram folder, one line per message.	채팅을 열고 위쪽 통화 버튼 옆의 시계 버튼을 누르거나 채팅 이름을 길게 누른 뒤 채팅 내보내기를 고르세요. 채팅 전체가 다운로드의 HushGram 폴더에 텍스트 파일로 저장되며, 메시지 한 개가 한 줄입니다.
+Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, Instagram folder, one line per message.	채팅을 열고 위쪽 통화 버튼 옆의 시계 버튼을 누르거나 채팅 이름을 길게 누른 뒤 채팅 내보내기를 고르세요. 채팅 전체가 다운로드의 Instagram Plus 폴더에 텍스트 파일로 저장되며, 메시지 한 개가 한 줄입니다.
 Instagram stopped loading older messages.	Instagram이 이전 메시지 불러오기를 멈췄습니다.
 Black settings page	검은색 설정 페이지
-Black rows and dialogs, HushGram's name at the top, and each category on one line.	검은색 행과 대화상자, 맨 위의 HushGram 이름, 한 줄로 줄인 각 카테고리.
+Black rows and dialogs, Instagram Plus at the top, and each category on one line.	검은색 행과 대화상자, 맨 위의 Instagram Plus 이름, 한 줄로 줄인 각 카테고리.
 Mark as read	읽음으로 표시
 Nothing to mark as read	읽음으로 표시할 항목이 없습니다
 Mark as read button in chats	채팅의 읽음으로 표시 버튼
@@ -1613,7 +1613,7 @@ A check mark shows at the top of a chat while it hasn't told the other person yo
 # context: a switch on the Messages page and the eye it adds to a chat's header (#13). "Seen" is Instagram's own read receipt label in a chat. A tap on the eye opens a menu with the three rows after the summary; the toasts and the eye's spoken label say what the chat does now.
 Choose Seen in each chat	채팅마다 읽음 선택
 An eye at the top of each chat holds or sends Seen in that chat alone, whatever Read messages without the seen receipt says. Changing it doesn't send anything by itself.	각 채팅 상단의 눈 아이콘으로 읽음 표시 없이 메시지 읽기 설정과 상관없이 그 채팅에서만 읽음을 보류하거나 보냅니다. 바꿔도 그 자체로는 아무것도 보내지 않습니다.
-Use the HushGram setting	HushGram 설정 따르기
+Use the Instagram Plus setting	Instagram Plus 설정 따르기
 Hold Seen in this chat	이 채팅에서 읽음 보류
 Send Seen in this chat	이 채팅에서 읽음 보내기
 Seen held in this chat	이 채팅에서 읽음을 보류합니다
@@ -1772,3 +1772,9 @@ Playing in the background	백그라운드에서 재생 중
 Paused in the background	백그라운드에서 일시정지됨
 Play	재생
 Stop	중지
+iOS tab bounce animation	iOS 탭 바운스 애니메이션
+Subtle spring bounce on tab icons when tapped, matching iOS Instagram's tactile feel.	탭할 때 탭 아이콘에 미세한 탄성 바운스를 주어 iOS Instagram의 손맛을 재현합니다.
+iOS tab bar top border	iOS 탭 바 상단 테두리
+Draws a subtle 0.5dp translucent hairline divider along the top of the tab bar.	탭 바 상단을 따라 0.5dp의 은은한 반투명 헤어라인 구분선을 그립니다.
+Tap active tab to scroll to top	활성 탭을 눌러 맨 위로 스크롤
+Tapping the currently active tab smoothly scrolls the current feed or list to the top.	현재 활성화된 탭을 다시 누르면 현재 피드나 목록이 부드럽게 맨 위로 스크롤됩니다.

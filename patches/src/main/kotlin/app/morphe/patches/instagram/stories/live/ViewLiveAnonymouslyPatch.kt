@@ -83,7 +83,7 @@ val viewLiveAnonymouslyPatch = bytecodePatch(
     name = "View live anonymously",
     description = "Keeps you off the viewer list of the lives you watch, so the host isn't told you're there. " +
         "Your own lives still count their viewers. An optional eye button at the top of a live puts you on that " +
-        "one's list. Ghost mode turns it on too. Starts off. Turn it on in HushGram settings > Stories.",
+        "one's list. Ghost mode turns it on too. Starts off. Turn it on in Instagram Plus Settings > Stories.",
     default = true,
 ) {
     category("Ghost mode")

@@ -33,7 +33,7 @@ import org.w3c.dom.Element
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
-private const val PATCH = "HushGram launch screen"
+private const val PATCH = "Instagram Plus launch screen"
 
 /** The theme Instagram's launcher activities wear, whose Android 12 version names the launch screen's icon. */
 internal const val INSTAGRAM_LAUNCH_THEME = "Base.Theme.Launcher"
@@ -292,9 +292,9 @@ private fun Method.where(): String = "$definingClass->$name"
  */
 @Suppress("unused")
 val launchScreenPatch = bytecodePatch(
-    name = "HushGram launch screen",
-    description = "Shows HushGram's logo instead of Instagram's on the screen you see while Instagram starts, on " +
-        "Android 13 and newer. Starts off. Turn it on in HushGram settings > Layout.",
+    name = "Instagram Plus launch screen",
+    description = "Shows a custom logo instead of Instagram's on the screen you see while Instagram starts, on " +
+        "Android 13 and newer. Starts off. Turn it on in Instagram Plus Settings > Layout.",
     default = true,
 ) {
     category("Interface")

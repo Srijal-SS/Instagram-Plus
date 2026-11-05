@@ -68,7 +68,7 @@ private val MOVES = setOf(Opcode.MOVE, Opcode.MOVE_FROM16, Opcode.MOVE_16)
 val keepReelsTopBarPatch = bytecodePatch(
     name = "Keep the Reels top bar",
     description = "Keeps the Reels title, the Friends tab and the buttons beside them at the top while you " +
-        "swipe through reels. Starts off. Turn it on in HushGram settings > Reels.",
+        "swipe through reels. Starts off. Turn it on in Instagram Plus Settings > Reels.",
 ) {
     category("Reels")
     dependsOn(settingsPatch, instagramExtensionPatch)

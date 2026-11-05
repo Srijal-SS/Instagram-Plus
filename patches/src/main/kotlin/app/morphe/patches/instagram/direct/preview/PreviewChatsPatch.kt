@@ -126,7 +126,7 @@ internal class PreviewTargets(
 val previewChatsPatch = bytecodePatch(
     name = "Preview chats",
     description = "Long press a chat in your messages and tap Preview to read its newest messages without opening " +
-        "it, so nobody sees Seen. You can reply from there too. Starts off. Turn it on in HushGram settings > Messages.",
+        "it, so nobody sees Seen. You can reply from there too. Starts off. Turn it on in Instagram Plus Settings > Messages.",
 ) {
     category("Messages")
     dependsOn(settingsPatch, instagramExtensionPatch)

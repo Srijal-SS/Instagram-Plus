@@ -54,7 +54,7 @@ internal const val SET_LOOPING = "setLooping: %s"
 val stopVideoLoopingPatch = bytecodePatch(
     name = "Stop videos looping",
     description = "Feed videos and reels stop at their last frame instead of playing again. Reels still loop " +
-        "while auto scroll is on, so it can move on. Starts off. Turn it on in HushGram settings > Playback.",
+        "while auto scroll is on, so it can move on. Starts off. Turn it on in Instagram Plus Settings > Playback.",
 ) {
     category("Playback")
     dependsOn(settingsPatch, instagramExtensionPatch)

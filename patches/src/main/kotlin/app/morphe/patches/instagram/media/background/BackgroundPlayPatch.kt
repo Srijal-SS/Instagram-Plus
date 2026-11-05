@@ -93,7 +93,7 @@ internal val backgroundPlayServicePatch = resourcePatch {
 val backgroundPlayPatch = bytecodePatch(
     name = "Keep playing in the background",
     description = "A video or reel playing with sound keeps going when you leave Instagram or turn the screen off, " +
-        "with a notification to pause or stop it. Starts off. Turn it on in HushGram settings > Playback.",
+        "with a notification to pause or stop it. Starts off. Turn it on in Instagram Plus Settings > Playback.",
 ) {
     category("Playback")
     dependsOn(settingsPatch, instagramExtensionPatch, backgroundPlayServicePatch)

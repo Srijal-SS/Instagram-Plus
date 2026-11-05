@@ -103,7 +103,7 @@ private const val OBJECT = "Ljava/lang/Object;"
 val resumeLongVideosPatch = bytecodePatch(
     name = "Resume long videos",
     description = "A video or reel longer than two minutes picks up where you left off the next time you play it " +
-        "on the same account. Live videos and ads start as usual. Starts off. Turn it on in HushGram settings > " +
+        "on the same account. Live videos and ads start as usual. Starts off. Turn it on in Instagram Plus Settings > " +
         "Playback.",
     default = true,
 ) {

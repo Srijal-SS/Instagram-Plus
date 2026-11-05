@@ -6,7 +6,7 @@
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Das wurde beim Patchen festgelegt, deshalb kann die Pause es nicht ausschalten. Um es auszuschließen, patche erneut und lass diesen Patch weg.
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Diese wurden beim Patchen festgelegt, deshalb kann die Pause sie nicht ausschalten. Um eines davon auszuschließen, patche erneut und lass den Patch weg, der in Klammern dahinter steht.
 A diagnostic report is already being saved.	Ein Diagnosebericht wird bereits gespeichert.
-A file named %1$s in %2$s paused HushGram.	Eine Datei namens %1$s in %2$s hat HushGram pausiert.
+A file named %1$s in %2$s paused Instagram Plus.	Eine Datei namens %1$s in %2$s hat Instagram Plus pausiert.
 About	Info
 Add the source to saved photos and videos	Quelle zu gespeicherten Fotos und Videos hinzufügen
 Ads and privacy	Werbung und Datenschutz
@@ -14,7 +14,7 @@ Asks Android to run Instagram at your screen's fastest refresh rate, at the same
 Back	Zurück
 Before you sign in	Bevor du dich anmeldest
 Cancel	Abbrechen
-Chat saved in Downloads/HushGram.	Chat in Downloads/HushGram gespeichert.
+Chat saved in Downloads/Instagram.	Chat in Downloads/Instagram Plus gespeichert.
 Chat saved in the app's Download folder.	Chat im Download-Ordner der App gespeichert.
 Clear diagnostic data	Diagnosedaten löschen
 Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in details are left out. Check it for other private text before you share it.	Kopiere einen Kurzbericht oder speichere den vollständigen Bericht unter %1$s. Links, IDs, Cookies und Anmeldedaten werden ausgelassen. Prüfe ihn auf anderen privaten Text, bevor du ihn teilst.
@@ -25,7 +25,7 @@ Couldn't find this chat's messages.	Die Nachrichten dieses Chats fehlen.
 Couldn't put back the diagnostic data. Try again.	Diagnosedaten nicht wiederhergestellt.
 Couldn't save the chat.	Chat nicht gespeichert.
 Couldn't start the report export. Try again shortly.	Export nicht gestartet. Versuch es gleich noch mal.
-Couldn't turn HushGram back on. Try again.	Einschalten fehlgeschlagen. Versuch es noch mal.
+Couldn't turn Instagram Plus back on. Try again.	Einschalten fehlgeschlagen. Versuch es noch mal.
 Debug logging	Debug-Protokollierung
 Diagnostic data cleared. Tap again to put it back.	Diagnosedaten gelöscht. Tippen macht es rückgängig.
 Diagnostic data put back.	Diagnosedaten wiederhergestellt.
@@ -77,16 +77,16 @@ GPL-3.0, with the notices of the projects this is built on	GPL-3.0, mit den Hinw
 Gray out stories you've watched	Angesehene Stories ausgrauen
 Hide ads	Werbung ausblenden
 How far a photo or video you're saving has got, with a button to cancel it	Fortschritt beim Speichern eines Fotos oder Videos, mit einem Button zum Abbrechen
-HushGram %1$s on Instagram %2$s	HushGram %1$s auf Instagram %2$s
-HushGram is on	HushGram ist aktiv
-HushGram is paused	HushGram ist pausiert
-HushGram pauses when Instagram restarts.	HushGram pausiert, sobald Instagram neu startet.
-HushGram saves	Speichern mit HushGram
-HushGram settings	HushGram-Einstellungen
-HushGram settings couldn't open	HushGram-Einstellungen ließen sich nicht öffnen
-HushGram settings are locked	HushGram-Einstellungen sind gesperrt
-HushGram turns back on when Instagram restarts.	HushGram ist wieder aktiv, sobald Instagram neu startet.
-Instagram crashed or froze within a minute of starting three times in a row, so HushGram paused itself.	Instagram ist dreimal hintereinander innerhalb einer Minute nach dem Start abgestürzt oder hängen geblieben, deshalb hat sich HushGram selbst pausiert.
+Instagram Plus %1$s on Instagram %2$s	Instagram Plus %1$s auf Instagram %2$s
+Instagram Plus is on	Instagram Plus ist aktiv
+Instagram Plus is paused	Instagram Plus ist pausiert
+Instagram Plus pauses when Instagram restarts.	Instagram Plus pausiert, sobald Instagram neu startet.
+Instagram Plus saves	Speichern mit Instagram Plus
+Instagram Plus Settings	Instagram Plus-Einstellungen
+Instagram Plus Settings couldn't open	Instagram Plus-Einstellungen ließen sich nicht öffnen
+Instagram Plus Settings are locked	Instagram Plus-Einstellungen sind gesperrt
+Instagram Plus turns back on when Instagram restarts.	Instagram Plus ist wieder aktiv, sobald Instagram neu startet.
+Instagram crashed or froze within a minute of starting three times in a row, so Instagram Plus paused itself.	Instagram ist dreimal hintereinander innerhalb einer Minute nach dem Start abgestürzt oder hängen geblieben, deshalb hat sich Instagram Plus selbst pausiert.
 Instagram stops showing the screen that says this version is too old. A patched build doesn't update on its own, so this keeps it usable.	Instagram zeigt den Bildschirm nicht mehr an, der meldet, dass diese Version zu alt ist. Ein gepatchter Build aktualisiert sich nicht von selbst, so bleibt er nutzbar.
 Instagram's own checks of who signed the app keep passing on this patched build.	Instagrams eigene Prüfungen, wer die App signiert hat, werden mit diesem gepatchten Build weiter bestanden.
 Joining the picture and sound	Bild und Ton werden zusammengefügt
@@ -100,7 +100,7 @@ No app can open the bug report.	Keine App kann den Fehlerbericht öffnen.
 Not saved: that isn't an Instagram photo or video	Nicht gespeichert: Das ist kein Foto oder Video von Instagram
 Not saved: the file is over 512 MB	Nicht gespeichert: Die Datei ist über 512 MB groß
 OK	OK
-Pause HushGram	HushGram pausieren
+Pause Instagram Plus	Instagram Plus pausieren
 Pause and diagnostics	Pause und Diagnose
 Instagram accepts this build	Instagram akzeptiert diesen Build
 Record patch activity and show errors for a bug report. Leave off during normal use.	Zeichnet Patch-Aktivität auf und zeigt Fehler für einen Fehlerbericht. Im Alltag ausgeschaltet lassen.
@@ -118,7 +118,7 @@ Saved. Restart Instagram to apply this change.	Gespeichert. Starte Instagram neu
 Saving a photo	Foto wird gespeichert
 Saving a video	Video wird gespeichert
 Saving...	Wird gespeichert …
-Saving... You can cancel from Downloads in HushGram settings.	Speichern... Abbrechen kannst du unter „Downloads“ in den HushGram-Einstellungen.
+Saving... You can cancel from Downloads in Instagram Plus Settings.	Speichern... Abbrechen kannst du unter „Downloads“ in den Instagram Plus-Einstellungen.
 Set when you patched	Beim Patchen festgelegt
 Settings couldn't open	Einstellungen ließen sich nicht öffnen
 Settings couldn't refresh completely. Reopen settings and try again.	Die Einstellungen ließen sich nicht vollständig aktualisieren. Öffne sie neu und versuche es noch einmal.
@@ -131,7 +131,7 @@ Couldn't hide this notice. Try again.	Hinweis nicht ausgeblendet. Versuch es noc
 Tap to turn it back on.	Zum Wiedereinschalten tippen.
 The report isn't saved yet. Try again in a moment.	Bericht noch ungespeichert. Versuch es gleich.
 Couldn't save the diagnostic report. Try again.	Bericht nicht gespeichert. Versuch es noch mal.
-The file %1$s couldn't be removed. Delete it from %2$s to turn HushGram back on.	Die Datei %1$s ließ sich nicht entfernen. Lösche sie aus %2$s, um HushGram wieder einzuschalten.
+The file %1$s couldn't be removed. Delete it from %2$s to turn Instagram Plus back on.	Die Datei %1$s ließ sich nicht entfernen. Lösche sie aus %2$s, um Instagram Plus wieder einzuschalten.
 Couldn't finish that change. Showing what's saved.	Änderung fehlgeschlagen. Das ist der gespeicherte Wert.
 There's no diagnostic data to clear.	Es gibt keine Diagnosedaten zum Löschen.
 There's no diagnostic data to put back.	Es gibt keine Diagnosedaten zum Wiederherstellen.
@@ -142,7 +142,7 @@ Version %1$s for Instagram %2$s	Version %1$s für Instagram %2$s
 While you view anonymously, a story you've watched turns gray and moves to the end of the row, on this phone only. Instagram still isn't told you watched it.	Während du Stories anonym ansiehst, wird eine angesehene Story grau und rückt ans Ende der Reihe, nur auf diesem Handy. Instagram erfährt weiterhin nicht, dass du sie angesehen hast.
 Writes the account that posted, the post date and a link to the post into a saved photo or video, in the EXIF or MP4 tags a gallery or exiftool reads. JPEG photos and MP4 videos only, and only what the save knows. The picture and the sound are unchanged.	Schreibt das Konto, das gepostet hat, das Beitragsdatum und einen Link zum Beitrag in ein gespeichertes Foto oder Video, in die EXIF- oder MP4-Tags, die eine Galerie oder exiftool liest. Nur JPEG-Fotos und MP4-Videos, und nur was beim Speichern bekannt ist. Bild und Ton bleiben unverändert.
 You	Du
-You paused HushGram.	Du hast HushGram pausiert.
+You paused Instagram Plus.	Du hast Instagram Plus pausiert.
 the re-signed build fix	der Fix für neu signierte Builds
 Don't send reel watch history	Reel-Wiedergabeverlauf nicht senden
 Stops telling Instagram which reels you watched or how far you got. Instagram uses that to pick your Reels. Watched reels may come back.	Instagram erfährt nicht mehr, welche Reels du gesehen hast und wie weit. Instagram nutzt das, um deine Reels auszuwählen. Gesehene Reels können wiederkommen.
@@ -363,7 +363,7 @@ Pure black dark mode isn't in this build	Rein schwarzer Dunkelmodus ist nicht in
 To make dark mode pure black instead of dark gray, which can save battery on an OLED screen, pick Pure black dark mode in Morphe Manager the next time you patch Instagram.	Damit der Dunkelmodus rein schwarz statt dunkelgrau ist, was auf einem OLED-Bildschirm Akku sparen kann, wähle beim nächsten Patchen von Instagram in Morphe Manager Rein schwarzer Dunkelmodus aus.
 the pure black dark mode	der rein schwarze Dunkelmodus
 No Play Store updates	Keine Updates aus dem Play Store
-Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later HushGram builds need Change version code too, or they won't install over this one.	Google Play bietet Metas Updates für diesen Build nicht an. Um zum normalen Instagram zurückzukehren, deinstalliere zuerst diesen, was die Daten von Instagram auf diesem Handy löscht. Spätere HushGram-Builds brauchen ebenfalls „Change version code“, sonst lassen sie sich nicht über diesen installieren.
+Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later Instagram Plus builds need Change version code too, or they won't install over this one.	Google Play bietet Metas Updates für diesen Build nicht an. Um zum normalen Instagram zurückzukehren, deinstalliere zuerst diesen, was die Daten von Instagram auf diesem Handy löscht. Spätere Instagram Plus-Builds brauchen ebenfalls „Change version code“, sonst lassen sie sich nicht über diesen installieren.
 the raised version code	der erhöhte Versionscode
 Sharing	Teilen
 Hide group buttons	Gruppen-Schaltflächen ausblenden
@@ -429,23 +429,23 @@ Updating remembered positions...	Gespeicherte Wiedergabepositionen werden aktual
 Undo cleared positions	Gelöschte Wiedergabepositionen wiederherstellen
 Clear remembered positions	Gespeicherte Wiedergabepositionen löschen
 Undo is available until %1$s.	Rückgängig ist bis %1$s verfügbar.
-HushGram remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	HushGram merkt sich 30 Tage lang, wo du in bis zu 200 Videos aufgehört hast. Tippe, um sie von diesem Gerät zu löschen.
+Instagram Plus remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	Instagram Plus merkt sich 30 Tage lang, wo du in bis zu 200 Videos aufgehört hast. Tippe, um sie von diesem Gerät zu löschen.
 Remembered playback positions restored.	Wiedergabepositionen wiederhergestellt.
 Undo has expired.	Rückgängig nicht mehr möglich.
 You cleared the remembered playback positions.	Wiedergabepositionen gelöscht.
 Couldn't update remembered playback positions.	Wiedergabepositionen nicht aktualisiert.
 Settings backup	Einstellungen sichern
-Export HushGram settings	HushGram-Einstellungen exportieren
+Export settings	Einstellungen exportieren
 Choose a file for your installed patches' settings. Accounts and history stay on this device.	Wähle eine Datei für die Einstellungen deiner installierten Patches. Konten und Verlauf bleiben auf diesem Gerät.
-Import HushGram settings	HushGram-Einstellungen importieren
+Import settings	Einstellungen importieren
 Choose a settings file. All valid choices apply together, and ones this version doesn't know are skipped. The Undo row shows how long you can undo.	Wähle eine Einstellungsdatei. Alle gültigen Einstellungen werden zusammen übernommen, unbekannte werden übersprungen. Die Zeile „Rückgängig“ zeigt, wie lange du rückgängig machen kannst.
 Undo settings import	Einstellungsimport rückgängig machen
 Undo is available until %1$s. Restarting Instagram discards Undo.	Rückgängig ist bis %1$s verfügbar. Ein Neustart von Instagram verwirft diese Möglichkeit.
 No settings import to undo.	Kein Einstellungsimport zum Rückgängigmachen.
 There's no file picker. Your settings haven't changed.	Keine Dateiauswahl. Einstellungen unverändert.
 Couldn't use that file. Your settings haven't changed.	Datei nicht nutzbar. Einstellungen unverändert.
-HushGram settings exported.	HushGram-Einstellungen exportiert.
-Couldn't export HushGram settings. Try another file.	Export fehlgeschlagen. Versuch eine andere Datei.
+Settings exported.	Einstellungen exportiert.
+Couldn't export settings. Try another file.	Export fehlgeschlagen. Versuch eine andere Datei.
 Settings restored.	Einstellungen wiederhergestellt.
 Imported %1$d settings. Skipped %2$d that this version doesn't know.	%1$d Einstellungen importiert. %2$d übersprungen, die diese Version nicht kennt.
 Imported %1$d settings.	%1$d Einstellungen importiert.
@@ -500,7 +500,7 @@ Preparing diagnostic report...	Diagnosebericht wird vorbereitet...
 Saving diagnostic report...	Diagnosebericht wird gespeichert...
 Diagnostic report saved.	Diagnosebericht gespeichert.
 Choose a file for the settings export.	Wähle eine Datei für den Einstellungsexport.
-Exporting HushGram settings...	HushGram-Einstellungen werden exportiert...
+Exporting settings...	Einstellungen werden exportiert...
 Settings export canceled.	Einstellungsexport abgebrochen.
 Round handle on the seek bar	Runden Reel-Regler anzeigen
 Adds a white round handle to the seek bar that you can drag. Ads keep their own bar.	Fügt der Suchleiste einen weißen runden Griff hinzu, den du ziehen kannst. Werbung behält ihre eigene Leiste.
@@ -524,8 +524,8 @@ Creator tools	Creator-Werkzeuge
 Home feed picker	Startseiten-Auswahl
 Custom tab	Benutzerdefinierter Tab
 Off	Aus
-Tab long presses keep Instagram's own action. Choose one to open HushGram instead.	Langes Drücken auf Tabs führt weiter die Instagram-Aktion aus. Wähle einen Tab, um stattdessen HushGram zu öffnen.
-Long press %1$s to open HushGram instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	Drücke lange auf %1$s, um HushGram statt der üblichen Tab-Aktion zu öffnen. Normales Tippen und andere Tabs bleiben gleich. Nur Tabs, die dein Konto anzeigt, können verwendet werden.
+Tab long presses keep Instagram's own action. Choose one to open Instagram Plus instead.	Langes Drücken auf Tabs führt weiter die Instagram-Aktion aus. Wähle einen Tab, um stattdessen Instagram Plus zu öffnen.
+Long press %1$s to open Instagram Plus instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	Drücke lange auf %1$s, um Instagram Plus statt der üblichen Tab-Aktion zu öffnen. Normales Tippen und andere Tabs bleiben gleich. Nur Tabs, die dein Konto anzeigt, können verwendet werden.
 A sideways swipe no longer moves you between Home, Reels and the other main tabs. Tap the tab bar instead. Stop swipe to create covers the camera.	Seitliches Wischen wechselt nicht mehr zwischen Startseite, Reels und den anderen Haupt-Tabs. Tippe stattdessen auf die Tab-Leiste. Die Kamera deckt „Wischen zum Erstellen stoppen“ ab.
 Ask for larger photos	Größere Fotos anfordern
 Empties Home on purpose, so you see the stories row and nothing under it. Profiles, Explore and Reels still show posts. Pull down on Home to refresh after changing it.	Leert die Startseite absichtlich, sodass du die Story-Leiste siehst und nichts darunter. Profile, Entdecken und Reels zeigen weiter Beiträge. Ziehe die Startseite nach dem Ändern nach unten, um sie zu aktualisieren.
@@ -562,8 +562,8 @@ New message	Neue Nachricht
 Notifications	Benachrichtigungen
 Puts every notification from Instagram in one group that shows how many it holds, so they don't fill your notification shade. Tapping one still opens it.	Legt jede Benachrichtigung von Instagram in eine Gruppe, die zeigt, wie viele sie enthält, damit sie deine Benachrichtigungsleiste nicht füllen. Ein Tippen öffnet sie weiterhin.
 Right away	Sofort
-Set a phone screen lock so HushGram can lock Instagram.	Displaysperre nötig, damit HushGram Instagram sperrt.
-Set a phone screen lock so HushGram can lock messages.	Displaysperre nötig, damit HushGram Nachrichten sperrt.
+Set a phone screen lock so Instagram Plus can lock Instagram.	Displaysperre nötig, damit Instagram Plus Instagram sperrt.
+Set a phone screen lock so Instagram Plus can lock messages.	Displaysperre nötig, damit Instagram Plus Nachrichten sperrt.
 Hides the cards between posts that ask you to rate what you saw.	Blendet die Karten zwischen Beiträgen aus, die dich bitten zu bewerten, was du gesehen hast.
 Hides the rows of products to shop and live shopping that Instagram puts between posts, and the shop tiles in Explore. Posts with tagged products don't show the shopping bag.	Blendet die Reihen mit Produkten zum Einkaufen und Live-Shopping aus, die Instagram zwischen Beiträge setzt, und die Shop-Kacheln in Entdecken. Beiträge mit markierten Produkten zeigen keine Einkaufstasche.
 Unlock	Entsperren
@@ -573,7 +573,7 @@ Your inbox and chats stay covered until your fingerprint, face or screen lock sa
 Your messages are locked	Deine Nachrichten sind gesperrt
 Allow screenshots	Screenshots erlauben
 Ghost mode partly changed. Check the switches below.	Ghost-Modus teils geändert. Schalter unten prüfen.
-Ghost mode partly changed. Check HushGram settings.	Ghost-Modus teils geändert. Sieh in HushGram nach.
+Ghost mode partly changed. Check Instagram Plus Settings.	Ghost-Modus teils geändert. Sieh in Instagram Plus nach.
 Don't report screenshots	Screenshots nicht melden
 Ghost mode	Ghost-Modus
 Ghost mode is off, and so is each of its switches.	Der Ghost-Modus ist aus, und jeder seiner Schalter auch.
@@ -656,14 +656,14 @@ Descriptions behind an info button	Beschreibungen hinter einer Info-Schaltfläch
 Shows each switch by its name alone. Tap the i next to a name to read what it does.	Zeigt jeden Schalter nur mit seinem Namen. Tippe auf das i neben einem Namen, um zu lesen, was er tut.
 Expanded	Aufgeklappt
 Collapsed	Zugeklappt
-Hide the HushGram row in Instagram's menu	HushGram-Zeile in Instagrams Menü ausblenden
+Hide the Instagram Plus row in Instagram's menu	Instagram Plus-Zeile in Instagrams Menü ausblenden
 Settings shortcut on the app icon	Einstellungsverknüpfung am App-Symbol
 Open settings from the logo	Einstellungen über das Logo öffnen
-Puts HushGram settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	Zeigt die HushGram-Einstellungen im Menü, das beim langen Drücken des Instagram-Symbols erscheint. Aus verschwinden sie aus diesem Menü.
+Puts Instagram Plus Settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	Zeigt die Instagram Plus-Einstellungen im Menü, das beim langen Drücken des Instagram-Symbols erscheint. Aus verschwinden sie aus diesem Menü.
 A long press on the Instagram logo at the top of Home opens these settings. Off, the long press goes back to Instagram.	Langes Drücken des Instagram-Logos oben auf der Startseite öffnet diese Einstellungen. Aus gehört das lange Drücken wieder Instagram.
 The last way into these settings stays on.	Der letzte Weg zu diesen Einstellungen bleibt eingeschaltet.
-No other way into HushGram is on, so the row stays in Instagram's menu.	Kein anderer Weg zu HushGram ist eingeschaltet, deshalb bleibt die Zeile in Instagrams Menü.
-Instagram's Settings and activity screen leaves out the HushGram row while another way here opens HushGram. With every other way off, the row comes back.	Solange ein anderer Weg HushGram öffnet, fehlt die HushGram-Zeile auf Instagrams Seite Einstellungen und Aktivität. Sind alle anderen Wege aus, ist die Zeile wieder da.
+No other way into Instagram Plus is on, so the row stays in Instagram's menu.	Kein anderer Weg zu Instagram Plus ist eingeschaltet, deshalb bleibt die Zeile in Instagrams Menü.
+Instagram's Settings and activity screen leaves out the Instagram Plus row while another way here opens Instagram Plus. With every other way off, the row comes back.	Solange ein anderer Weg Instagram Plus öffnet, fehlt die Instagram Plus-Zeile auf Instagrams Seite Einstellungen und Aktivität. Sind alle anderen Wege aus, ist die Zeile wieder da.
 Stop loading stories and highlights	Stories und Highlights nicht laden
 Takes the Comment button and the comment count off the posts in your feed.	Entfernt den Kommentieren-Button und die Kommentarzahl von den Beiträgen in deinem Feed.
 # context: Comments: the switch that hides the row of quick emoji above the comment box (#248). Comment box is the field where you type a comment.
@@ -779,8 +779,8 @@ Bio copied	Steckbrief kopiert
 Copy bio	Steckbrief kopieren
 Copy username and bio	Benutzername und Steckbrief kopieren
 Profile extras button	Zusatzknopf im Profil
-Puts a button next to the three dots on profiles that opens HushGram's profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	Setzt neben die drei Punkte in Profilen einen Button, der die Profilaktionen von HushGram öffnet. Braucht Profilbild speichern, Profilbild ansehen oder Benutzername und Steckbrief kopieren. Die Zeilen im Drei-Punkte-Menü bleiben auch erhalten.
-HushGram profile actions	HushGram-Profilaktionen
+Puts a button next to the three dots on profiles that opens Instagram Plus profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	Setzt neben die drei Punkte in Profilen einen Button, der die Profilaktionen von Instagram Plus öffnet. Braucht Profilbild speichern, Profilbild ansehen oder Benutzername und Steckbrief kopieren. Die Zeilen im Drei-Punkte-Menü bleiben auch erhalten.
+Instagram Plus profile actions	Instagram Plus-Profilaktionen
 Nothing to do for this profile	Hier gibt es nichts zu tun
 Couldn't copy the bio	Steckbrief konnte nicht kopiert werden
 Couldn't open the picture	Das Bild konnte nicht geöffnet werden
@@ -834,8 +834,8 @@ Teal	Petrol
 Material You	Material You
 Material You needs Android 12 or newer, so Instagram's blue stays.	Material You braucht Android 12 oder neuer, deshalb bleibt das Blau von Instagram.
 # context: Layout switch; it puts HushGram's logo on the screen Android shows while Instagram starts
-HushGram launch screen	HushGram-Startbildschirm
-Shows HushGram's logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	Zeigt auf dem Bildschirm, den du beim Start von Instagram siehst, das Logo von HushGram statt dem von Instagram, ab Android 13. Es erscheint ab dem nächsten Start.
+Instagram Plus launch screen	Instagram Plus-Startbildschirm
+Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	Zeigt auf dem Bildschirm, den du beim Start von Instagram siehst, das Logo von Instagram Plus statt dem von Instagram, ab Android 13. Es erscheint ab dem nächsten Start.
 # context: Downloads switch under Download feed videos; it adds Download cover to a feed video post's menu
 Download video covers	Video-Cover herunterladen
 Adds Download cover to the menu of a feed post with a video, and of a carousel showing one. It saves the still picture shown before the video plays, at its largest size.	Fügt dem Menü eines Feed-Beitrags mit Video und eines Karussells, das gerade ein Video zeigt, den Eintrag Cover herunterladen hinzu. Er speichert das Standbild, das vor dem Abspielen des Videos zu sehen ist, in der größten Auflösung.
@@ -914,10 +914,10 @@ Open a chat in Instagram, then come back here to pin it.	Öffne einen Chat in In
 %1$s is shown again	%1$s wird wieder angezeigt
 Pick the playback quality with a tab long press	Wiedergabequalität durch langes Drücken auf einen Tab wählen
 Tab long presses keep Instagram's own action. Choose one to pick the playback quality instead.	Langes Drücken auf Tabs führt weiter die Instagram-Aktion aus. Wähle einen Tab, um stattdessen die Wiedergabequalität zu wählen.
-Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens HushGram, that comes first.	Drücke lange auf %1$s, um statt der üblichen Tab-Aktion die Wiedergabequalität zu wählen. Normales Tippen und andere Tabs bleiben wie sie sind. Standard-Wiedergabequalität muss an sein. Öffnet derselbe Tab HushGram, hat das Vorrang.
+Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens Instagram Plus, that comes first.	Drücke lange auf %1$s, um statt der üblichen Tab-Aktion die Wiedergabequalität zu wählen. Normales Tippen und andere Tabs bleiben wie sie sind. Standard-Wiedergabequalität muss an sein. Öffnet derselbe Tab Instagram Plus, hat das Vorrang.
 Playback quality: %1$s. The next video uses it.	Qualität: %1$s. Gilt ab dem nächsten Video.
-Couldn't save the quality. Set it in HushGram settings.	Qualität nicht gespeichert. Stell sie in HushGram ein.
-Support HushGram	HushGram unterstützen
+Couldn't save the quality. Set it in Instagram Plus Settings.	Qualität nicht gespeichert. Stell sie in Instagram Plus ein.
+Support	Unterstützen
 Hide the Home tab	Den Startseite-Tab ausblenden
 Takes Home off the tab bar. Your Start tab opens wherever Home would, so pick one other than Home that's on the bar, or Home stays. Restart Instagram to see the change.	Entfernt die Startseite aus der Tab-Leiste. Dein Starttab öffnet sich überall dort, wo sonst die Startseite käme. Wähle also einen anderen Starttab als die Startseite, der in der Leiste ist, sonst bleibt die Startseite. Starte Instagram neu, um die Änderung zu sehen.
 Hide the Search tab	Den Suche-Tab ausblenden
@@ -1039,7 +1039,7 @@ Hides the status bar and the navigation bar while your messages or a chat shows.
 Hide Notes on profile pictures	Notizen auf Profilbildern ausblenden
 Takes the Notes bubble off profile pictures, yours included. Notes in Messages stay as they are.	Entfernt die Notizblase von Profilbildern, auch von deinem. Notizen in Nachrichten bleiben, wie sie sind.
 # context: the line that opens a category's page in HushGram settings, under the page title
-How you open HushGram and lay out settings.	Wie du HushGram öffnest und die Einstellungen anordnest.
+How you open Instagram Plus and lay out settings.	Wie du Instagram Plus öffnest und die Einstellungen anordnest.
 Hide ads and share less with Instagram.	Werbung ausblenden und weniger mit Instagram teilen.
 Choose what Home shows and how it behaves.	Wähle, was die Startseite zeigt und wie sie sich verhält.
 Control where Meta AI appears.	Bestimme, wo Meta AI erscheint.
@@ -1059,10 +1059,10 @@ Save photos, videos and more, and choose where they go.	Speichere Fotos, Videos 
 Stop background work Instagram doesn't need.	Stoppe Hintergrundarbeit, die Instagram nicht braucht.
 Stop Instagram from saying this version is too old.	Verhindere, dass Instagram diese Version für zu alt erklärt.
 Chosen when you patched, so Pause leaves them on. Patch again to change them.	Beim Patchen gewählt, daher lässt die Pause sie an. Patche erneut, um sie zu ändern.
-Save your HushGram choices to a file, or bring them back.	Speichere deine HushGram-Auswahl in einer Datei oder hol sie zurück.
+Save your Instagram Plus choices to a file, or bring them back.	Speichere deine Instagram Plus-Auswahl in einer Datei oder hol sie zurück.
 Your version, the source code and licenses.	Deine Version, der Quellcode und die Lizenzen.
 Open settings with a long press on your profile's menu	Einstellungen durch langes Drücken auf das Menü deines Profils öffnen
-A long press on the menu button, the three lines at the top right of your own profile, opens HushGram. A tap still opens Instagram's menu, and other profiles stay the same.	Langes Drücken auf die Menütaste, die drei Striche oben rechts in deinem eigenen Profil, öffnet HushGram. Ein Tippen öffnet weiter Instagrams Menü, und andere Profile bleiben, wie sie sind.
+A long press on the menu button, the three lines at the top right of your own profile, opens Instagram Plus. A tap still opens Instagram's menu, and other profiles stay the same.	Langes Drücken auf die Menütaste, die drei Striche oben rechts in deinem eigenen Profil, öffnet Instagram Plus. Ein Tippen öffnet weiter Instagrams Menü, und andere Profile bleiben, wie sie sind.
 Hide the top bar on the Reels tab	Obere Leiste im Reels-Tab ausblenden
 Takes away the row at the top of the Reels tab, with the Reels title, the camera button and anything else Instagram puts there. Reels you open from a profile, a post or a chat keep theirs. The camera still opens from Home.	Entfernt die Zeile oben im Reels-Tab mit dem Reels-Titel, der Kamera-Schaltfläche und allem anderen, was Instagram dort zeigt. Reels, die du über ein Profil, einen Beitrag oder einen Chat öffnest, behalten sie. Die Kamera öffnet sich weiterhin über die Startseite.
 Hide the Create button on reels	Erstellen-Button bei Reels ausblenden
@@ -1092,14 +1092,14 @@ Don't vibrate in clear mode	Im klaren Modus nicht vibrieren
 Stops the short buzz Instagram plays when a reel opens in clear mode. With Keep clear mode on, that's every swipe.	Stoppt das kurze Vibrieren, das Instagram abspielt, wenn ein Reel im klaren Modus öffnet. Mit Klaren Modus anlassen ist das bei jedem Wischen.
 Unlock with	Entsperren mit
 Phone lock	Handy-Sperre
-HushGram PIN	HushGram-PIN
+Settings PIN	Einstellungen-PIN
 A PIN you set here unlocks your messages, in place of your screen lock. It can't be recovered, only cleared by clearing Instagram's storage.	Eine PIN, die du hier festlegst, entsperrt deine Nachrichten statt der Bildschirmsperre. Sie lässt sich nicht wiederherstellen, nur durch Löschen des Instagram-Speichers entfernen.
 Your fingerprint, face or screen lock unlocks your messages.	Fingerabdruck, Gesicht oder Bildschirmsperre deines Handys entsperrt deine Nachrichten.
 Fingerprint or face only	Nur Fingerabdruck oder Gesicht
 Only your fingerprint or face unlocks your messages. If the phone has none set up, your screen lock does.	Nur dein Fingerabdruck oder Gesicht entsperrt deine Nachrichten. Ist auf dem Handy keins eingerichtet, tut es deine Bildschirmsperre.
 Add a fingerprint or face in your phone's settings first.	Richte zuerst in den Einstellungen deines Handys einen Fingerabdruck oder ein Gesicht ein.
 This phone has no fingerprint or face unlock to use.	Dieses Handy hat keine Entsperrung per Fingerabdruck oder Gesicht, die sich nutzen lässt.
-Your phone won't let HushGram use your fingerprint or face right now. Check its fingerprint and face settings.	Dein Handy lässt HushGram deinen Fingerabdruck oder dein Gesicht gerade nicht nutzen. Sieh in den Einstellungen für Fingerabdruck und Gesicht nach.
+Your phone won't let Instagram Plus use your fingerprint or face right now. Check its fingerprint and face settings.	Dein Handy lässt Instagram Plus deinen Fingerabdruck oder dein Gesicht gerade nicht nutzen. Sieh in den Einstellungen für Fingerabdruck und Gesicht nach.
 Set or change the 4 to 8 digit PIN. It stays on this phone and isn't in a backup.	Lege die PIN mit 4 bis 8 Ziffern fest oder ändere sie. Sie bleibt auf diesem Handy und ist in keinem Backup.
 PIN saved.	PIN gespeichert.
 PIN	PIN
@@ -1113,7 +1113,7 @@ Set a PIN	PIN festlegen
 Use 4 to 8 digits.	Nimm 4 bis 8 Ziffern.
 The PINs don't match.	Die PINs stimmen nicht überein.
 Couldn't save the PIN.	Die PIN konnte nicht gespeichert werden.
-The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets HushGram's settings. A saved settings backup brings the rest back, but not the PIN.	Die PIN lässt sich nicht wiederherstellen. Zum Entfernen löschst du den Instagram-Speicher in den Android-App-Einstellungen. Dabei wirst du abgemeldet und die HushGram-Einstellungen werden zurückgesetzt. Ein gespeichertes Einstellungs-Backup bringt den Rest zurück, aber nicht die PIN.
+The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets Instagram Plus settings. A saved settings backup brings the rest back, but not the PIN.	Die PIN lässt sich nicht wiederherstellen. Zum Entfernen löschst du den Instagram-Speicher in den Android-App-Einstellungen. Dabei wirst du abgemeldet und die Instagram Plus-Einstellungen werden zurückgesetzt. Ein gespeichertes Einstellungs-Backup bringt den Rest zurück, aber nicht die PIN.
 Open app info	App-Info öffnen
 Hide 'Are you interested?' bubbles	Fragen „Interessiert dich dieser Beitrag?“ ausblenden
 Hides the bubble under a post that asks 'Are you interested in this post?' with Not interested and Interested buttons. Nothing is answered for you.	Blendet die Blase unter einem Beitrag aus, die „Interessiert dich dieser Beitrag?“ fragt, mit den Schaltflächen „Kein Interesse“ und „Interessiert“. Für dich wird nichts beantwortet.
@@ -1143,9 +1143,9 @@ A carousel post's page sits a little in from the edges, with the start of the ne
 Large	Groß
 Small	Klein
 # context: a toast shown once when safe mode has paused HushGram on its own after crashes at start
-Instagram kept crashing, so HushGram paused itself.	Instagram stürzte oft ab, daher pausiert HushGram.
+Instagram kept crashing, so Instagram Plus paused itself.	Instagram stürzte oft ab, daher pausiert Instagram Plus.
 # context: the second toast after safe mode paused HushGram, saying where to turn it back on
-Turn it back on in HushGram settings.	In HushGram-Einstellungen wieder einschalten.
+Turn it back on in Instagram Plus Settings.	In Instagram Plus-Einstellungen wieder einschalten.
 # context: a toast when a save couldn't reach Instagram's servers or the connection dropped
 Download failed. Check your connection and try again.	Download fehlgeschlagen. Prüfe deine Verbindung und versuche es noch einmal.
 # context: a toast when a save arrived incomplete or couldn't be written to the phone
@@ -1273,7 +1273,7 @@ Ghost mode needs at least one switch to turn.	Ghost-Modus braucht mindestens ein
 # context: Ghost mode: turning it on or off with a long press on a tab (#255). %1$s is a tab's name
 Turn Ghost mode on or off with a tab long press	Ghost-Modus durch langes Drücken auf einen Tab ein- oder ausschalten
 Tab long presses keep Instagram's own action. Choose one to turn Ghost mode on or off instead.	Langes Drücken auf Tabs führt weiter die Instagram-Aktion aus. Wähle einen Tab, um stattdessen den Ghost-Modus ein- oder auszuschalten.
-Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens HushGram or picks the playback quality, that comes first.	Drücke lange auf %1$s, um statt der üblichen Tab-Aktion den Ghost-Modus ein- oder auszuschalten, und eine kurze Meldung sagt, ob er jetzt an oder aus ist. Normales Tippen und andere Tabs bleiben wie sie sind. Öffnet derselbe Tab HushGram oder wählt er die Wiedergabequalität, hat das Vorrang.
+Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens Instagram Plus or picks the playback quality, that comes first.	Drücke lange auf %1$s, um statt der üblichen Tab-Aktion den Ghost-Modus ein- oder auszuschalten, und eine kurze Meldung sagt, ob er jetzt an oder aus ist. Normales Tippen und andere Tabs bleiben wie sie sind. Öffnet derselbe Tab Instagram Plus oder wählt er die Wiedergabequalität, hat das Vorrang.
 Buttons on the share sheet	Schaltflächen im Teilen-Fenster
 Every button under the people on the share sheet shows. Untick the ones you don't use.	Alle Schaltflächen unter den Personen im Teilen-Fenster werden angezeigt. Hake die ab, die du nicht brauchst.
 Left off the share sheet: %1$s.	Aus dem Teilen-Fenster entfernt: %1$s.
@@ -1373,7 +1373,7 @@ Every row of Instagram's Settings and activity shows. Untick the ones you don't 
 %1$d rows are left off Instagram's Settings and activity.	%1$d Zeilen fehlen in Instagrams Einstellungen und Aktivitäten.
 Open Settings and activity in Instagram once, then come back here. Its rows show up in this list to untick.	Öffne in Instagram einmal Einstellungen und Aktivitäten und komm dann hierher zurück. Die Zeilen erscheinen dann in dieser Liste zum Abhaken.
 Date in backup file names	Datum in Sicherungsdateinamen
-Add the current date and time when exporting settings. Off keeps HushGram-settings.json.	Fügt beim Export der Einstellungen das aktuelle Datum und die Uhrzeit hinzu. Aus behält HushGram-settings.json bei.
+Add the current date and time when exporting settings. Off keeps settings.json.	Fügt beim Export der Einstellungen das aktuelle Datum und die Uhrzeit hinzu. Aus behält settings.json bei.
 %1$s is the post's shortcode. Stories and unknown posts leave it out. Using it also names photos.	%1$s ist der Kurzcode des Beitrags. Bei Storys und unbekannten Beiträgen entfällt er. Mit diesem Platzhalter gilt die Vorlage auch für Fotos.
 Videos and photos use %1$s. Unknown codes are left out.	Videos und Fotos verwenden %1$s. Unbekannte Codes werden weggelassen.
 Tab bar layout	Layout der Tab-Leiste
@@ -1386,11 +1386,11 @@ Instagram picks the tab bar for your account, and it can switch between the two 
 Group or mute Instagram's notifications, and take suggestions off the Notifications page.	Gruppiere Instagrams Benachrichtigungen oder schalte sie stumm und nimm Vorschläge von der Benachrichtigungsseite.
 Take suggestions and Featured off the Notifications page.	Nimm Vorschläge und „Empfohlen“ von der Benachrichtigungsseite.
 Version warnings	Versionswarnungen
-Pause HushGram, lock these settings, or make a report when something breaks.	HushGram pausieren, diese Einstellungen sperren oder einen Bericht erstellen, wenn etwas nicht funktioniert.
+Pause Instagram Plus, lock these settings, or make a report when something breaks.	Instagram Plus pausieren, diese Einstellungen sperren oder einen Bericht erstellen, wenn etwas nicht funktioniert.
 Choose a folder	Ordner auswählen
 Saves go to Movies and Pictures. Pick any folder instead, a hidden one too, and every photo and video goes there.	Speicherungen landen in Movies und Pictures. Wähle stattdessen einen beliebigen Ordner, auch einen versteckten, und jedes Foto und Video landet dort.
 Photos and videos go to %1$s. Tap to pick another folder.	Fotos und Videos landen in %1$s. Tippe, um einen anderen Ordner zu wählen.
-HushGram can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	HushGram erreicht %1$s nicht mehr, deshalb landen Speicherungen in Movies und Pictures. Wähle den Ordner noch einmal.
+Instagram Plus can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	Instagram Plus erreicht %1$s nicht mehr, deshalb landen Speicherungen in Movies und Pictures. Wähle den Ordner noch einmal.
 Use Movies and Pictures	Movies und Pictures verwenden
 Stop using the folder you picked. Saves go back to Movies and Pictures.	Den gewählten Ordner nicht mehr verwenden. Speicherungen landen wieder in Movies und Pictures.
 Couldn't use that folder. Saves go where they did.	Ordner nicht nutzbar. Gespeichert wird wie bisher.
@@ -1414,7 +1414,7 @@ Stops the notification types you tick, even ones Instagram's own notification se
 Instagram hasn't set up its notification types on this phone yet. Open Instagram once, then come back here.	Instagram hat seine Benachrichtigungsarten auf diesem Telefon noch nicht eingerichtet. Öffne Instagram einmal und komm dann hierher zurück.
 Unmute all	Alle Stummschaltungen aufheben
 Settings button on Home's header	Einstellungen-Taste oben auf der Startseite
-Adds a gear at the top of Home that opens HushGram settings. Restart Instagram to see the change.	Fügt oben auf der Startseite ein Zahnrad hinzu, das die HushGram-Einstellungen öffnet. Starte Instagram neu, um die Änderung zu sehen.
+Adds a gear at the top of Home that opens Instagram Plus Settings. Restart Instagram to see the change.	Fügt oben auf der Startseite ein Zahnrad hinzu, das die Instagram Plus-Einstellungen öffnet. Starte Instagram neu, um die Änderung zu sehen.
 Download button on stories	Download-Taste bei Stories
 Puts a Download button at the top of a story, beside the three dots. One tap saves the photo or video in front, the same as Download in the menu.	Setzt oben in einer Story neben die drei Punkte eine Download-Taste. Ein Tipp speichert das Foto oder Video, das du gerade siehst, genau wie Download im Menü.
 Start reels muted	Reels stumm starten
@@ -1535,8 +1535,8 @@ Tap to see all %1$d, by kind or by search.	Tippen, um alle %1$d zu sehen, nach A
 Instagram gradient on dark	Instagram-Verlauf auf Dunkel
 Retro Instagram	Retro-Instagram
 Menu button on Home's header	Menütaste oben auf der Startseite
-Adds a menu button at the top of Home with your viewing history, Ghost mode and HushGram settings. Restart Instagram to see the change.	Fügt oben auf der Startseite eine Menütaste mit deinem Verlauf, dem Ghost-Modus und den HushGram-Einstellungen hinzu. Starte Instagram neu, um die Änderung zu sehen.
-HushGram menu	HushGram-Menü
+Adds a menu button at the top of Home with your viewing history, Ghost mode and Instagram Plus Settings. Restart Instagram to see the change.	Fügt oben auf der Startseite eine Menütaste mit deinem Verlauf, dem Ghost-Modus und den Instagram Plus-Einstellungen hinzu. Starte Instagram neu, um die Änderung zu sehen.
+Instagram Plus menu	Instagram Plus-Menü
 Seek bar button on feed videos	Suchleisten-Taste in Feed-Videos
 Adds a small button at the bottom left of a feed video that shows or hides its seek bar. It works with Seek bar on feed videos on or off.	Fügt unten links an einem Feed-Video eine kleine Taste hinzu, die seine Suchleiste ein- oder ausblendet. Sie funktioniert mit Suchleiste in Feed-Videos an oder aus.
 Seek bar	Suchleiste
@@ -1603,10 +1603,10 @@ That isn't a picture.	Das ist kein Bild.
 That picture is over %1$d MB.	Das Bild ist größer als %1$d MB.
 Couldn't save the picture.	Das Bild konnte nicht gespeichert werden.
 Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Jump to the first message or Jump to a date. The chat loads its older messages on its own, with a count and a Cancel button.	Öffne einen Chat, tippe oben auf die Uhr-Taste neben den Anruf-Tasten oder halte den Namen des Chats gedrückt und wähle Zur ersten Nachricht springen oder Zu einem Datum springen. Der Chat lädt seine älteren Nachrichten von selbst, mit Zähler und Abbrechen-Taste.
-Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, HushGram folder, one line per message.	Öffne einen Chat, tippe oben auf die Uhr-Taste neben den Anruf-Tasten oder halte den Namen des Chats gedrückt und wähle Chat exportieren. Der ganze Chat wird als Textdatei im Ordner HushGram unter Downloads gespeichert, eine Zeile pro Nachricht.
+Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, Instagram folder, one line per message.	Öffne einen Chat, tippe oben auf die Uhr-Taste neben den Anruf-Tasten oder halte den Namen des Chats gedrückt und wähle Chat exportieren. Der ganze Chat wird als Textdatei im Ordner Instagram Plus unter Downloads gespeichert, eine Zeile pro Nachricht.
 Instagram stopped loading older messages.	Instagram lädt keine älteren Nachrichten mehr.
 Black settings page	Schwarze Einstellungsseite
-Black rows and dialogs, HushGram's name at the top, and each category on one line.	Schwarze Zeilen und Dialoge, der Name HushGram oben und jede Kategorie in einer Zeile.
+Black rows and dialogs, Instagram Plus at the top, and each category on one line.	Schwarze Zeilen und Dialoge, der Name Instagram Plus oben und jede Kategorie in einer Zeile.
 Mark as read	Als gelesen markieren
 Nothing to mark as read	Nichts als gelesen zu markieren
 Mark as read button in chats	Als-gelesen-Taste in Chats
@@ -1614,7 +1614,7 @@ A check mark shows at the top of a chat while it hasn't told the other person yo
 # context: a switch on the Messages page and the eye it adds to a chat's header (#13). "Seen" is Instagram's own read receipt label in a chat. A tap on the eye opens a menu with the three rows after the summary; the toasts and the eye's spoken label say what the chat does now.
 Choose Seen in each chat	Gesehen für jeden Chat einzeln wählen
 An eye at the top of each chat holds or sends Seen in that chat alone, whatever Read messages without the seen receipt says. Changing it doesn't send anything by itself.	Ein Auge oben in jedem Chat hält Gesehen nur in diesem Chat zurück oder sendet es, egal was Nachrichten ohne Gesehen-Bestätigung lesen sagt. Eine Änderung sendet von selbst nichts.
-Use the HushGram setting	HushGram-Einstellung verwenden
+Use the Instagram Plus setting	Instagram Plus-Einstellung verwenden
 Hold Seen in this chat	Gesehen in diesem Chat zurückhalten
 Send Seen in this chat	Gesehen in diesem Chat senden
 Seen held in this chat	Gesehen in diesem Chat zurückgehalten
@@ -1773,3 +1773,9 @@ Playing in the background	Läuft im Hintergrund
 Paused in the background	Im Hintergrund pausiert
 Play	Abspielen
 Stop	Stoppen
+iOS tab bounce animation	iOS-Tab-Hüpf-Animation
+Subtle spring bounce on tab icons when tapped, matching iOS Instagram's tactile feel.	Dezenter Feder-Rebound auf Tab-Symbolen beim Antippen, der dem haptischen Gefühl von iOS Instagram entspricht.
+iOS tab bar top border	Obere Haarlinie der iOS-Leiste
+Draws a subtle 0.5dp translucent hairline divider along the top of the tab bar.	Zeichnet eine dezente, 0,5 dp feine, durchscheinende Haarlinie am oberen Rand der Tableiste.
+Tap active tab to scroll to top	Aktiven Tab antippen, um nach oben zu scrollen
+Tapping the currently active tab smoothly scrolls the current feed or list to the top.	Durch Antippen des aktuell aktiven Tabs wird der aktuelle Feed oder die Liste sanft nach ganz oben gescrollt.

@@ -21,7 +21,7 @@ internal const val SKIP_AD_DATA_REMINDER = "$AD_DATA_REMINDER->skip(Ljava/lang/S
 val skipAdDataReminderPatch = bytecodePatch(
     name = "Skip the ad data reminder",
     description = "Stops Instagram's reminder to review whether it can process your data for ads from opening by itself. " +
-        "Your ad choice doesn't change and nothing is answered for you. Starts off. Turn it on in HushGram settings > Ads and privacy.",
+        "Your ad choice doesn't change and nothing is answered for you. Starts off. Turn it on in Instagram Plus Settings > Ads and privacy.",
 ) {
     category("Privacy")
     dependsOn(settingsPatch, instagramExtensionPatch)

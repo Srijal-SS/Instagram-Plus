@@ -105,7 +105,7 @@ val pickAppIconPatch = bytecodePatch(
         "Instagram's glyph on black, on plum, or in black on white, a hand-drawn Instagram glyph on white, " +
         "Instagram's gradient glyph on dark, the old retro camera icon, or Instagram's glyph in pink on pale pink. " +
         "The new icon shows once you leave Instagram, and you may need to add it to " +
-        "your home screen again from the app drawer. Starts on Instagram's own. Pick one in HushGram settings > Layout.",
+        "your home screen again from the app drawer. Starts on Instagram's own. Pick one in Instagram Plus Settings > Layout.",
     default = true,
 ) {
     category("Interface")

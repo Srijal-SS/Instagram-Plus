@@ -68,7 +68,7 @@ internal const val LAYOUT_BUILDER = "Landroid/text/StaticLayout\$Builder;->obtai
     "Landroid/text/StaticLayout\$Builder;"
 
 /**
- * Adds the font files picked in HushGram settings to the story text editor's row of fonts, before
+ * Adds the font files picked in Instagram Plus Settings to the story text editor's row of fonts, before
  * Instagram's paid section. Its own fonts all stay (#275). Each is a format Instagram's import would
  * make for that file, so the editor and the finished sticker draw it the way they draw an imported
  * font. In the default selection with its switch off; adding a font in settings turns it on.
@@ -78,7 +78,7 @@ val storyFontsPatch = bytecodePatch(
     name = "Story text fonts",
     description = "Adds fonts you pick from your phone (.ttf or .otf files) to the story text editor alongside Instagram's " +
         "own fonts, and can draw the emoji in story text from an emoji font file you pick. Starts off. Set both up in " +
-        "HushGram settings > Stories.",
+        "Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
     dependsOn(settingsPatch, instagramExtensionPatch)

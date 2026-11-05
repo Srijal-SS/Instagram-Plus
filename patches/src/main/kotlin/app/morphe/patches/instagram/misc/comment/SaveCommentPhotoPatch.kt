@@ -36,7 +36,7 @@ val saveCommentPhotoPatch = bytecodePatch(
         "Instagram sent. A GIF is saved as a .gif in Pictures/Instagram, taken from Instagram's own copy, not " +
         "Giphy. If Instagram lists only an animated WebP or an MP4 for it, you get that file instead, and an MP4 " +
         "goes in Movies/Instagram like a video. It can also add a GIF reply to a comment with a GIF, sending " +
-        "that same GIF back as your reply. Starts off. Turn it on in HushGram settings > Comments.",
+        "that same GIF back as your reply. Starts off. Turn it on in Instagram Plus Settings > Comments.",
     default = true,
 ) {
     category("Downloads")

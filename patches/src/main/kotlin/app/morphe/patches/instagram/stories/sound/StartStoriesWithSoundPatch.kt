@@ -74,7 +74,7 @@ private fun refuse(detail: String): Nothing = throw PatchException("$PATCH: $det
 val startStoriesWithSoundPatch = bytecodePatch(
     name = "Start stories with sound",
     description = "Opens stories with their sound on, the same as tapping Instagram's speaker. Your phone's ringer " +
-        "and volume still count. Starts off. Turn it on in HushGram settings > Stories.",
+        "and volume still count. Starts off. Turn it on in Instagram Plus Settings > Stories.",
 ) {
     category("Playback")
     dependsOn(settingsPatch, instagramExtensionPatch)

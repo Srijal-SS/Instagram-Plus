@@ -97,7 +97,7 @@ val fullScreenBarsPatch = bytecodePatch(
     description = "Hides the status bar and the navigation bar while Reels shows, and optionally while Home or your messages do. " +
         "Swipe in from the edge to bring them back for a moment. Back and the keyboard work as usual. " +
         "It can also show stories over the whole screen on tall phones. " +
-        "Starts off. Turn it on in HushGram settings > Reels (Full screen Reels), Feed (Full screen Home), " +
+        "Starts off. Turn it on in Instagram Plus Settings > Reels (Full screen Reels), Feed (Full screen Home), " +
         "Messages (Full screen Messages) and Stories (Stories fill the screen).",
 ) {
     category("Reels")

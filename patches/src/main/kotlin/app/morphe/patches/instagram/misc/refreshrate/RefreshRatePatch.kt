@@ -24,7 +24,7 @@ val refreshRatePatch = bytecodePatch(
     name = "Use the highest refresh rate",
     description = "Asks Android to run Instagram at your screen's fastest refresh rate, at the same resolution, " +
         "so scrolling looks smoother on a 90 or 120 Hz phone. Some phones keep their own limit for apps. " +
-        "Starts off. Turn it on in HushGram settings > Layout.",
+        "Starts off. Turn it on in Instagram Plus Settings > Layout.",
 ) {
     category("Fixes")
     dependsOn(settingsPatch, instagramExtensionPatch)

@@ -42,7 +42,7 @@ internal val FLAG_PARAMETER = listOf("Ljava/lang/String;", "Z")
 val dontReportBlendVisitsPatch = bytecodePatch(
     name = "Don't report Blend visits",
     description = "Stops Instagram from telling a chat that you opened its Blend. Ghost mode, at the top of Ads " +
-        "and privacy, turns it on with the others. Starts off. Turn it on in HushGram settings > Messages.",
+        "and privacy, turns it on with the others. Starts off. Turn it on in Instagram Plus Settings > Messages.",
     default = true,
 ) {
     category("Ghost mode")

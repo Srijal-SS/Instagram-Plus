@@ -6,7 +6,7 @@
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Mục này được đặt khi bạn vá nên Tạm dừng không tắt được. Để loại trừ, hãy vá lại và bỏ bản vá đó ra.
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Các mục này được đặt khi bạn vá nên Tạm dừng không tắt được. Để loại trừ một mục, hãy vá lại và bỏ bản vá ghi trong ngoặc sau mục đó ra.
 A diagnostic report is already being saved.	Một báo cáo chẩn đoán đang được lưu.
-A file named %1$s in %2$s paused HushGram.	Một tệp tên %1$s trong %2$s đã tạm dừng HushGram.
+A file named %1$s in %2$s paused Instagram Plus.	Một tệp tên %1$s trong %2$s đã tạm dừng Instagram Plus.
 About	Giới thiệu
 Add the source to saved photos and videos	Thêm nguồn vào ảnh và video đã lưu
 Ads and privacy	Quảng cáo và quyền riêng tư
@@ -14,7 +14,7 @@ Asks Android to run Instagram at your screen's fastest refresh rate, at the same
 Back	Quay lại
 Before you sign in	Trước khi đăng nhập
 Cancel	Hủy
-Chat saved in Downloads/HushGram.	Đã lưu cuộc trò chuyện vào Downloads/HushGram.
+Chat saved in Downloads/Instagram.	Đã lưu cuộc trò chuyện vào Downloads/Instagram Plus.
 Chat saved in the app's Download folder.	Đã lưu cuộc trò chuyện vào thư mục Download.
 Clear diagnostic data	Xóa dữ liệu chẩn đoán
 Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in details are left out. Check it for other private text before you share it.	Sao chép báo cáo nhanh hoặc lưu báo cáo đầy đủ vào %1$s. Liên kết, ID, cookie và thông tin đăng nhập đã được loại bỏ. Hãy kiểm tra xem còn văn bản riêng tư nào khác không trước khi chia sẻ.
@@ -25,7 +25,7 @@ Couldn't find this chat's messages.	Không tìm thấy tin nhắn của cuộc t
 Couldn't put back the diagnostic data. Try again.	Không khôi phục được dữ liệu chẩn đoán. Hãy thử lại.
 Couldn't save the chat.	Không lưu được cuộc trò chuyện.
 Couldn't start the report export. Try again shortly.	Không xuất được báo cáo. Thử lại sau ít phút.
-Couldn't turn HushGram back on. Try again.	Không bật lại được HushGram. Hãy thử lại.
+Couldn't turn Instagram Plus back on. Try again.	Không bật lại được Instagram Plus. Hãy thử lại.
 Debug logging	Ghi nhật ký gỡ lỗi
 Diagnostic data cleared. Tap again to put it back.	Đã xóa dữ liệu chẩn đoán. Nhấn lại để khôi phục.
 Diagnostic data put back.	Đã khôi phục dữ liệu chẩn đoán.
@@ -75,16 +75,16 @@ GPL-3.0, with the notices of the projects this is built on	GPL-3.0, kèm thông 
 Gray out stories you've watched	Làm xám các tin bạn đã xem
 Hide ads	Ẩn quảng cáo
 How far a photo or video you're saving has got, with a button to cancel it	Tiến độ lưu ảnh hoặc video, kèm nút để hủy
-HushGram %1$s on Instagram %2$s	HushGram %1$s trên Instagram %2$s
-HushGram is on	HushGram đang bật
-HushGram is paused	HushGram đang tạm dừng
-HushGram pauses when Instagram restarts.	HushGram tạm dừng cho đến khi Instagram khởi động lại.
-HushGram saves	HushGram lưu
-HushGram settings	Cài đặt HushGram
-HushGram settings couldn't open	Không mở được cài đặt HushGram
-HushGram settings are locked	Cài đặt HushGram đang bị khóa
-HushGram turns back on when Instagram restarts.	HushGram bật lại khi Instagram khởi động lại.
-Instagram crashed or froze within a minute of starting three times in a row, so HushGram paused itself.	Instagram sập hoặc đứng trong vòng một phút sau khi khởi động ba lần liên tiếp nên HushGram đã tự tạm dừng.
+Instagram Plus %1$s on Instagram %2$s	Instagram Plus %1$s trên Instagram %2$s
+Instagram Plus is on	Instagram Plus đang bật
+Instagram Plus is paused	Instagram Plus đang tạm dừng
+Instagram Plus pauses when Instagram restarts.	Instagram Plus tạm dừng cho đến khi Instagram khởi động lại.
+Instagram Plus saves	Instagram Plus lưu
+Instagram Plus Settings	Cài đặt Instagram Plus
+Instagram Plus Settings couldn't open	Không mở được cài đặt Instagram Plus
+Instagram Plus Settings are locked	Cài đặt Instagram Plus đang bị khóa
+Instagram Plus turns back on when Instagram restarts.	Instagram Plus bật lại khi Instagram khởi động lại.
+Instagram crashed or froze within a minute of starting three times in a row, so Instagram Plus paused itself.	Instagram sập hoặc đứng trong vòng một phút sau khi khởi động ba lần liên tiếp nên Instagram Plus đã tự tạm dừng.
 Instagram stops showing the screen that says this version is too old. A patched build doesn't update on its own, so this keeps it usable.	Instagram không hiện màn hình báo phiên bản này đã quá cũ. Bản đã vá không tự cập nhật nên cách này giúp bạn vẫn dùng được.
 Instagram's own checks of who signed the app keep passing on this patched build.	Các bước kiểm tra chữ ký ứng dụng của chính Instagram vẫn được vượt qua trên bản đã vá này.
 Joining the picture and sound	Đang ghép hình và âm thanh
@@ -98,7 +98,7 @@ No app can open the bug report.	Không có ứng dụng nào mở được báo 
 Not saved: that isn't an Instagram photo or video	Chưa lưu: đây không phải ảnh hay video Instagram
 Not saved: the file is over 512 MB	Chưa lưu: tệp lớn hơn 512 MB
 OK	OK
-Pause HushGram	Tạm dừng HushGram
+Pause Instagram Plus	Tạm dừng Instagram Plus
 Pause and diagnostics	Tạm dừng và chẩn đoán
 Instagram accepts this build	Instagram chấp nhận bản này
 Record patch activity and show errors for a bug report. Leave off during normal use.	Ghi lại hoạt động của bản vá và hiện lỗi để báo cáo sự cố. Hãy tắt khi dùng bình thường.
@@ -116,7 +116,7 @@ Saved. Restart Instagram to apply this change.	Đã lưu. Hãy khởi động l�
 Saving a photo	Đang lưu ảnh
 Saving a video	Đang lưu video
 Saving...	Đang lưu...
-Saving... You can cancel from Downloads in HushGram settings.	Đang lưu... Bạn có thể hủy trong Tải xuống ở cài đặt HushGram.
+Saving... You can cancel from Downloads in Instagram Plus Settings.	Đang lưu... Bạn có thể hủy trong Tải xuống ở cài đặt Instagram Plus.
 Set when you patched	Đặt lúc vá
 Settings couldn't open	Không mở được cài đặt
 Settings couldn't refresh completely. Reopen settings and try again.	Cài đặt chưa làm mới xong. Hãy mở lại cài đặt và thử lại.
@@ -129,7 +129,7 @@ Couldn't hide this notice. Try again.	Không ẩn được thông báo này. Hã
 Tap to turn it back on.	Nhấn để bật lại.
 The report isn't saved yet. Try again in a moment.	Chưa lưu được báo cáo chẩn đoán. Thử lại sau giây lát.
 Couldn't save the diagnostic report. Try again.	Không lưu được báo cáo chẩn đoán. Hãy thử lại.
-The file %1$s couldn't be removed. Delete it from %2$s to turn HushGram back on.	Không xóa được tệp %1$s. Hãy xóa tệp đó khỏi %2$s để bật lại HushGram.
+The file %1$s couldn't be removed. Delete it from %2$s to turn Instagram Plus back on.	Không xóa được tệp %1$s. Hãy xóa tệp đó khỏi %2$s để bật lại Instagram Plus.
 Couldn't finish that change. Showing what's saved.	Cài đặt chưa cập nhật xong. Giá trị đã lưu đang hiện.
 There's no diagnostic data to clear.	Không có dữ liệu chẩn đoán để xóa.
 There's no diagnostic data to put back.	Không có dữ liệu chẩn đoán để khôi phục.
@@ -140,7 +140,7 @@ Version %1$s for Instagram %2$s	Phiên bản %1$s cho Instagram %2$s
 While you view anonymously, a story you've watched turns gray and moves to the end of the row, on this phone only. Instagram still isn't told you watched it.	Khi bạn xem ẩn danh, tin bạn đã xem sẽ chuyển sang màu xám và dời xuống cuối hàng, chỉ trên điện thoại này. Instagram vẫn không biết bạn đã xem.
 Writes the account that posted, the post date and a link to the post into a saved photo or video, in the EXIF or MP4 tags a gallery or exiftool reads. JPEG photos and MP4 videos only, and only what the save knows. The picture and the sound are unchanged.	Ghi tài khoản đăng, ngày đăng và liên kết đến bài viết vào ảnh hoặc video đã lưu, trong thẻ EXIF hoặc MP4 mà thư viện ảnh hoặc exiftool đọc được. Chỉ áp dụng cho ảnh JPEG và video MP4, và chỉ gồm những gì bản lưu biết. Hình ảnh và âm thanh không đổi.
 You	Bạn
-You paused HushGram.	Bạn đã tạm dừng HushGram.
+You paused Instagram Plus.	Bạn đã tạm dừng Instagram Plus.
 the re-signed build fix	bản sửa cho bản dựng đã ký lại
 Don't send reel watch history	Không gửi lịch sử xem reel
 Stops telling Instagram which reels you watched or how far you got. Instagram uses that to pick your Reels. Watched reels may come back.	Ngừng báo cho Instagram biết bạn đã xem reel nào hoặc xem đến đâu. Instagram dùng thông tin đó để chọn Reels cho bạn. Các reel đã xem có thể xuất hiện lại.
@@ -362,7 +362,7 @@ Pure black dark mode isn't in this build	Bản này không có Chế độ tối
 To make dark mode pure black instead of dark gray, which can save battery on an OLED screen, pick Pure black dark mode in Morphe Manager the next time you patch Instagram.	Để chế độ tối thành đen hoàn toàn thay vì xám đậm, giúp tiết kiệm pin trên màn hình OLED, hãy chọn Chế độ tối đen hoàn toàn trong Morphe Manager lần tới khi bạn vá Instagram.
 the pure black dark mode	chế độ tối đen hoàn toàn
 No Play Store updates	Không cập nhật từ Play Store
-Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later HushGram builds need Change version code too, or they won't install over this one.	Google Play sẽ không đưa ra bản cập nhật của Meta cho bản này. Để quay lại Instagram thông thường, hãy gỡ bản này trước, thao tác này xóa dữ liệu Instagram trên điện thoại. Các bản HushGram sau cũng cần Đổi mã phiên bản, nếu không sẽ không cài đè lên bản này được.
+Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later Instagram Plus builds need Change version code too, or they won't install over this one.	Google Play sẽ không đưa ra bản cập nhật của Meta cho bản này. Để quay lại Instagram thông thường, hãy gỡ bản này trước, thao tác này xóa dữ liệu Instagram trên điện thoại. Các bản Instagram Plus sau cũng cần Đổi mã phiên bản, nếu không sẽ không cài đè lên bản này được.
 the raised version code	mã phiên bản đã tăng
 Sharing	Chia sẻ
 Hide group buttons	Ẩn nút nhóm
@@ -429,23 +429,23 @@ Updating remembered positions...	Đang cập nhật vị trí đã nhớ...
 Undo cleared positions	Hoàn tác việc xóa vị trí
 Clear remembered positions	Xóa vị trí đã nhớ
 Undo is available until %1$s.	Có thể hoàn tác đến %1$s.
-HushGram remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	HushGram nhớ chỗ bạn dừng trong tối đa 200 video trong 30 ngày. Nhấn để xóa chúng khỏi thiết bị này.
+Instagram Plus remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	Instagram Plus nhớ chỗ bạn dừng trong tối đa 200 video trong 30 ngày. Nhấn để xóa chúng khỏi thiết bị này.
 Remembered playback positions restored.	Đã khôi phục vị trí phát đã nhớ.
 Undo has expired.	Đã hết hạn hoàn tác.
 You cleared the remembered playback positions.	Bạn đã xóa vị trí phát đã nhớ.
 Couldn't update remembered playback positions.	Không cập nhật được vị trí phát đã nhớ.
 Settings backup	Sao lưu cài đặt
-Export HushGram settings	Xuất cài đặt HushGram
+Export settings	Xuất cài đặt
 Choose a file for your installed patches' settings. Accounts and history stay on this device.	Chọn một tệp cho cài đặt của các bản vá đã cài. Tài khoản và lịch sử vẫn ở trên thiết bị này.
-Import HushGram settings	Nhập cài đặt HushGram
+Import settings	Nhập cài đặt
 Choose a settings file. All valid choices apply together, and ones this version doesn't know are skipped. The Undo row shows how long you can undo.	Chọn một tệp cài đặt. Mọi lựa chọn hợp lệ được áp dụng cùng lúc và lựa chọn mà phiên bản này không biết sẽ bị bỏ qua. Hàng Hoàn tác cho biết bạn hoàn tác được trong bao lâu.
 Undo settings import	Hoàn tác nhập cài đặt
 Undo is available until %1$s. Restarting Instagram discards Undo.	Có thể hoàn tác đến %1$s. Khởi động lại Instagram sẽ bỏ khả năng hoàn tác.
 No settings import to undo.	Không có lần nhập cài đặt nào để hoàn tác.
 There's no file picker. Your settings haven't changed.	Điện thoại không có bộ chọn tệp. Cài đặt không đổi.
 Couldn't use that file. Your settings haven't changed.	Không dùng được tệp đó. Cài đặt của bạn không đổi.
-HushGram settings exported.	Đã xuất cài đặt HushGram.
-Couldn't export HushGram settings. Try another file.	Không xuất được cài đặt HushGram. Hãy thử tệp khác.
+Settings exported.	Đã xuất cài đặt.
+Couldn't export settings. Try another file.	Không xuất được cài đặt Instagram Plus. Hãy thử tệp khác.
 Settings restored.	Đã khôi phục cài đặt.
 Imported %1$d settings. Skipped %2$d that this version doesn't know.	Đã nhập %1$d cài đặt. Bỏ qua %2$d mục mà phiên bản này không biết.
 Imported %1$d settings.	Đã nhập %1$d cài đặt.
@@ -499,7 +499,7 @@ Preparing diagnostic report...	Đang chuẩn bị báo cáo chẩn đoán...
 Saving diagnostic report...	Đang lưu báo cáo chẩn đoán...
 Diagnostic report saved.	Đã lưu báo cáo chẩn đoán.
 Choose a file for the settings export.	Chọn một tệp để xuất cài đặt.
-Exporting HushGram settings...	Đang xuất cài đặt HushGram...
+Exporting settings...	Đang xuất cài đặt...
 Settings export canceled.	Đã hủy xuất cài đặt.
 Round handle on the seek bar	Núm tròn trên thanh tua
 Adds a white round handle to the seek bar that you can drag. Ads keep their own bar.	Thêm núm tròn màu trắng vào thanh tua để bạn kéo. Quảng cáo giữ thanh riêng.
@@ -524,8 +524,8 @@ Creator tools	Công cụ cho nhà sáng tạo
 Home feed picker	Bộ chọn bảng feed trang chủ
 Custom tab	Tab tùy chỉnh
 Off	Tắt
-Tab long presses keep Instagram's own action. Choose one to open HushGram instead.	Nhấn giữ tab vẫn dùng thao tác riêng của Instagram. Hãy chọn một tab để mở HushGram thay thế.
-Long press %1$s to open HushGram instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	Nhấn giữ %1$s để mở HushGram thay cho thao tác thường của tab đó. Nhấn bình thường và các tab khác không đổi. Chỉ dùng được các tab mà tài khoản của bạn hiện.
+Tab long presses keep Instagram's own action. Choose one to open Instagram Plus instead.	Nhấn giữ tab vẫn dùng thao tác riêng của Instagram. Hãy chọn một tab để mở Instagram Plus thay thế.
+Long press %1$s to open Instagram Plus instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	Nhấn giữ %1$s để mở Instagram Plus thay cho thao tác thường của tab đó. Nhấn bình thường và các tab khác không đổi. Chỉ dùng được các tab mà tài khoản của bạn hiện.
 A sideways swipe no longer moves you between Home, Reels and the other main tabs. Tap the tab bar instead. Stop swipe to create covers the camera.	Vuốt ngang không còn chuyển giữa Trang chủ, Reels và các tab chính khác. Hãy nhấn vào thanh tab. Ngừng vuốt để tạo áp dụng cho camera.
 Ask for larger photos	Yêu cầu ảnh lớn hơn
 Empties Home on purpose, so you see the stories row and nothing under it. Profiles, Explore and Reels still show posts. Pull down on Home to refresh after changing it.	Cố ý làm trống trang chủ để bạn chỉ thấy hàng tin và không có gì bên dưới. Trang cá nhân, Khám phá và Reels vẫn hiện bài viết. Hãy kéo xuống trên trang chủ để làm mới sau khi thay đổi.
@@ -562,8 +562,8 @@ New message	Tin nhắn mới
 Notifications	Thông báo
 Puts every notification from Instagram in one group that shows how many it holds, so they don't fill your notification shade. Tapping one still opens it.	Gộp mọi thông báo từ Instagram vào một nhóm hiện số lượng, để chúng không chiếm đầy thanh thông báo. Nhấn vào một thông báo vẫn mở nó.
 Right away	Ngay lập tức
-Set a phone screen lock so HushGram can lock Instagram.	Hãy đặt khóa màn hình để HushGram khóa Instagram.
-Set a phone screen lock so HushGram can lock messages.	Hãy đặt khóa màn hình để HushGram khóa tin nhắn.
+Set a phone screen lock so Instagram Plus can lock Instagram.	Hãy đặt khóa màn hình để Instagram Plus khóa Instagram.
+Set a phone screen lock so Instagram Plus can lock messages.	Hãy đặt khóa màn hình để Instagram Plus khóa tin nhắn.
 Hides the cards between posts that ask you to rate what you saw.	Ẩn các thẻ giữa bài viết hỏi bạn đánh giá những gì vừa xem.
 Hides the rows of products to shop and live shopping that Instagram puts between posts, and the shop tiles in Explore. Posts with tagged products don't show the shopping bag.	Ẩn các hàng sản phẩm để mua sắm và mua sắm trực tiếp mà Instagram chèn giữa bài viết, cùng ô cửa hàng trong Khám phá. Bài viết có gắn thẻ sản phẩm không hiện túi mua sắm.
 Unlock	Mở khóa
@@ -573,7 +573,7 @@ Your inbox and chats stay covered until your fingerprint, face or screen lock sa
 Your messages are locked	Tin nhắn của bạn đã khóa
 Allow screenshots	Cho phép chụp màn hình
 Ghost mode partly changed. Check the switches below.	Không đổi hết công tắc Chế độ ẩn. Kiểm tra bên dưới.
-Ghost mode partly changed. Check HushGram settings.	Không đổi hết công tắc Chế độ ẩn. Hãy kiểm tra lại.
+Ghost mode partly changed. Check Instagram Plus Settings.	Không đổi hết công tắc Chế độ ẩn. Hãy kiểm tra lại.
 Don't report screenshots	Không báo chụp màn hình
 Ghost mode	Chế độ ẩn
 Ghost mode is off, and so is each of its switches.	Chế độ ẩn đang tắt, các công tắc của nó cũng vậy.
@@ -653,14 +653,14 @@ Descriptions behind an info button	Mô tả sau nút thông tin
 Shows each switch by its name alone. Tap the i next to a name to read what it does.	Chỉ hiện tên của từng công tắc. Nhấn chữ i cạnh tên để đọc công dụng.
 Expanded	Đã mở rộng
 Collapsed	Đã thu gọn
-Hide the HushGram row in Instagram's menu	Ẩn hàng HushGram trong menu của Instagram
+Hide the Instagram Plus row in Instagram's menu	Ẩn hàng Instagram Plus trong menu của Instagram
 Settings shortcut on the app icon	Lối tắt cài đặt trên biểu tượng ứng dụng
 Open settings from the logo	Mở cài đặt từ logo
-Puts HushGram settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	Đưa cài đặt HushGram vào menu hiện khi bạn giữ biểu tượng Instagram. Khi tắt, mục này rời khỏi menu đó.
+Puts Instagram Plus Settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	Đưa cài đặt Instagram Plus vào menu hiện khi bạn giữ biểu tượng Instagram. Khi tắt, mục này rời khỏi menu đó.
 A long press on the Instagram logo at the top of Home opens these settings. Off, the long press goes back to Instagram.	Nhấn giữ logo Instagram ở đầu trang chủ sẽ mở các cài đặt này. Khi tắt, nhấn giữ trở lại như của Instagram.
 The last way into these settings stays on.	Lối vào cuối cùng của các cài đặt này vẫn bật.
-No other way into HushGram is on, so the row stays in Instagram's menu.	Không còn lối vào HushGram nào khác đang bật nên hàng này vẫn ở trong menu của Instagram.
-Instagram's Settings and activity screen leaves out the HushGram row while another way here opens HushGram. With every other way off, the row comes back.	Màn hình Cài đặt và hoạt động của Instagram bỏ hàng HushGram khi có lối khác mở HushGram. Khi mọi lối khác đều tắt, hàng này quay lại.
+No other way into Instagram Plus is on, so the row stays in Instagram's menu.	Không còn lối vào Instagram Plus nào khác đang bật nên hàng này vẫn ở trong menu của Instagram.
+Instagram's Settings and activity screen leaves out the Instagram Plus row while another way here opens Instagram Plus. With every other way off, the row comes back.	Màn hình Cài đặt và hoạt động của Instagram bỏ hàng Instagram Plus khi có lối khác mở Instagram Plus. Khi mọi lối khác đều tắt, hàng này quay lại.
 Stop loading stories and highlights	Ngừng tải tin và tin nổi bật
 Takes the Comment button and the comment count off the posts in your feed.	Gỡ nút Bình luận và số bình luận khỏi các bài viết trong bảng feed.
 Hide the emoji row	Ẩn hàng biểu tượng cảm xúc
@@ -774,8 +774,8 @@ Bio copied	Đã sao chép tiểu sử
 Copy bio	Sao chép tiểu sử
 Copy username and bio	Sao chép tên người dùng và tiểu sử
 Profile extras button	Nút tiện ích trang cá nhân
-Puts a button next to the three dots on profiles that opens HushGram's profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	Đặt một nút cạnh ba chấm trên trang cá nhân để mở các thao tác trang cá nhân của HushGram. Cần bật Lưu ảnh đại diện, Xem ảnh đại diện hoặc Sao chép tên người dùng và tiểu sử. Các hàng trong menu ba chấm vẫn giữ.
-HushGram profile actions	Thao tác trang cá nhân của HushGram
+Puts a button next to the three dots on profiles that opens Instagram Plus profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	Đặt một nút cạnh ba chấm trên trang cá nhân để mở các thao tác trang cá nhân của Instagram Plus. Cần bật Lưu ảnh đại diện, Xem ảnh đại diện hoặc Sao chép tên người dùng và tiểu sử. Các hàng trong menu ba chấm vẫn giữ.
+Instagram Plus profile actions	Thao tác trang cá nhân của Instagram Plus
 Nothing to do for this profile	Không có gì để làm với trang cá nhân này
 Couldn't copy the bio	Không sao chép được tiểu sử
 Couldn't open the picture	Không mở được ảnh
@@ -824,8 +824,8 @@ Green	Xanh lục
 Teal	Xanh lam lục
 Material You	Material You
 Material You needs Android 12 or newer, so Instagram's blue stays.	Material You cần Android 12 trở lên nên màu xanh của Instagram vẫn giữ.
-HushGram launch screen	Màn hình khởi động HushGram
-Shows HushGram's logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	Hiện logo HushGram thay vì logo Instagram trên màn hình bạn thấy khi Instagram khởi động, trên Android 13 trở lên. Hiện từ lần khởi động sau.
+Instagram Plus launch screen	Màn hình khởi động Instagram Plus
+Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	Hiện logo Instagram Plus thay vì logo Instagram trên màn hình bạn thấy khi Instagram khởi động, trên Android 13 trở lên. Hiện từ lần khởi động sau.
 Download video covers	Tải ảnh bìa video
 Adds Download cover to the menu of a feed post with a video, and of a carousel showing one. It saves the still picture shown before the video plays, at its largest size.	Thêm Tải ảnh bìa vào menu của bài viết bảng feed có video và của ảnh nhiều trang đang hiện video. Lưu ảnh tĩnh hiện trước khi video phát, ở kích thước lớn nhất.
 Download button on feed posts	Nút tải xuống trên bài viết bảng feed
@@ -897,10 +897,10 @@ Open a chat in Instagram, then come back here to pin it.	Hãy mở một cuộc 
 %1$s is shown again	%1$s hiện lại
 Pick the playback quality with a tab long press	Chọn chất lượng phát bằng cách nhấn giữ tab
 Tab long presses keep Instagram's own action. Choose one to pick the playback quality instead.	Nhấn giữ tab vẫn dùng thao tác riêng của Instagram. Hãy chọn một tab để chọn chất lượng phát.
-Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens HushGram, that comes first.	Nhấn giữ %1$s để chọn chất lượng phát thay cho thao tác thường của tab đó. Nhấn bình thường và các tab khác không đổi. Cần bật Chất lượng phát mặc định. Nếu cùng tab mở HushGram thì mục đó được ưu tiên.
+Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens Instagram Plus, that comes first.	Nhấn giữ %1$s để chọn chất lượng phát thay cho thao tác thường của tab đó. Nhấn bình thường và các tab khác không đổi. Cần bật Chất lượng phát mặc định. Nếu cùng tab mở Instagram Plus thì mục đó được ưu tiên.
 Playback quality: %1$s. The next video uses it.	Chất lượng phát: %1$s. Video sau sẽ dùng mức này.
-Couldn't save the quality. Set it in HushGram settings.	Không lưu được chất lượng. Hãy đặt trong cài đặt.
-Support HushGram	Ủng hộ HushGram
+Couldn't save the quality. Set it in Instagram Plus Settings.	Không lưu được chất lượng. Hãy đặt trong cài đặt.
+Support	Ủng hộ
 Hide the Home tab	Ẩn tab Trang chủ
 Takes Home off the tab bar. Your Start tab opens wherever Home would, so pick one other than Home that's on the bar, or Home stays. Restart Instagram to see the change.	Gỡ Trang chủ khỏi thanh tab. Tab bắt đầu của bạn mở ở nơi Trang chủ sẽ mở, nên hãy chọn một tab khác Trang chủ có trên thanh, nếu không Trang chủ vẫn ở lại. Hãy khởi động lại Instagram để thấy thay đổi.
 Hide the Search tab	Ẩn tab Tìm kiếm
@@ -1010,7 +1010,7 @@ Full screen Messages	Tin nhắn toàn màn hình
 Hides the status bar and the navigation bar while your messages or a chat shows. Swipe in from the edge to bring them back for a moment. Back and the keyboard work as usual.	Ẩn thanh trạng thái và thanh điều hướng khi tin nhắn hoặc cuộc trò chuyện hiện. Vuốt từ mép vào để đưa chúng trở lại trong giây lát. Quay lại và bàn phím hoạt động như thường.
 Hide Notes on profile pictures	Ẩn Ghi chú trên ảnh đại diện
 Takes the Notes bubble off profile pictures, yours included. Notes in Messages stay as they are.	Gỡ bong bóng Ghi chú khỏi ảnh đại diện, kể cả của bạn. Ghi chú trong Tin nhắn giữ nguyên.
-How you open HushGram and lay out settings.	Cách mở HushGram và bố trí cài đặt.
+How you open Instagram Plus and lay out settings.	Cách mở Instagram Plus và bố trí cài đặt.
 Hide ads and share less with Instagram.	Ẩn quảng cáo và chia sẻ ít hơn với Instagram.
 Choose what Home shows and how it behaves.	Chọn nội dung trang chủ hiện và cách hoạt động.
 Control where Meta AI appears.	Kiểm soát nơi Meta AI xuất hiện.
@@ -1030,10 +1030,10 @@ Save photos, videos and more, and choose where they go.	Lưu ảnh, video và h�
 Stop background work Instagram doesn't need.	Ngừng các tác vụ nền mà Instagram không cần.
 Stop Instagram from saying this version is too old.	Ngăn Instagram báo phiên bản này đã quá cũ.
 Chosen when you patched, so Pause leaves them on. Patch again to change them.	Được chọn khi bạn vá nên Tạm dừng vẫn để bật. Hãy vá lại để đổi.
-Save your HushGram choices to a file, or bring them back.	Lưu lựa chọn HushGram vào tệp hoặc khôi phục lại.
+Save your Instagram Plus choices to a file, or bring them back.	Lưu lựa chọn Instagram Plus vào tệp hoặc khôi phục lại.
 Your version, the source code and licenses.	Phiên bản, mã nguồn và giấy phép của bạn.
 Open settings with a long press on your profile's menu	Mở cài đặt bằng cách nhấn giữ menu trang cá nhân
-A long press on the menu button, the three lines at the top right of your own profile, opens HushGram. A tap still opens Instagram's menu, and other profiles stay the same.	Nhấn giữ nút menu, ba gạch ở góc trên bên phải trang cá nhân của bạn, sẽ mở HushGram. Nhấn vẫn mở menu của Instagram và trang cá nhân người khác không đổi.
+A long press on the menu button, the three lines at the top right of your own profile, opens Instagram Plus. A tap still opens Instagram's menu, and other profiles stay the same.	Nhấn giữ nút menu, ba gạch ở góc trên bên phải trang cá nhân của bạn, sẽ mở Instagram Plus. Nhấn vẫn mở menu của Instagram và trang cá nhân người khác không đổi.
 Hide the top bar on the Reels tab	Ẩn thanh trên cùng ở tab Reels
 Takes away the row at the top of the Reels tab, with the Reels title, the camera button and anything else Instagram puts there. Reels you open from a profile, a post or a chat keep theirs. The camera still opens from Home.	Gỡ hàng ở đầu tab Reels, gồm tiêu đề Reels, nút camera và mọi thứ khác Instagram đặt ở đó. Reel bạn mở từ trang cá nhân, bài viết hoặc cuộc trò chuyện vẫn giữ thanh của chúng. Camera vẫn mở từ trang chủ.
 Hide the Create button on reels	Ẩn nút Tạo trên reel
@@ -1062,14 +1062,14 @@ Don't vibrate in clear mode	Không rung ở chế độ xem sạch
 Stops the short buzz Instagram plays when a reel opens in clear mode. With Keep clear mode on, that's every swipe.	Tắt rung ngắn mà Instagram phát khi một reel mở ở chế độ xem sạch. Khi bật Giữ chế độ xem sạch luôn bật, việc này xảy ra mỗi lần vuốt.
 Unlock with	Mở khóa bằng
 Phone lock	Khóa điện thoại
-HushGram PIN	PIN HushGram
+Settings PIN	Mã PIN cài đặt
 A PIN you set here unlocks your messages, in place of your screen lock. It can't be recovered, only cleared by clearing Instagram's storage.	Mã PIN bạn đặt ở đây mở khóa tin nhắn, thay cho khóa màn hình. Không thể khôi phục, chỉ xóa được bằng cách xóa bộ nhớ của Instagram.
 Your fingerprint, face or screen lock unlocks your messages.	Vân tay, khuôn mặt hoặc khóa màn hình của bạn mở khóa tin nhắn.
 Fingerprint or face only	Chỉ vân tay hoặc khuôn mặt
 Only your fingerprint or face unlocks your messages. If the phone has none set up, your screen lock does.	Chỉ vân tay hoặc khuôn mặt mới mở khóa tin nhắn của bạn. Nếu điện thoại chưa thiết lập thì dùng khóa màn hình.
 Add a fingerprint or face in your phone's settings first.	Hãy thêm vân tay hoặc khuôn mặt trong cài đặt điện thoại trước.
 This phone has no fingerprint or face unlock to use.	Điện thoại này không có mở khóa bằng vân tay hoặc khuôn mặt để dùng.
-Your phone won't let HushGram use your fingerprint or face right now. Check its fingerprint and face settings.	Điện thoại hiện không cho HushGram dùng vân tay hoặc khuôn mặt. Hãy kiểm tra cài đặt vân tay và khuôn mặt.
+Your phone won't let Instagram Plus use your fingerprint or face right now. Check its fingerprint and face settings.	Điện thoại hiện không cho Instagram Plus dùng vân tay hoặc khuôn mặt. Hãy kiểm tra cài đặt vân tay và khuôn mặt.
 Set or change the 4 to 8 digit PIN. It stays on this phone and isn't in a backup.	Đặt hoặc đổi mã PIN 4 đến 8 chữ số. Mã ở lại trên điện thoại này và không nằm trong bản sao lưu.
 PIN saved.	Đã lưu PIN.
 PIN	PIN
@@ -1083,7 +1083,7 @@ Set a PIN	Đặt mã PIN
 Use 4 to 8 digits.	Dùng 4 đến 8 chữ số.
 The PINs don't match.	Hai mã PIN không khớp.
 Couldn't save the PIN.	Không lưu được mã PIN.
-The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets HushGram's settings. A saved settings backup brings the rest back, but not the PIN.	Không thể khôi phục mã PIN. Để gỡ, hãy xóa bộ nhớ của Instagram trong cài đặt ứng dụng của Android. Việc này đăng xuất bạn và đặt lại cài đặt HushGram. Bản sao lưu cài đặt đã lưu sẽ đưa phần còn lại trở lại, nhưng không có mã PIN.
+The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets Instagram Plus settings. A saved settings backup brings the rest back, but not the PIN.	Không thể khôi phục mã PIN. Để gỡ, hãy xóa bộ nhớ của Instagram trong cài đặt ứng dụng của Android. Việc này đăng xuất bạn và đặt lại cài đặt Instagram Plus. Bản sao lưu cài đặt đã lưu sẽ đưa phần còn lại trở lại, nhưng không có mã PIN.
 Open app info	Mở thông tin ứng dụng
 Hide 'Are you interested?' bubbles	Ẩn bong bóng 'Bạn có quan tâm không?'
 Hides the bubble under a post that asks 'Are you interested in this post?' with Not interested and Interested buttons. Nothing is answered for you.	Ẩn bong bóng bên dưới bài viết hỏi 'Bạn có quan tâm đến bài viết này không?' với các nút Không quan tâm và Quan tâm. Không có câu trả lời nào được đưa thay bạn.
@@ -1112,9 +1112,9 @@ Peek at the next carousel page	Ló trang ảnh nhiều trang kế tiếp
 A carousel post's page sits a little in from the edges, with the start of the next page showing at the right.	Trang của bài viết ảnh nhiều trang thụt vào một chút so với mép, phần đầu của trang kế tiếp hiện ở bên phải.
 Large	Lớn
 Small	Nhỏ
-Instagram kept crashing, so HushGram paused itself.	Instagram liên tục sập nên HushGram tự tạm dừng.
+Instagram kept crashing, so Instagram Plus paused itself.	Instagram liên tục sập nên Instagram Plus tự tạm dừng.
 # context: the second toast after safe mode paused HushGram, saying where to turn it back on
-Turn it back on in HushGram settings.	Bật lại trong Cài đặt HushGram.
+Turn it back on in Instagram Plus Settings.	Bật lại trong Cài đặt Instagram Plus.
 Download failed. Check your connection and try again.	Tải xuống thất bại. Hãy kiểm tra kết nối và thử lại.
 Download didn't finish. Check your connection and free storage, then try again.	Tải xuống chưa xong. Hãy kiểm tra kết nối và bộ nhớ trống rồi thử lại.
 Some changes apply when Instagram restarts. Tap to restart it now.	Một số thay đổi áp dụng khi Instagram khởi động lại. Nhấn để khởi động lại ngay.
@@ -1216,7 +1216,7 @@ Switches Ghost mode turns	Công tắc mà Chế độ ẩn bật tắt
 Ghost mode needs at least one switch to turn.	Chế độ ẩn cần ít nhất một công tắc để bật tắt.
 Turn Ghost mode on or off with a tab long press	Bật hoặc tắt Chế độ ẩn bằng cách nhấn giữ tab
 Tab long presses keep Instagram's own action. Choose one to turn Ghost mode on or off instead.	Nhấn giữ tab vẫn dùng thao tác riêng của Instagram. Hãy chọn một tab để bật hoặc tắt Chế độ ẩn.
-Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens HushGram or picks the playback quality, that comes first.	Nhấn giữ %1$s để bật hoặc tắt Chế độ ẩn thay cho thao tác thường của tab đó, và một thông báo cho biết đã chuyển sang bên nào. Nhấn bình thường và các tab khác không đổi. Nếu cùng tab mở HushGram hoặc chọn chất lượng phát thì mục đó được ưu tiên.
+Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens Instagram Plus or picks the playback quality, that comes first.	Nhấn giữ %1$s để bật hoặc tắt Chế độ ẩn thay cho thao tác thường của tab đó, và một thông báo cho biết đã chuyển sang bên nào. Nhấn bình thường và các tab khác không đổi. Nếu cùng tab mở Instagram Plus hoặc chọn chất lượng phát thì mục đó được ưu tiên.
 Buttons on the share sheet	Nút trên bảng chia sẻ
 Every button under the people on the share sheet shows. Untick the ones you don't use.	Mọi nút bên dưới danh sách người trên bảng chia sẻ đều hiện. Bỏ tích những nút bạn không dùng.
 Left off the share sheet: %1$s.	Đã bỏ khỏi bảng chia sẻ: %1$s.
@@ -1315,7 +1315,7 @@ Every row of Instagram's Settings and activity shows. Untick the ones you don't 
 %1$d rows are left off Instagram's Settings and activity.	%1$d hàng bị bỏ khỏi Cài đặt và hoạt động của Instagram.
 Open Settings and activity in Instagram once, then come back here. Its rows show up in this list to untick.	Hãy mở Cài đặt và hoạt động trong Instagram một lần rồi quay lại đây. Các hàng của nó sẽ hiện trong danh sách này để bỏ tích.
 Date in backup file names	Ngày trong tên tệp sao lưu
-Add the current date and time when exporting settings. Off keeps HushGram-settings.json.	Thêm ngày giờ hiện tại khi xuất cài đặt. Khi tắt giữ HushGram-settings.json.
+Add the current date and time when exporting settings. Off keeps settings.json.	Thêm ngày giờ hiện tại khi xuất cài đặt. Khi tắt giữ settings.json.
 %1$s is the post's shortcode. Stories and unknown posts leave it out. Using it also names photos.	%1$s là mã rút gọn của bài viết. Tin và bài viết không rõ sẽ bỏ qua. Dùng nó cũng đặt tên cho ảnh.
 Videos and photos use %1$s. Unknown codes are left out.	Video và ảnh dùng %1$s. Mã không rõ sẽ bị bỏ qua.
 Tab bar layout	Bố cục thanh tab
@@ -1328,11 +1328,11 @@ Instagram picks the tab bar for your account, and it can switch between the two 
 Group or mute Instagram's notifications, and take suggestions off the Notifications page.	Gộp hoặc tắt tiếng thông báo Instagram, và gỡ gợi ý khỏi trang Thông báo.
 Take suggestions and Featured off the Notifications page.	Gỡ gợi ý và Nổi bật khỏi trang Thông báo.
 Version warnings	Cảnh báo phiên bản
-Pause HushGram, lock these settings, or make a report when something breaks.	Tạm dừng HushGram, khóa các cài đặt này, hoặc tạo báo cáo khi có gì hỏng.
+Pause Instagram Plus, lock these settings, or make a report when something breaks.	Tạm dừng Instagram Plus, khóa các cài đặt này, hoặc tạo báo cáo khi có gì hỏng.
 Choose a folder	Chọn thư mục
 Saves go to Movies and Pictures. Pick any folder instead, a hidden one too, and every photo and video goes there.	Bản lưu vào Movies và Pictures. Hãy chọn thư mục bất kỳ, kể cả thư mục ẩn, và mọi ảnh, video sẽ vào đó.
 Photos and videos go to %1$s. Tap to pick another folder.	Ảnh và video vào %1$s. Nhấn để chọn thư mục khác.
-HushGram can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	HushGram không truy cập được %1$s nữa nên bản lưu vào Movies và Pictures. Hãy chọn lại thư mục.
+Instagram Plus can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	Instagram Plus không truy cập được %1$s nữa nên bản lưu vào Movies và Pictures. Hãy chọn lại thư mục.
 Use Movies and Pictures	Dùng Movies và Pictures
 Stop using the folder you picked. Saves go back to Movies and Pictures.	Ngừng dùng thư mục bạn đã chọn. Bản lưu quay lại Movies và Pictures.
 Couldn't use that folder. Saves go where they did.	Không dùng được thư mục đó. Bản lưu vẫn vào nơi cũ.
@@ -1356,7 +1356,7 @@ Stops the notification types you tick, even ones Instagram's own notification se
 Instagram hasn't set up its notification types on this phone yet. Open Instagram once, then come back here.	Instagram chưa thiết lập các loại thông báo trên điện thoại này. Hãy mở Instagram một lần rồi quay lại đây.
 Unmute all	Bật tiếng tất cả
 Settings button on Home's header	Nút Cài đặt ở đầu trang chủ
-Adds a gear at the top of Home that opens HushGram settings. Restart Instagram to see the change.	Thêm bánh răng ở đầu trang chủ để mở cài đặt HushGram. Hãy khởi động lại Instagram để thấy thay đổi.
+Adds a gear at the top of Home that opens Instagram Plus Settings. Restart Instagram to see the change.	Thêm bánh răng ở đầu trang chủ để mở cài đặt Instagram Plus. Hãy khởi động lại Instagram để thấy thay đổi.
 Download button on stories	Nút tải xuống trên tin
 Puts a Download button at the top of a story, beside the three dots. One tap saves the photo or video in front, the same as Download in the menu.	Đặt nút Tải xuống ở đầu tin, cạnh ba chấm. Một lần nhấn lưu ảnh hoặc video đang hiện, giống Tải xuống trong menu.
 Start reels muted	Bắt đầu reel tắt tiếng
@@ -1452,8 +1452,8 @@ Tap to see all %1$d, by kind or by search.	Nhấn để xem tất cả %1$d, the
 Instagram gradient on dark	Instagram chuyển sắc trên nền tối
 Retro Instagram	Instagram cổ điển
 Menu button on Home's header	Nút menu ở đầu trang chủ
-Adds a menu button at the top of Home with your viewing history, Ghost mode and HushGram settings. Restart Instagram to see the change.	Thêm nút menu ở đầu trang chủ với lịch sử đã xem, Chế độ ẩn và cài đặt HushGram. Hãy khởi động lại Instagram để thấy thay đổi.
-HushGram menu	Menu HushGram
+Adds a menu button at the top of Home with your viewing history, Ghost mode and Instagram Plus Settings. Restart Instagram to see the change.	Thêm nút menu ở đầu trang chủ với lịch sử đã xem, Chế độ ẩn và cài đặt Instagram Plus. Hãy khởi động lại Instagram để thấy thay đổi.
+Instagram Plus menu	Menu Instagram Plus
 Seek bar button on feed videos	Nút thanh tua trên video bảng feed
 Adds a small button at the bottom left of a feed video that shows or hides its seek bar. It works with Seek bar on feed videos on or off.	Thêm nút nhỏ ở dưới bên trái video bảng feed để hiện hoặc ẩn thanh tua. Dùng được dù Thanh tua trên video bảng feed bật hay tắt.
 Seek bar	Thanh tua
@@ -1520,10 +1520,10 @@ That isn't a picture.	Đó không phải là ảnh.
 That picture is over %1$d MB.	Ảnh đó lớn hơn %1$d MB.
 Couldn't save the picture.	Không lưu được ảnh.
 Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Jump to the first message or Jump to a date. The chat loads its older messages on its own, with a count and a Cancel button.	Mở một cuộc trò chuyện, nhấn nút đồng hồ cạnh các nút gọi ở đầu màn hình, hoặc nhấn giữ tên cuộc trò chuyện, rồi chọn Chuyển đến tin nhắn đầu tiên hoặc Chuyển đến một ngày. Cuộc trò chuyện tự tải các tin nhắn cũ hơn, có hiển thị số lượng và nút Hủy.
-Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, HushGram folder, one line per message.	Mở một cuộc trò chuyện, nhấn nút đồng hồ cạnh các nút gọi ở đầu màn hình, hoặc nhấn giữ tên cuộc trò chuyện, rồi chọn Xuất cuộc trò chuyện. Toàn bộ cuộc trò chuyện được lưu thành tệp văn bản trong thư mục HushGram của Downloads, mỗi tin nhắn một dòng.
+Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, Instagram folder, one line per message.	Mở một cuộc trò chuyện, nhấn nút đồng hồ cạnh các nút gọi ở đầu màn hình, hoặc nhấn giữ tên cuộc trò chuyện, rồi chọn Xuất cuộc trò chuyện. Toàn bộ cuộc trò chuyện được lưu thành tệp văn bản trong thư mục Instagram Plus của Downloads, mỗi tin nhắn một dòng.
 Instagram stopped loading older messages.	Instagram đã ngừng tải tin nhắn cũ hơn.
 Black settings page	Trang cài đặt màu đen
-Black rows and dialogs, HushGram's name at the top, and each category on one line.	Hàng và hộp thoại màu đen, tên HushGram ở trên cùng, mỗi danh mục trên một dòng.
+Black rows and dialogs, Instagram Plus at the top, and each category on one line.	Hàng và hộp thoại màu đen, tên Instagram Plus ở trên cùng, mỗi danh mục trên một dòng.
 Mark as read	Đánh dấu là đã đọc
 Nothing to mark as read	Không có gì để đánh dấu
 Mark as read button in chats	Nút Đánh dấu là đã đọc trong cuộc trò chuyện
@@ -1531,7 +1531,7 @@ A check mark shows at the top of a chat while it hasn't told the other person yo
 # context: a switch on the Messages page and the eye it adds to a chat's header (#13). "Seen" is Instagram's own read receipt label in a chat. A tap on the eye opens a menu with the three rows after the summary; the toasts and the eye's spoken label say what the chat does now.
 Choose Seen in each chat	Chọn Đã xem cho từng cuộc trò chuyện
 An eye at the top of each chat holds or sends Seen in that chat alone, whatever Read messages without the seen receipt says. Changing it doesn't send anything by itself.	Biểu tượng con mắt ở đầu mỗi cuộc trò chuyện giữ hoặc gửi Đã xem chỉ trong cuộc trò chuyện đó, bất kể Đọc tin nhắn mà không báo đã xem đang bật hay tắt. Thay đổi nó không tự gửi gì cả.
-Use the HushGram setting	Dùng cài đặt của HushGram
+Use the Instagram Plus setting	Dùng cài đặt của Instagram Plus
 Hold Seen in this chat	Giữ Đã xem trong cuộc trò chuyện này
 Send Seen in this chat	Gửi Đã xem trong cuộc trò chuyện này
 Seen held in this chat	Cuộc trò chuyện này giữ Đã xem
@@ -1690,3 +1690,9 @@ Playing in the background	Đang phát trong nền
 Paused in the background	Đã tạm dừng trong nền
 Play	Phát
 Stop	Dừng
+iOS tab bounce animation	Hiệu ứng nảy tab iOS
+Subtle spring bounce on tab icons when tapped, matching iOS Instagram's tactile feel.	Độ nảy đàn hồi tinh tế trên biểu tượng tab khi chạm, phù hợp với cảm giác xúc giác của Instagram trên iOS.
+iOS tab bar top border	Đường viền trên thanh tab iOS
+Draws a subtle 0.5dp translucent hairline divider along the top of the tab bar.	Vẽ một đường mảnh bán trong suốt 0,5 dp tinh tế dọc theo đầu thanh tab.
+Tap active tab to scroll to top	Nhấn tab hiện tại để cuộn lên đầu
+Tapping the currently active tab smoothly scrolls the current feed or list to the top.	Nhấn vào tab đang hoạt động sẽ cuộn bảng tin hoặc danh sách hiện tại lên đầu trang một cách mượt mà.

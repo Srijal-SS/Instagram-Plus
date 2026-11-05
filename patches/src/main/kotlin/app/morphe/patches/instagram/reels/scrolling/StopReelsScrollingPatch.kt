@@ -72,7 +72,7 @@ val stopReelsScrollingPatch = bytecodePatch(
     description = "Stops a swipe in Reels from moving to the next reel, so you stay on the one you opened. A " +
         "second switch stops swiping after as many reels as you pick, for as long as you pick, and Take a " +
         "scroll break covers Home, Reels and Explore for 5 minutes after the time you pick. Starts off. Turn " +
-        "it on in HushGram settings > Reels.",
+        "it on in Instagram Plus Settings > Reels.",
     default = true,
 ) {
     category("Reels")

@@ -82,7 +82,7 @@ val hideProfileSuggestionsPatch = bytecodePatch(
     description = "Takes Suggested for you and the Discover people button off profiles. Bios, counts and posts stay. " +
         "More switches take Suggested for you off the follow lists, their Suggested tab and the Follow requests screen, the Complete your profile " +
         "cards off your own profile, and People you don't follow back, suggested threads and people, and the " +
-        "Featured section off your notifications. Starts off. Turn it on in HushGram settings > Profiles.",
+        "Featured section off your notifications. Starts off. Turn it on in Instagram Plus Settings > Profiles.",
 ) {
     category("Profiles")
     dependsOn(settingsPatch, instagramExtensionPatch)

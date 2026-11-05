@@ -1638,6 +1638,24 @@ public class Settings extends BaseSettings {
                     app.hushgram.extension.instagram.misc.GlassReelsHide.NEVER, true, parent(GLASS_TAB_BAR));
 
     /**
+     * Under {@link #GLASS_TAB_BAR}: subtle iOS-style spring bounce animation on tab icons when tapped.
+     */
+    public static final BooleanSetting IOS_TAB_BOUNCE =
+            new BooleanSetting("hushgram_ios_tab_bounce", TRUE, false, parent(GLASS_TAB_BAR));
+
+    /**
+     * Under {@link #GLASS_TAB_BAR}: subtle translucent 0.5dp top border on the tab bar matching iOS navigation styling.
+     */
+    public static final BooleanSetting IOS_TAB_HAIRLINE =
+            new BooleanSetting("hushgram_ios_tab_hairline", TRUE, false, parent(GLASS_TAB_BAR));
+
+    /**
+     * Under {@link #GLASS_TAB_BAR}: tapping the currently active tab scrolls the current feed or list to the top.
+     */
+    public static final BooleanSetting IOS_TAB_RECLICK_SCROLL =
+            new BooleanSetting("hushgram_ios_tab_reclick_scroll", TRUE, false, parent(GLASS_TAB_BAR));
+
+    /**
      * Your own profile's tabs get one more, a bookmark, that opens Saved
      * ({@link app.hushgram.extension.instagram.misc.ProfileSaved}). The tabs are built as the profile
      * opens, so a change takes a restart. Off to start.
@@ -3341,6 +3359,6 @@ public class Settings extends BaseSettings {
      * switch: a pause doesn't bring the notice back, and a settings backup leaves it out.
      */
     public static final BooleanSetting SIGN_IN_NOTICE_HIDDEN =
-            new BooleanSetting("hushgram_sign_in_notice_hidden", FALSE, false, false);
+            new BooleanSetting("hushgram_sign_in_notice_hidden", TRUE, false, false);
 
 }

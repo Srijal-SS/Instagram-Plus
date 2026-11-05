@@ -72,7 +72,7 @@ val exploreMenuPatch = bytecodePatch(
     name = "Explore without personalization",
     description = "Opens Explore on the grid that isn't personalized every time and keeps it from switching back " +
         "after ten minutes. Instagram only promises that grid in the EU. A second switch hides the EU menu button " +
-        "for it. Both start off. Turn them on in HushGram settings > Explore.",
+        "for it. Both start off. Turn them on in Instagram Plus Settings > Explore.",
 ) {
     category("Privacy")
     dependsOn(settingsPatch, instagramExtensionPatch)

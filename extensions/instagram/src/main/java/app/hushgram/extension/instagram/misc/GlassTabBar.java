@@ -680,7 +680,7 @@ public final class GlassTabBar {
     /** How long the blur rests on the plain tint after {@link #BLUR_TRIES} failed recordings in a row. */
     static final long BLUR_REST_MS = 2000;
     /** How long the capsule takes to slide to a new tab. */
-    static final long SLIDE_MS = 280;
+    static final long SLIDE_MS = 190;
     /** How long a missing shadow or content view stays unsearched before the parent is walked for it again. */
     static final long RESEARCH_MS = 500;
     /**
@@ -2207,6 +2207,9 @@ public final class GlassTabBar {
                     lastSelected = selected == null ? null : new WeakReference<>(selected);
                     if (scrollHide != null) scrollHide.show();
                     bar.invalidate();
+                    if (selected != null && Settings.IOS_TAB_BOUNCE.get()) {
+                        bounceTabIcon(selected);
+                    }
                 }
             } catch (Throwable failure) {
                 // Reported, and the frame and the blur go on: neither depends on what threw (#262).
@@ -2386,6 +2389,12 @@ public final class GlassTabBar {
                 stroke.setColor(edge(base));
                 rect.inset(density / 2f, density / 2f);
                 canvas.drawRoundRect(rect, radius, radius, stroke);
+
+                if (Settings.IOS_TAB_HAIRLINE.get()) {
+                    stroke.setStrokeWidth(Math.max(1f, density * 0.5f));
+                    stroke.setColor(dark ? 0x28FFFFFF : 0x28000000);
+                    canvas.drawLine(0, 0, bar.getWidth(), 0, stroke);
+                }
             }
 
             /**
@@ -2436,6 +2445,11 @@ public final class GlassTabBar {
                     outline.set(circle);
                     outline.inset(half, half);
                     canvas.drawOval(outline, stroke);
+                }
+                if (Settings.IOS_TAB_HAIRLINE.get()) {
+                    stroke.setStrokeWidth(Math.max(1f, density * 0.5f));
+                    stroke.setColor(dark ? 0x28FFFFFF : 0x28000000);
+                    canvas.drawLine(0, 0, bar.getWidth(), 0, stroke);
                 }
             }
 
@@ -2506,13 +2520,17 @@ public final class GlassTabBar {
                     slideStart = now - SLIDE_MS;
                     bubbleNow = bubbleFrom = 1f;
                 } else if (Math.abs(targetLeft - toLeft) > 0.5f || Math.abs(targetRight - toRight) > 0.5f) {
-                    tickedThisSlide = false;
                     fromLeft = nowLeft;
                     fromRight = nowRight;
                     toLeft = targetLeft;
                     toRight = targetRight;
                     slideStart = slideStartAt(now);
                     bubbleFrom = bubbleNow;
+                    tickedThisSlide = true;
+                    tickedTab = bar.indexOfChild(selected);
+                    if (haptics) {
+                        Haptics.tick(bar, hapticStyle);
+                    }
                 }
                 float progress = slideProgress(now - slideStart);
                 boolean bubble = liquidNow() && share > 0f;
@@ -2521,7 +2539,9 @@ public final class GlassTabBar {
                 nowLeft = fromLeft + (toLeft - fromLeft) * progress;
                 nowRight = fromRight + (toRight - fromRight) * progress;
                 capsule.set(nowLeft, within.top + inset, nowRight, within.bottom - inset);
-                tick((nowLeft + nowRight) / 2f);
+                if (!Float.isNaN(dragX)) {
+                    tick((nowLeft + nowRight) / 2f);
+                }
                 int color = highlight(base);
                 if (share < 1f) color = (color & 0x00ffffff) | (scaledAlpha(Color.alpha(color), Math.max(0f, share)) << 24);
                 fill.setColor(color);
@@ -2960,7 +2980,7 @@ public final class GlassTabBar {
         if (elapsed <= 0) return 0f;
         float t = elapsed / (float) SLIDE_MS;
         float rest = 1f - t;
-        return 1f - rest * rest * rest;
+        return 1f - rest * rest * rest * rest;
     }
 
     /** How much larger the liquid look's bubble is while it moves between tabs, and under a finger (#289). */
@@ -3046,7 +3066,7 @@ public final class GlassTabBar {
                 long now = android.os.SystemClock.uptimeMillis();
                 if (!farEnough(now, lastTick)) return;
                 lastTick = now;
-                if (style == HapticStyle.SYSTEM && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                if (style == HapticStyle.SYSTEM) {
                     view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
                     return;
                 }
@@ -3111,5 +3131,89 @@ public final class GlassTabBar {
             }
             return handler;
         }
+    }
+
+    /**
+     * iOS-style spring bounce micro-interaction on tab icons when selected.
+     */
+    public static void bounceTabIcon(@Nullable View tab) {
+        if (tab == null) return;
+        View target = tab;
+        if (tab instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) tab;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                View child = vg.getChildAt(i);
+                if (child instanceof android.widget.ImageView || child.getVisibility() == View.VISIBLE) {
+                    target = child;
+                    break;
+                }
+            }
+        }
+        target.animate().cancel();
+        target.setScaleX(0.86f);
+        target.setScaleY(0.86f);
+        target.animate()
+                .scaleX(1.0f)
+                .scaleY(1.0f)
+                .setDuration(240)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(2.2f))
+                .start();
+    }
+
+    /**
+     * Smoothly scrolls the active screen list/feed to the top when the active tab is re-tapped.
+     */
+    public static void scrollToTop(@Nullable View bar) {
+        if (bar == null) return;
+        Activity activity = activityOf(bar.getContext());
+        if (activity == null) return;
+        View decor = activity.getWindow().getDecorView();
+        View scrollable = findFirstScrollable(decor);
+        if (scrollable == null) return;
+        if (scrollable instanceof android.widget.AbsListView) {
+            ((android.widget.AbsListView) scrollable).smoothScrollToPosition(0);
+        } else if (scrollable instanceof android.widget.ScrollView) {
+            ((android.widget.ScrollView) scrollable).smoothScrollTo(0, 0);
+        } else {
+            try {
+                java.lang.reflect.Method method = scrollable.getClass().getMethod("smoothScrollToPosition", int.class);
+                method.invoke(scrollable, 0);
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    @Nullable
+    private static View findFirstScrollable(@Nullable View view) {
+        if (view == null || view.getVisibility() != View.VISIBLE) return null;
+        if (view instanceof android.widget.AbsListView
+                || view instanceof android.widget.ScrollView
+                || isRecyclerView(view)) {
+            return view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findFirstScrollable(group.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isRecyclerView(View view) {
+        for (Class<?> at = view.getClass(); at != null; at = at.getSuperclass()) {
+            if ("androidx.recyclerview.widget.RecyclerView".equals(at.getName())) return true;
+        }
+        return false;
+    }
+
+    @Nullable
+    static Activity activityOf(@Nullable Context context) {
+        while (context instanceof ContextWrapper) {
+            if (context instanceof Activity) return (Activity) context;
+            context = ((ContextWrapper) context).getBaseContext();
+        }
+        return null;
     }
 }

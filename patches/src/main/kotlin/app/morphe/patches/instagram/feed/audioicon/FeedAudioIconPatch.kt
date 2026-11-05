@@ -26,7 +26,7 @@ internal const val FEED_AUDIO_ICON_STATUS = "feedAudioIcon"
 val feedAudioIconPatch = bytecodePatch(
     name = "Hide the audio icon on posts",
     description = "Takes the speaker icon off videos in your feed. Tapping the video still turns the sound on or off. " +
-        "Starts off. Turn it on in HushGram settings > Feed.",
+        "Starts off. Turn it on in Instagram Plus Settings > Feed.",
 ) {
     category("Interaction")
     dependsOn(settingsPatch, instagramExtensionPatch)

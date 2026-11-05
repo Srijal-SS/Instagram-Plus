@@ -197,7 +197,7 @@ public final class SettingsEntry {
      */
     static void relabelIfStale(Context context) {
         try {
-            if (!L10n.t(context, "HushGram settings").equals(publishedLabel)) publishShortcut(context);
+            if (!L10n.t(context, "Instagram Plus Settings").equals(publishedLabel)) publishShortcut(context);
         } catch (Exception ex) {
             Logger.printException(() -> "Settings entry: could not check the shortcut's label", ex);
         }
@@ -214,7 +214,7 @@ public final class SettingsEntry {
             if (!Utils.settingsReady()) return;
             ShortcutManager manager = app.getSystemService(ShortcutManager.class);
             if (manager == null) return;
-            String longLabel = L10n.t(app, "HushGram settings");
+            String longLabel = L10n.t(app, "Instagram Plus Settings");
             // Set before the attempt, so a shortcut that can't be pushed isn't tried on every screen.
             publishedLabel = longLabel;
             if (!Settings.SETTINGS_SHORTCUT.get()) {
@@ -258,7 +258,7 @@ public final class SettingsEntry {
             final int rank = existing.getRank();
             if (rank == 0) return;
             CharSequence label = existing.getLongLabel();
-            push(manager, shortcut(app, label != null ? label : L10n.t(app, "HushGram settings")));
+            push(manager, shortcut(app, label != null ? label : L10n.t(app, "Instagram Plus Settings")));
             Logger.printInfo(() -> "Settings entry: launcher shortcut moved back in front from rank " + rank);
         } catch (Exception ex) {
             Logger.printException(() -> "Settings entry: could not put the shortcut back in front", ex);
@@ -315,7 +315,7 @@ public final class SettingsEntry {
                 .putExtra(EXTRA_OPEN_SETTINGS, true)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         return new ShortcutInfo.Builder(app, SHORTCUT_ID)
-                .setShortLabel("HushGram")
+                .setShortLabel("Instagram Plus")
                 .setLongLabel(longLabel)
                 .setIcon(Icon.createWithAdaptiveBitmap(shortcutIcon()))
                 .setIntent(intent)
@@ -447,8 +447,8 @@ public final class SettingsEntry {
         try {
             if (HushgramPause.reason() != HushgramPause.Reason.CRASH_LOOP || !pauseSaid.compareAndSet(false, true)) return;
             // Two toasts, since a toast shows two lines and the way back on is the half that matters.
-            Utils.showToastLong(L10n.t("Instagram kept crashing, so HushGram paused itself."));
-            Utils.showToastLong(L10n.t("Turn it back on in HushGram settings."));
+            Utils.showToastLong(L10n.t("Instagram kept crashing, so Instagram Plus paused itself."));
+            Utils.showToastLong(L10n.t("Turn it back on in Instagram Plus Settings."));
         } catch (Throwable failure) {
             Logger.printException(() -> "Settings entry: could not say why HushGram is paused", failure);
         }
@@ -905,7 +905,7 @@ public final class SettingsEntry {
         text.setTypeface(Typeface.DEFAULT_BOLD);
         text.setTextSize(size * radius * 0.8f);
         Paint.FontMetrics metrics = text.getFontMetrics();
-        canvas.drawText("H", size / 2f, size / 2f - (metrics.ascent + metrics.descent) / 2f, text);
+        canvas.drawText("+", size / 2f, size / 2f - (metrics.ascent + metrics.descent) / 2f, text);
         return bitmap;
     }
 }

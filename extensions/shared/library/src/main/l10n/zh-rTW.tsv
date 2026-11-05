@@ -11,7 +11,7 @@
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s。這是在套用修補程式時設定的，暫停也無法停用。若要確認是否由此造成，請重新套用修補程式並排除此項。
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s。這些是在套用修補程式時設定的，暫停也無法停用。若要排查其中一項，請重新套用修補程式，並排除該項後方括號內的修補程式。
 A diagnostic report is already being saved.	已有診斷報告正在儲存。
-A file named %1$s in %2$s paused HushGram.	%2$s 中名為 %1$s 的檔案使 HushGram 暫停。
+A file named %1$s in %2$s paused Instagram Plus.	%2$s 中名為 %1$s 的檔案使 Instagram Plus 暫停。
 About	關於
 Add the source to saved photos and videos	在儲存的照片和影片中加入來源資訊
 Ads and privacy	廣告與隱私
@@ -19,7 +19,7 @@ Asks Android to run Instagram at your screen's fastest refresh rate, at the same
 Back	返回
 Before you sign in	登入之前
 Cancel	取消
-Chat saved in Downloads/HushGram.	聊天已存到下載/HushGram。
+Chat saved in Downloads/Instagram.	聊天已存到下載/Instagram Plus。
 Chat saved in the app's Download folder.	聊天已存到應用程式的下載資料夾。
 Clear diagnostic data	清除診斷資料
 Copy a quick report or save the full one to %1$s. Links, IDs, cookies and sign-in details are left out. Check it for other private text before you share it.	複製簡要報告，或將完整報告儲存至 %1$s。報告不含連結、ID、Cookie 與登入資訊。分享前，請確認是否還有其他私人文字。
@@ -30,7 +30,7 @@ Couldn't find this chat's messages.	找不到這個聊天的訊息。
 Couldn't put back the diagnostic data. Try again.	無法還原診斷資料，請再試一次。
 Couldn't save the chat.	無法儲存聊天。
 Couldn't start the report export. Try again shortly.	無法開始匯出報告，請稍後再試。
-Couldn't turn HushGram back on. Try again.	無法重新啟用 HushGram，請再試一次。
+Couldn't turn Instagram Plus back on. Try again.	無法重新啟用 Instagram Plus，請再試一次。
 Debug logging	偵錯記錄
 Diagnostic data cleared. Tap again to put it back.	已清除診斷資料。再次點擊即可還原。
 Diagnostic data put back.	已還原診斷資料。
@@ -82,16 +82,16 @@ GPL-3.0, with the notices of the projects this is built on	GPL-3.0，以及本�
 Gray out stories you've watched	將已看過的限時動態顯示為灰色
 Hide ads	隱藏廣告
 How far a photo or video you're saving has got, with a button to cancel it	顯示照片或影片的儲存進度，並提供取消按鈕
-HushGram %1$s on Instagram %2$s	HushGram %1$s，Instagram %2$s
-HushGram is on	HushGram 已啟用
-HushGram is paused	HushGram 已暫停
-HushGram pauses when Instagram restarts.	重新啟動 Instagram 後，HushGram 將會暫停。
-HushGram saves	HushGram 儲存項目
-HushGram settings	HushGram 設定
-HushGram settings couldn't open	無法開啟 HushGram 設定
-HushGram settings are locked	HushGram 設定已鎖定
-HushGram turns back on when Instagram restarts.	重新啟動 Instagram 後，HushGram 將會重新啟用。
-Instagram crashed or froze within a minute of starting three times in a row, so HushGram paused itself.	Instagram 連續三次在啟動後一分鐘內當機或無回應，因此 HushGram 已自動暫停。
+Instagram Plus %1$s on Instagram %2$s	Instagram Plus %1$s，Instagram %2$s
+Instagram Plus is on	Instagram Plus 已啟用
+Instagram Plus is paused	Instagram Plus 已暫停
+Instagram Plus pauses when Instagram restarts.	重新啟動 Instagram 後，Instagram Plus 將會暫停。
+Instagram Plus saves	Instagram Plus 儲存項目
+Instagram Plus Settings	Instagram Plus 設定
+Instagram Plus Settings couldn't open	無法開啟 Instagram Plus 設定
+Instagram Plus Settings are locked	Instagram Plus 設定已鎖定
+Instagram Plus turns back on when Instagram restarts.	重新啟動 Instagram 後，Instagram Plus 將會重新啟用。
+Instagram crashed or froze within a minute of starting three times in a row, so Instagram Plus paused itself.	Instagram 連續三次在啟動後一分鐘內當機或無回應，因此 Instagram Plus 已自動暫停。
 Instagram stops showing the screen that says this version is too old. A patched build doesn't update on its own, so this keeps it usable.	不再顯示 Instagram 版本過舊的畫面。修補過的版本不會自行更新，此功能可讓它繼續使用。
 Instagram's own checks of who signed the app keep passing on this patched build.	讓修補過的版本繼續通過 Instagram 本身對應用程式簽署者的檢查。
 Joining the picture and sound	正在合併影像與聲音
@@ -105,7 +105,7 @@ No app can open the bug report.	手機上沒有可開啟問題回報的應用程
 Not saved: that isn't an Instagram photo or video	未儲存：這不是 Instagram 照片或影片
 Not saved: the file is over 512 MB	未儲存：檔案超過 512 MB
 OK	確認
-Pause HushGram	暫停 HushGram
+Pause Instagram Plus	暫停 Instagram Plus
 Pause and diagnostics	暫停與診斷
 Instagram accepts this build	讓 Instagram 接受此版本
 Record patch activity and show errors for a bug report. Leave off during normal use.	記錄修補程式活動並顯示錯誤，以供回報問題。平常使用時請保持關閉。
@@ -123,7 +123,7 @@ Saved. Restart Instagram to apply this change.	已儲存。請重新啟動 Insta
 Saving a photo	正在儲存照片
 Saving a video	正在儲存影片
 Saving...	儲存中…
-Saving... You can cancel from Downloads in HushGram settings.	儲存中…你可以從 HushGram 設定中的「下載」取消。
+Saving... You can cancel from Downloads in Instagram Plus Settings.	儲存中…你可以從 Instagram Plus 設定中的「下載」取消。
 Set when you patched	套用修補程式時設定
 Settings couldn't open	無法開啟設定
 Settings couldn't refresh completely. Reopen settings and try again.	設定未能完整重新整理，請重新開啟設定後再試一次。
@@ -136,7 +136,7 @@ Couldn't hide this notice. Try again.	無法隱藏此通知，請再試一次。
 Tap to turn it back on.	點擊即可重新啟用。
 The report isn't saved yet. Try again in a moment.	目前還無法儲存診斷報告，請稍後再試。
 Couldn't save the diagnostic report. Try again.	無法儲存診斷報告，請再試一次。
-The file %1$s couldn't be removed. Delete it from %2$s to turn HushGram back on.	無法移除檔案 %1$s。請從 %2$s 刪除它，以重新啟用 HushGram。
+The file %1$s couldn't be removed. Delete it from %2$s to turn Instagram Plus back on.	無法移除檔案 %1$s。請從 %2$s 刪除它，以重新啟用 Instagram Plus。
 Couldn't finish that change. Showing what's saved.	未能完成更新設定，目前顯示的是已儲存的值。
 There's no diagnostic data to clear.	沒有可清除的診斷資料。
 There's no diagnostic data to put back.	沒有可還原的診斷資料。
@@ -147,7 +147,7 @@ Version %1$s for Instagram %2$s	版本 %1$s，適用於 Instagram %2$s
 While you view anonymously, a story you've watched turns gray and moves to the end of the row, on this phone only. Instagram still isn't told you watched it.	匿名觀看時，已看過的限時動態會變成灰色並移到橫列末端，僅在這支手機上生效。Instagram 仍不會得知你已觀看。
 Writes the account that posted, the post date and a link to the post into a saved photo or video, in the EXIF or MP4 tags a gallery or exiftool reads. JPEG photos and MP4 videos only, and only what the save knows. The picture and the sound are unchanged.	將發文帳號、貼文日期及貼文連結寫入儲存的照片或影片，也就是相簿或 exiftool 可讀取的 EXIF 或 MP4 標籤。僅適用於 JPEG 照片和 MP4 影片，且只會寫入儲存時可取得的資訊。畫面和聲音本身不會改變。
 You	你
-You paused HushGram.	你已暫停 HushGram。
+You paused Instagram Plus.	你已暫停 Instagram Plus。
 the re-signed build fix	重新簽署版本修正
 Don't send reel watch history	不傳送 Reels 觀看記錄
 Stops telling Instagram which reels you watched or how far you got. Instagram uses that to pick your Reels. Watched reels may come back.	不再向 Instagram 回報你看過哪些 Reels 或觀看進度。Instagram 會用這些資料推薦 Reels，因此已看過的 Reels 可能再次出現。
@@ -368,7 +368,7 @@ Pure black dark mode isn't in this build	這個版本沒有 AMOLED 純黑模式
 To make dark mode pure black instead of dark gray, which can save battery on an OLED screen, pick Pure black dark mode in Morphe Manager the next time you patch Instagram.	想讓深色模式變成純黑而不是深灰（在 OLED 螢幕上可以省電），下次修補 Instagram 時，請在 Morphe Manager 中選取 AMOLED 純黑模式。
 the pure black dark mode	純黑深色模式
 No Play Store updates	停用 Play 商店更新
-Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later HushGram builds need Change version code too, or they won't install over this one.	Google Play 不會再為此版本提供 Meta 的更新。若要恢復一般 Instagram，請先解除安裝此版本，這會刪除手機上的 Instagram 資料。之後的 HushGram 版本也需套用「變更版本號碼」，否則無法覆蓋安裝。
+Google Play won't offer Meta's updates over this build. To go back to the normal Instagram, uninstall this one first, which deletes Instagram's data on this phone. Later Instagram Plus builds need Change version code too, or they won't install over this one.	Google Play 不會再為此版本提供 Meta 的更新。若要恢復一般 Instagram，請先解除安裝此版本，這會刪除手機上的 Instagram 資料。之後的 Instagram Plus 版本也需套用「變更版本號碼」，否則無法覆蓋安裝。
 the raised version code	提高版本號碼
 Sharing	分享
 Hide group buttons	隱藏群組按鈕
@@ -434,23 +434,23 @@ Updating remembered positions...	正在更新記住的播放位置…
 Undo cleared positions	復原清除播放位置
 Clear remembered positions	清除記住的播放位置
 Undo is available until %1$s.	可在 %1$s 前復原。
-HushGram remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	HushGram 最多會記住 200 部影片的停止位置，保留 30 天。點擊即可從此裝置清除。
+Instagram Plus remembers where you stopped in up to 200 videos for 30 days. Tap to clear them from this device.	Instagram Plus 最多會記住 200 部影片的停止位置，保留 30 天。點擊即可從此裝置清除。
 Remembered playback positions restored.	已還原記住的播放位置。
 Undo has expired.	復原期限已過。
 You cleared the remembered playback positions.	你已清除記住的播放位置。
 Couldn't update remembered playback positions.	無法更新記住的播放位置。
 Settings backup	設定備份
-Export HushGram settings	匯出 HushGram 設定
+Export settings	匯出設定
 Choose a file for your installed patches' settings. Accounts and history stay on this device.	選擇檔案以儲存已安裝修補程式的設定。帳號與記錄仍留在此裝置上。
-Import HushGram settings	匯入 HushGram 設定
+Import settings	匯入設定
 Choose a settings file. All valid choices apply together, and ones this version doesn't know are skipped. The Undo row shows how long you can undo.	選擇設定檔案。所有有效選項會一併套用，此版本不認得的選項則會略過。「復原」列會顯示可復原的期限。
 Undo settings import	復原設定匯入
 Undo is available until %1$s. Restarting Instagram discards Undo.	可在 %1$s 前復原。重新啟動 Instagram 後將無法復原。
 No settings import to undo.	沒有可復原的設定匯入。
 There's no file picker. Your settings haven't changed.	這支手機沒有檔案選擇器。你的設定未變更。
 Couldn't use that file. Your settings haven't changed.	無法使用此設定檔案。你的設定未變更。
-HushGram settings exported.	已匯出 HushGram 設定。
-Couldn't export HushGram settings. Try another file.	無法匯出 HushGram 設定，請嘗試其他檔案。
+Settings exported.	設定已匯出。
+Couldn't export settings. Try another file.	無法匯出 Instagram Plus 設定，請嘗試其他檔案。
 Settings restored.	已還原設定。
 Imported %1$d settings. Skipped %2$d that this version doesn't know.	已匯入 %1$d 項設定，略過此版本不認得的 %2$d 項設定。
 Imported %1$d settings.	已匯入 %1$d 項設定。
@@ -505,7 +505,7 @@ Preparing diagnostic report...	正在準備診斷報告…
 Saving diagnostic report...	正在儲存診斷報告…
 Diagnostic report saved.	已儲存診斷報告。
 Choose a file for the settings export.	請選擇匯出設定的檔案。
-Exporting HushGram settings...	正在匯出 HushGram 設定…
+Exporting settings...	正在匯出設定...
 Settings export canceled.	已取消匯出設定。
 Round handle on the seek bar	進度列圓形拖曳鈕
 Adds a white round handle to the seek bar that you can drag. Ads keep their own bar.	在進度列新增可拖曳的白色圓形拖曳鈕。廣告仍使用原本的進度列。
@@ -529,8 +529,8 @@ Creator tools	創作者工具
 Home feed picker	首頁動態選擇器
 Custom tab	自訂分頁
 Off	關閉
-Tab long presses keep Instagram's own action. Choose one to open HushGram instead.	長按分頁會保留 Instagram 原本的操作。選擇一個分頁，改為開啟 HushGram。
-Long press %1$s to open HushGram instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	長按 %1$s 會開啟 HushGram，取代該分頁原本的操作。一般點擊與其他分頁不受影響。僅可使用帳號有顯示的分頁。
+Tab long presses keep Instagram's own action. Choose one to open Instagram Plus instead.	長按分頁會保留 Instagram 原本的操作。選擇一個分頁，改為開啟 Instagram Plus。
+Long press %1$s to open Instagram Plus instead of that tab's usual action. Normal taps and other tabs stay the same. Only tabs your account shows can be used.	長按 %1$s 會開啟 Instagram Plus，取代該分頁原本的操作。一般點擊與其他分頁不受影響。僅可使用帳號有顯示的分頁。
 A sideways swipe no longer moves you between Home, Reels and the other main tabs. Tap the tab bar instead. Stop swipe to create covers the camera.	左右滑動不再切換首頁、Reels 與其他主要分頁，請改點擊分頁列。相機則由「停用滑動建立」控制。
 Ask for larger photos	要求更大尺寸的照片
 Empties Home on purpose, so you see the stories row and nothing under it. Profiles, Explore and Reels still show posts. Pull down on Home to refresh after changing it.	刻意清空動態首頁，只顯示限時動態橫列，下方不顯示內容。個人檔案、探索與 Reels 仍會顯示貼文。變更後請下拉重新整理首頁。
@@ -567,8 +567,8 @@ New message	新訊息
 Notifications	通知
 Puts every notification from Instagram in one group that shows how many it holds, so they don't fill your notification shade. Tapping one still opens it.	將所有 Instagram 通知合併為一組並顯示數量，避免佔滿通知欄。點擊通知仍可開啟對應內容。
 Right away	立即
-Set a phone screen lock so HushGram can lock Instagram.	請先在手機上設定螢幕鎖定，HushGram 才能鎖定 Instagram。
-Set a phone screen lock so HushGram can lock messages.	請先在手機上設定螢幕鎖定，HushGram 才能鎖定私訊。
+Set a phone screen lock so Instagram Plus can lock Instagram.	請先在手機上設定螢幕鎖定，Instagram Plus 才能鎖定 Instagram。
+Set a phone screen lock so Instagram Plus can lock messages.	請先在手機上設定螢幕鎖定，Instagram Plus 才能鎖定私訊。
 Hides the cards between posts that ask you to rate what you saw.	隱藏貼文之間請你評價所看內容的卡片。
 Hides the rows of products to shop and live shopping that Instagram puts between posts, and the shop tiles in Explore. Posts with tagged products don't show the shopping bag.	隱藏 Instagram 在貼文之間插入的商品與直播購物橫列，以及探索中的商店方塊。標註商品的貼文也不會顯示購物袋。
 Unlock	解鎖
@@ -578,7 +578,7 @@ Your inbox and chats stay covered until your fingerprint, face or screen lock sa
 Your messages are locked	你的私訊已鎖定
 Allow screenshots	允許截圖
 Ghost mode partly changed. Check the switches below.	無法變更所有幽靈模式開關，請在下方確認。
-Ghost mode partly changed. Check HushGram settings.	無法變更所有幽靈模式開關，請開啟 HushGram 設定確認。
+Ghost mode partly changed. Check Instagram Plus Settings.	無法變更所有幽靈模式開關，請開啟 Instagram Plus 設定確認。
 Don't report screenshots	不回報截圖
 Ghost mode	幽靈模式
 Ghost mode is off, and so is each of its switches.	幽靈模式與其所有開關皆已關閉。
@@ -660,14 +660,14 @@ Descriptions behind an info button	說明收在資訊按鈕後
 Shows each switch by its name alone. Tap the i next to a name to read what it does.	每個開關只顯示名稱。點一下名稱旁的 i 即可查看它的作用。
 Expanded	已展開
 Collapsed	已收合
-Hide the HushGram row in Instagram's menu	隱藏 Instagram 選單中的 HushGram 項目
+Hide the Instagram Plus row in Instagram's menu	隱藏 Instagram 選單中的 Instagram Plus 項目
 Settings shortcut on the app icon	應用程式圖示的設定捷徑
 Open settings from the logo	從標誌開啟設定
-Puts HushGram settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	在長按 Instagram 圖示顯示的選單中加入 HushGram 設定。關閉後會從該選單移除。
+Puts Instagram Plus Settings in the menu you get by holding Instagram's icon. Off, it leaves that menu.	在長按 Instagram 圖示顯示的選單中加入 Instagram Plus 設定。關閉後會從該選單移除。
 A long press on the Instagram logo at the top of Home opens these settings. Off, the long press goes back to Instagram.	長按首頁頂端的 Instagram 標誌即可開啟這些設定。關閉後，長按會恢復 Instagram 原本的操作。
 The last way into these settings stays on.	最後一個設定入口會維持啟用。
-No other way into HushGram is on, so the row stays in Instagram's menu.	目前未啟用其他 HushGram 入口，因此 Instagram 選單中的項目會保留。
-Instagram's Settings and activity screen leaves out the HushGram row while another way here opens HushGram. With every other way off, the row comes back.	啟用其他 HushGram 入口時，Instagram 的「設定和動態」畫面會隱藏 HushGram 項目。關閉所有其他入口後，此項目會重新出現。
+No other way into Instagram Plus is on, so the row stays in Instagram's menu.	目前未啟用其他 Instagram Plus 入口，因此 Instagram 選單中的項目會保留。
+Instagram's Settings and activity screen leaves out the Instagram Plus row while another way here opens Instagram Plus. With every other way off, the row comes back.	啟用其他 Instagram Plus 入口時，Instagram 的「設定和動態」畫面會隱藏 Instagram Plus 項目。關閉所有其他入口後，此項目會重新出現。
 Stop loading stories and highlights	停止載入限時動態與精選
 Takes the Comment button and the comment count off the posts in your feed.	移除動態首頁貼文的留言按鈕與留言數。
 # context: Comments: the switch that hides the row of quick emoji above the comment box (#248). Comment box is the field where you type a comment.
@@ -783,8 +783,8 @@ Bio copied	已複製個人簡介
 Copy bio	複製個人簡介
 Copy username and bio	複製使用者名稱與個人簡介
 Profile extras button	個人檔案額外選項按鈕
-Puts a button next to the three dots on profiles that opens HushGram's profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	在個人檔案的三點按鈕旁新增按鈕，開啟 HushGram 的個人檔案操作。需開啟「儲存個人檔案相片」、「檢視個人檔案相片」或「複製使用者名稱與個人簡介」其中一項。三點選單中的選項仍會保留。
-HushGram profile actions	HushGram 個人檔案操作
+Puts a button next to the three dots on profiles that opens Instagram Plus profile actions. Needs Save profile picture, View profile picture or Copy username and bio on. The rows in the three-dot menu stay too.	在個人檔案的三點按鈕旁新增按鈕，開啟 Instagram Plus 的個人檔案操作。需開啟「儲存個人檔案相片」、「檢視個人檔案相片」或「複製使用者名稱與個人簡介」其中一項。三點選單中的選項仍會保留。
+Instagram Plus profile actions	Instagram Plus 個人檔案操作
 Nothing to do for this profile	此個人檔案沒有可用的操作
 Couldn't copy the bio	無法複製個人簡介
 Couldn't open the picture	無法開啟相片
@@ -832,8 +832,8 @@ Orange	橘色
 Green	綠色
 Teal	藍綠色
 # context: Layout switch; it puts HushGram's logo on the screen Android shows while Instagram starts
-HushGram launch screen	HushGram 啟動畫面
-Shows HushGram's logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	在 Android 13 以上版本，將 Instagram 啟動畫面的標誌改為 HushGram。下次啟動時顯示。
+Instagram Plus launch screen	Instagram Plus 啟動畫面
+Shows Instagram Plus logo instead of Instagram's on the screen you see while Instagram starts, on Android 13 and newer. It shows from the next start.	在 Android 13 以上版本，將 Instagram 啟動畫面的標誌改為 Instagram Plus。下次啟動時顯示。
 # context: Downloads switch under Download feed videos; it adds Download cover to a feed video post's menu
 Download video covers	下載影片封面
 Adds Download cover to the menu of a feed post with a video, and of a carousel showing one. It saves the still picture shown before the video plays, at its largest size.	在動態首頁影片貼文與目前顯示影片的輪播貼文選單中新增「下載封面」，以最大尺寸儲存影片播放前的靜態圖片。
@@ -912,10 +912,10 @@ Open a chat in Instagram, then come back here to pin it.	先在 Instagram 開啟
 %1$s is shown again	已重新顯示 %1$s
 Pick the playback quality with a tab long press	長按分頁選擇播放畫質
 Tab long presses keep Instagram's own action. Choose one to pick the playback quality instead.	長按分頁會保留 Instagram 原本的操作。選擇一個分頁，改為選擇播放畫質。
-Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens HushGram, that comes first.	長按 %1$s 會選擇播放畫質，取代該分頁原本的操作。一般點擊與其他分頁不受影響。需啟用「預設播放畫質」。若同一分頁也用來開啟 HushGram，會優先開啟 HushGram。
+Long press %1$s to pick the playback quality instead of that tab's usual action. Normal taps and other tabs stay the same. Needs Default playback quality on. If the same tab opens Instagram Plus, that comes first.	長按 %1$s 會選擇播放畫質，取代該分頁原本的操作。一般點擊與其他分頁不受影響。需啟用「預設播放畫質」。若同一分頁也用來開啟 Instagram Plus，會優先開啟 Instagram Plus。
 Playback quality: %1$s. The next video uses it.	播放畫質：%1$s。下一部開啟的影片會使用此畫質。
-Couldn't save the quality. Set it in HushGram settings.	無法儲存播放畫質，請開啟 HushGram 設定進行設定。
-Support HushGram	支持 HushGram
+Couldn't save the quality. Set it in Instagram Plus Settings.	無法儲存播放畫質，請開啟 Instagram Plus 設定進行設定。
+Support	支持
 Hide the Home tab	隱藏首頁分頁
 Takes Home off the tab bar. Your Start tab opens wherever Home would, so pick one other than Home that's on the bar, or Home stays. Restart Instagram to see the change.	從分頁列移除首頁。原本開啟首頁的位置會改為開啟「啟動分頁」，因此請選擇分頁列上首頁以外的分頁，否則首頁仍會保留。請重新啟動 Instagram 以套用變更。
 Hide the Search tab	隱藏搜尋分頁
@@ -1033,7 +1033,7 @@ Hides the status bar and the navigation bar while your messages or a chat shows.
 Hide Notes on profile pictures	隱藏個人檔案相片上的筆記
 Takes the Notes bubble off profile pictures, yours included. Notes in Messages stay as they are.	移除個人檔案相片上的筆記泡泡，自己的也適用。私訊中的筆記不受影響。
 # context: the line that opens a category's page in HushGram settings, under the page title
-How you open HushGram and lay out settings.	開啟 HushGram 的方式與設定版面。
+How you open Instagram Plus and lay out settings.	開啟 Instagram Plus 的方式與設定版面。
 Hide ads and share less with Instagram.	隱藏廣告，減少與 Instagram 分享的資訊。
 Choose what Home shows and how it behaves.	選擇首頁顯示的內容與操作方式。
 Control where Meta AI appears.	選擇 Meta AI 出現的位置。
@@ -1053,10 +1053,10 @@ Save photos, videos and more, and choose where they go.	儲存照片、影片等
 Stop background work Instagram doesn't need.	停止 Instagram 不必要的背景工作。
 Stop Instagram from saying this version is too old.	不再讓 Instagram 顯示版本過舊的提示。
 Chosen when you patched, so Pause leaves them on. Patch again to change them.	這些項目在套用修補程式時決定，暫停時仍會啟用。若要變更，請重新套用修補程式。
-Save your HushGram choices to a file, or bring them back.	將 HushGram 設定儲存為檔案，或從檔案還原。
+Save your Instagram Plus choices to a file, or bring them back.	將 Instagram Plus 設定儲存為檔案，或從檔案還原。
 Your version, the source code and licenses.	查看版本、原始碼與授權條款。
 Open settings with a long press on your profile's menu	長按個人檔案選單開啟設定
-A long press on the menu button, the three lines at the top right of your own profile, opens HushGram. A tap still opens Instagram's menu, and other profiles stay the same.	長按自己個人檔案右上角的三條線選單按鈕，即可開啟 HushGram。點擊仍會開啟 Instagram 選單，其他人的個人檔案不受影響。
+A long press on the menu button, the three lines at the top right of your own profile, opens Instagram Plus. A tap still opens Instagram's menu, and other profiles stay the same.	長按自己個人檔案右上角的三條線選單按鈕，即可開啟 Instagram Plus。點擊仍會開啟 Instagram 選單，其他人的個人檔案不受影響。
 Hide the top bar on the Reels tab	隱藏 Reels 分頁頂端列
 Takes away the row at the top of the Reels tab, with the Reels title, the camera button and anything else Instagram puts there. Reels you open from a profile, a post or a chat keep theirs. The camera still opens from Home.	移除 Reels 分頁頂端的整列內容，包括 Reels 標題、相機按鈕與 Instagram 放在該處的其他項目。從個人檔案、貼文或聊天開啟的 Reels 仍會保留頂端列。相機仍可從首頁開啟。
 Hide the Create button on reels	隱藏 Reels 上的建立按鈕
@@ -1086,14 +1086,14 @@ Don't vibrate in clear mode	清爽模式中不震動
 Stops the short buzz Instagram plays when a reel opens in clear mode. With Keep clear mode on, that's every swipe.	Reel 以清爽模式開啟時，停止 Instagram 播放的短暫震動。開啟「保持清爽模式」時，每次滑動都會震動。
 Unlock with	解鎖方式
 Phone lock	手機鎖定
-HushGram PIN	HushGram PIN 碼
+Settings PIN	設定 PIN 碼
 A PIN you set here unlocks your messages, in place of your screen lock. It can't be recovered, only cleared by clearing Instagram's storage.	使用在此設定的 PIN 碼解鎖私訊，取代螢幕鎖定。PIN 碼無法復原，只能透過清除 Instagram 儲存空間來移除。
 Your fingerprint, face or screen lock unlocks your messages.	使用指紋、臉部或螢幕鎖定解鎖私訊。
 Fingerprint or face only	僅限指紋或臉部
 Only your fingerprint or face unlocks your messages. If the phone has none set up, your screen lock does.	只有指紋或臉部能解鎖私訊。手機若尚未設定任何一種，則由螢幕鎖定解鎖。
 Add a fingerprint or face in your phone's settings first.	請先在手機設定中新增指紋或臉部。
 This phone has no fingerprint or face unlock to use.	這支手機沒有可用的指紋或臉部解鎖。
-Your phone won't let HushGram use your fingerprint or face right now. Check its fingerprint and face settings.	手機目前不允許 HushGram 使用你的指紋或臉部。請檢查手機的指紋和臉部設定。
+Your phone won't let Instagram Plus use your fingerprint or face right now. Check its fingerprint and face settings.	手機目前不允許 Instagram Plus 使用你的指紋或臉部。請檢查手機的指紋和臉部設定。
 Set or change the 4 to 8 digit PIN. It stays on this phone and isn't in a backup.	設定或變更 4 至 8 位數的 PIN 碼。僅保留在此手機上，不會包含在備份中。
 PIN saved.	已儲存 PIN 碼。
 PIN	PIN 碼
@@ -1107,7 +1107,7 @@ Set a PIN	設定 PIN 碼
 Use 4 to 8 digits.	請使用 4 至 8 位數字。
 The PINs don't match.	兩次輸入的 PIN 碼不相符。
 Couldn't save the PIN.	無法儲存 PIN 碼。
-The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets HushGram's settings. A saved settings backup brings the rest back, but not the PIN.	PIN 碼無法復原。若要移除，請在 Android 應用程式設定中清除 Instagram 的儲存空間。這會將你登出並重設 HushGram 設定。已儲存的設定備份可還原其他設定，但不包含 PIN 碼。
+The PIN can't be recovered. To remove it, clear Instagram's storage in Android's app settings. That signs you out and resets Instagram Plus settings. A saved settings backup brings the rest back, but not the PIN.	PIN 碼無法復原。若要移除，請在 Android 應用程式設定中清除 Instagram 的儲存空間。這會將你登出並重設 Instagram Plus 設定。已儲存的設定備份可還原其他設定，但不包含 PIN 碼。
 Open app info	開啟應用程式資訊
 Hide 'Are you interested?' bubbles	隱藏「感興趣嗎？」泡泡
 Hides the bubble under a post that asks 'Are you interested in this post?' with Not interested and Interested buttons. Nothing is answered for you.	隱藏貼文下方詢問「你對這則貼文感興趣嗎？」的泡泡及「不感興趣」、「感興趣」按鈕。不會代你作答。
@@ -1137,9 +1137,9 @@ A carousel post's page sits a little in from the edges, with the start of the ne
 Large	大
 Small	小
 # context: a toast shown once when safe mode has paused HushGram on its own after crashes at start
-Instagram kept crashing, so HushGram paused itself.	Instagram 一直當機，HushGram 已自動暫停。
+Instagram kept crashing, so Instagram Plus paused itself.	Instagram 一直當機，Instagram Plus 已自動暫停。
 # context: the second toast after safe mode paused HushGram, saying where to turn it back on
-Turn it back on in HushGram settings.	請到 HushGram 設定重新開啟。
+Turn it back on in Instagram Plus Settings.	請到 Instagram Plus 設定重新開啟。
 # context: a toast when a save couldn't reach Instagram's servers or the connection dropped
 Download failed. Check your connection and try again.	下載失敗，請檢查連線後再試一次。
 # context: a toast when a save arrived incomplete or couldn't be written to the phone
@@ -1267,7 +1267,7 @@ Ghost mode needs at least one switch to turn.	幽靈模式至少需要控制一�
 # context: Ghost mode: turning it on or off with a long press on a tab (#255). %1$s is a tab's name
 Turn Ghost mode on or off with a tab long press	長按分頁切換幽靈模式
 Tab long presses keep Instagram's own action. Choose one to turn Ghost mode on or off instead.	長按分頁會保留 Instagram 原本的操作。選擇一個分頁，改為開啟或關閉幽靈模式。
-Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens HushGram or picks the playback quality, that comes first.	長按 %1$s 會開啟或關閉幽靈模式，取代該分頁原本的操作，並以短暫提示顯示切換結果。一般點擊與其他分頁不受影響。若同一分頁也用來開啟 HushGram 或選擇播放畫質，會優先執行那些操作。
+Long press %1$s to turn Ghost mode on or off instead of that tab's usual action, and a toast says which way it went. Normal taps and other tabs stay the same. If the same tab opens Instagram Plus or picks the playback quality, that comes first.	長按 %1$s 會開啟或關閉幽靈模式，取代該分頁原本的操作，並以短暫提示顯示切換結果。一般點擊與其他分頁不受影響。若同一分頁也用來開啟 Instagram Plus 或選擇播放畫質，會優先執行那些操作。
 Buttons on the share sheet	分享表單按鈕
 Every button under the people on the share sheet shows. Untick the ones you don't use.	分享表單中聯絡人下方的所有按鈕皆會顯示。取消勾選用不到的按鈕。
 Left off the share sheet: %1$s.	分享表單中已隱藏：%1$s。
@@ -1376,7 +1376,7 @@ Instagram's icons on the top bar, the tab bar and under posts take the color you
 Your fonts in story text	限時動態文字的自訂字型
 Your story fonts	你的限時動態字型
 Date in backup file names	在備份檔名加入日期
-Add the current date and time when exporting settings. Off keeps HushGram-settings.json.	匯出設定時加入目前的日期與時間。關閉時保留 HushGram-settings.json。
+Add the current date and time when exporting settings. Off keeps settings.json.	匯出設定時加入目前的日期與時間。關閉時保留 settings.json。
 %1$s is the post's shortcode. Stories and unknown posts leave it out. Using it also names photos.	%1$s 是貼文網址中的短代碼。限時動態和未知貼文會省略。加入此代碼後，範本也會用於相片檔名。
 Videos and photos use %1$s. Unknown codes are left out.	影片和相片使用 %1$s。未知的代碼會省略。
 Tab bar layout	分頁列版面
@@ -1389,11 +1389,11 @@ Instagram picks the tab bar for your account, and it can switch between the two 
 Group or mute Instagram's notifications, and take suggestions off the Notifications page.	將 Instagram 通知分組或設為靜音，並移除通知頁面上的建議。
 Take suggestions and Featured off the Notifications page.	移除通知頁面上的建議和精選內容。
 Version warnings	版本警告
-Pause HushGram, lock these settings, or make a report when something breaks.	暫停 HushGram、鎖定這些設定，或在出問題時製作報告。
+Pause Instagram Plus, lock these settings, or make a report when something breaks.	暫停 Instagram Plus、鎖定這些設定，或在出問題時製作報告。
 Choose a folder	選擇資料夾
 Saves go to Movies and Pictures. Pick any folder instead, a hidden one too, and every photo and video goes there.	儲存的內容會放在 Movies 和 Pictures。你可以改選任何資料夾，包括隱藏資料夾，所有相片和影片都會存到那裡。
 Photos and videos go to %1$s. Tap to pick another folder.	相片和影片會存到 %1$s。輕觸即可選擇其他資料夾。
-HushGram can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	HushGram 已無法存取 %1$s，因此儲存的內容會放在 Movies 和 Pictures。請重新選擇資料夾。
+Instagram Plus can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.	Instagram Plus 已無法存取 %1$s，因此儲存的內容會放在 Movies 和 Pictures。請重新選擇資料夾。
 Use Movies and Pictures	使用 Movies 和 Pictures
 Stop using the folder you picked. Saves go back to Movies and Pictures.	停止使用你選擇的資料夾。儲存的內容會改回放在 Movies 和 Pictures。
 Couldn't use that folder. Saves go where they did.	無法使用該資料夾。儲存的內容仍會存到原本的位置。
@@ -1417,7 +1417,7 @@ Stops the notification types you tick, even ones Instagram's own notification se
 Instagram hasn't set up its notification types on this phone yet. Open Instagram once, then come back here.	Instagram 尚未在這支手機上建立通知類型。請先開啟 Instagram 一次，再回到這裡。
 Unmute all	全部取消靜音
 Settings button on Home's header	首頁頂端的設定按鈕
-Adds a gear at the top of Home that opens HushGram settings. Restart Instagram to see the change.	在首頁頂端加入齒輪，可開啟 HushGram 設定。請重新啟動 Instagram 以套用變更。
+Adds a gear at the top of Home that opens Instagram Plus Settings. Restart Instagram to see the change.	在首頁頂端加入齒輪，可開啟 Instagram Plus 設定。請重新啟動 Instagram 以套用變更。
 Download button on stories	限時動態的下載按鈕
 Puts a Download button at the top of a story, beside the three dots. One tap saves the photo or video in front, the same as Download in the menu.	在限時動態頂端的三個點旁加入下載按鈕。點一下就能儲存目前的相片或影片，與選單中的下載相同。
 Start reels muted	Reels 預設靜音
@@ -1538,8 +1538,8 @@ Tap to see all %1$d, by kind or by search.	輕觸即可依類型或搜尋查看�
 Instagram gradient on dark	深色底的 Instagram 漸層
 Retro Instagram	復古 Instagram
 Menu button on Home's header	首頁頂端的選單按鈕
-Adds a menu button at the top of Home with your viewing history, Ghost mode and HushGram settings. Restart Instagram to see the change.	在首頁頂端加入選單按鈕，內含瀏覽紀錄、鬼魂模式與 HushGram 設定。請重新啟動 Instagram 以套用變更。
-HushGram menu	HushGram 選單
+Adds a menu button at the top of Home with your viewing history, Ghost mode and Instagram Plus Settings. Restart Instagram to see the change.	在首頁頂端加入選單按鈕，內含瀏覽紀錄、鬼魂模式與 Instagram Plus 設定。請重新啟動 Instagram 以套用變更。
+Instagram Plus menu	Instagram Plus 選單
 Seek bar button on feed videos	動態影片拖曳列按鈕
 Adds a small button at the bottom left of a feed video that shows or hides its seek bar. It works with Seek bar on feed videos on or off.	在動態影片左下角加入小按鈕，可顯示或隱藏拖曳列。無論動態影片拖曳列開或關都能使用。
 Seek bar	拖曳列
@@ -1606,10 +1606,10 @@ That isn't a picture.	這不是圖片。
 That picture is over %1$d MB.	這張圖片超過 %1$d MB。
 Couldn't save the picture.	無法儲存圖片。
 Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Jump to the first message or Jump to a date. The chat loads its older messages on its own, with a count and a Cancel button.	開啟聊天，點一下上方通話按鈕旁的時鐘按鈕，或長按聊天名稱，選擇「跳到第一則訊息」或「跳到某個日期」。聊天會自動載入較舊的訊息，並顯示數量和取消按鈕。
-Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, HushGram folder, one line per message.	開啟聊天，點一下上方通話按鈕旁的時鐘按鈕，或長按聊天名稱，選擇「匯出聊天」。整個聊天會存成文字檔，放在「下載」的 HushGram 資料夾，每則訊息一行。
+Open a chat, tap the clock button next to the call buttons at the top, or long press the chat's name, and pick Export chat. The whole chat is saved as a text file in Downloads, Instagram folder, one line per message.	開啟聊天，點一下上方通話按鈕旁的時鐘按鈕，或長按聊天名稱，選擇「匯出聊天」。整個聊天會存成文字檔，放在「下載」的 Instagram Plus 資料夾，每則訊息一行。
 Instagram stopped loading older messages.	Instagram 已停止載入較舊的訊息。
 Black settings page	黑色設定頁面
-Black rows and dialogs, HushGram's name at the top, and each category on one line.	黑色的列和對話框，頂端顯示 HushGram 名稱，每個類別只佔一行。
+Black rows and dialogs, Instagram Plus at the top, and each category on one line.	黑色的列和對話框，頂端顯示 Instagram Plus 名稱，每個類別只佔一行。
 Mark as read	標示為已讀
 Nothing to mark as read	沒有可標示為已讀的內容
 Mark as read button in chats	聊天中的「標示為已讀」按鈕
@@ -1617,7 +1617,7 @@ A check mark shows at the top of a chat while it hasn't told the other person yo
 # context: a switch on the Messages page and the eye it adds to a chat's header (#13). "Seen" is Instagram's own read receipt label in a chat. A tap on the eye opens a menu with the three rows after the summary; the toasts and the eye's spoken label say what the chat does now.
 Choose Seen in each chat	為每個聊天選擇「已讀」
 An eye at the top of each chat holds or sends Seen in that chat alone, whatever Read messages without the seen receipt says. Changing it doesn't send anything by itself.	每個聊天頂端的眼睛圖示可讓該聊天單獨保留或傳送「已讀」，不受「匿名查看私訊」影響。變更本身不會傳送任何內容。
-Use the HushGram setting	使用 HushGram 設定
+Use the Instagram Plus setting	使用 Instagram Plus 設定
 Hold Seen in this chat	在此聊天保留「已讀」
 Send Seen in this chat	在此聊天傳送「已讀」
 Seen held in this chat	此聊天會保留「已讀」
@@ -1776,3 +1776,9 @@ Playing in the background	正在背景播放
 Paused in the background	已在背景暫停
 Play	播放
 Stop	停止
+iOS tab bounce animation	iOS 分頁彈跳動畫
+Subtle spring bounce on tab icons when tapped, matching iOS Instagram's tactile feel.	輕觸分頁圖示時帶有微彈跳效果，貼合 iOS 版 Instagram 的觸覺反饋。
+iOS tab bar top border	iOS 分頁列頂部邊框
+Draws a subtle 0.5dp translucent hairline divider along the top of the tab bar.	沿著分頁列頂部繪製一條細緻的 0.5dp 半透明分隔線。
+Tap active tab to scroll to top	點擊目前分頁以捲動至頂部
+Tapping the currently active tab smoothly scrolls the current feed or list to the top.	點擊目前的分頁會將當前動態或列表平滑捲動至頂部。

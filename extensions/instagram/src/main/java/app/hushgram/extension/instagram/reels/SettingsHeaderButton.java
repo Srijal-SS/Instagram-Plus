@@ -143,7 +143,7 @@ public final class SettingsHeaderButton {
                 && ripple.resourceId != 0) {
             button.setBackgroundResource(ripple.resourceId);
         }
-        button.setContentDescription(L10n.t("HushGram settings"));
+        button.setContentDescription(L10n.t("Instagram Plus Settings"));
         button.setOnClickListener(SettingsHeaderButton::press);
         return button;
     }

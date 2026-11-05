@@ -73,7 +73,7 @@ internal const val SEEK_PLAY_REASON = "start"
 val feedSeekBarPatch = bytecodePatch(
     name = "Seek bar on feed videos",
     description = "Shows a bar along the bottom of the video playing in your feed that you can drag to jump to any " +
-        "point in it. Starts off. Turn it on in HushGram settings > Feed. Another switch there adds a small button " +
+        "point in it. Starts off. Turn it on in Instagram Plus Settings > Feed. Another switch there adds a small button " +
         "on the video that shows or hides the bar, and a choice under it makes the bar see-through or puts it on " +
         "frosted glass.",
 ) {

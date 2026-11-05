@@ -135,7 +135,7 @@ val downloadReelPatch = bytecodePatch(
         "picture, the largest one the post carries, and Download audio saves just its sound. Download as video on " +
         "a carousel with music saves every page, in order. A separate switch under Downloads puts a download icon under Save beside each reel, " +
         "and others add a Lens icon for copying a reel's text, a speed icon and a Full screen icon. On by " +
-        "default. Turn it off in HushGram settings > Reels.",
+        "default. Turn it off in Instagram Plus Settings > Reels.",
     default = true,
 ) {
     category("Downloads")

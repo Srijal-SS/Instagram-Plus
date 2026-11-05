@@ -47,7 +47,7 @@ private const val USER_SESSION = "Lcom/instagram/common/session/UserSession;"
 val hideActivityBubblesPatch = bytecodePatch(
     name = "Hide activity bubbles",
     description = "Takes the little round pictures off posts and reels that show a friend liked, commented on or " +
-        "reshared them. Starts off. Turn it on in HushGram settings > Feed.",
+        "reshared them. Starts off. Turn it on in Instagram Plus Settings > Feed.",
 ) {
     category("Interaction")
     dependsOn(settingsPatch, instagramExtensionPatch)

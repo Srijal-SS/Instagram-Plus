@@ -132,7 +132,7 @@ public final class HomeMenuButton {
             ghost.setCheckable(true);
             ghost.setChecked(GhostMode.on(switches));
         }
-        menu.add(Menu.NONE, SETTINGS, Menu.NONE, L10n.t("HushGram settings"));
+        menu.add(Menu.NONE, SETTINGS, Menu.NONE, L10n.t("Instagram Plus Settings"));
     }
 
     /** What a pick does. Never throws. */
@@ -196,7 +196,7 @@ public final class HomeMenuButton {
                 && ripple.resourceId != 0) {
             button.setBackgroundResource(ripple.resourceId);
         }
-        button.setContentDescription(L10n.t("HushGram menu"));
+        button.setContentDescription(L10n.t("Instagram Plus menu"));
         button.setOnClickListener(HomeMenuButton::press);
         return button;
     }

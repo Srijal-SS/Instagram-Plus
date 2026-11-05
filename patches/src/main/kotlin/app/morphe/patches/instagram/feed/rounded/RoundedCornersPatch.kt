@@ -63,7 +63,7 @@ val roundedPostCornersPatch = bytecodePatch(
     name = "Rounded post corners",
     description = "Rounds the corners of a post's photo, video and carousel pages in Home and Following, and of " +
         "reels and stories if you like, at a small or large size. Profiles and Explore stay as Instagram draws them. " +
-        "Starts off. Turn it on in HushGram settings > Feed.",
+        "Starts off. Turn it on in Instagram Plus Settings > Feed.",
 ) {
     category("Feed")
     dependsOn(settingsPatch, instagramExtensionPatch)

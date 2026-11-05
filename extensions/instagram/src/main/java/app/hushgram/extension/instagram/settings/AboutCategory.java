@@ -40,7 +40,7 @@ final class AboutCategory {
                 L10n.t("Your version, the source code and licenses."));
         page.about = about;
         Preference version = info(context, L10n.t("Version"), "");
-        version.setSummary(versionSummary(L10n.f("HushGram %1$s on Instagram %2$s",
+        version.setSummary(versionSummary(L10n.f("Instagram Plus %1$s on Instagram %2$s",
                 L10n.isolate(Utils.getPatchesReleaseVersion()), L10n.isolate(Utils.getAppVersionName())),
                 L10n.isolate(Utils.getSourceBuildIdentity())));
         about.addPreference(mark(version, SettingsIcons.ABOUT));

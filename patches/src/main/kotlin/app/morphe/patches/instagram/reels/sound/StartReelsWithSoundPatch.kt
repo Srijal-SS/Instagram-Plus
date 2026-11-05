@@ -98,7 +98,7 @@ val startReelsWithSoundPatch = bytecodePatch(
     name = "Start reels with sound",
     description = "A reel you open from a post on Home plays with sound, and Home is muted again when you go " +
         "back. Your phone's ringer and volume still count. A separate switch, Start reels muted, starts every reel silent " +
-        "instead. Both start off. Turn them on in HushGram settings > Playback.",
+        "instead. Both start off. Turn them on in Instagram Plus Settings > Playback.",
 ) {
     category("Playback")
     dependsOn(settingsPatch, instagramExtensionPatch)

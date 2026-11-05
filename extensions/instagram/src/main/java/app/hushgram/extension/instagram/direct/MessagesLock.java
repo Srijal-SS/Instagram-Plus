@@ -927,11 +927,11 @@ public final class MessagesLock {
         column.addView(icon, new LinearLayout.LayoutParams(size, size));
 
         TextView title = new TextView(activity);
-        title.setText(SETTINGS.equals(screen) ? L10n.t("HushGram settings are locked")
+        title.setText(SETTINGS.equals(screen) ? L10n.t("Instagram Plus Settings are locked")
                 : wholeApp ? L10n.t("Instagram is locked") : L10n.t("Your messages are locked"));
-        ShimmerTitle.wear(title);
+        title.setTextColor(colors.title);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         title.setGravity(Gravity.CENTER);
         title.setPadding(0, dp(activity, 24), 0, dp(activity, 32));
         column.addView(title, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1045,8 +1045,8 @@ public final class MessagesLock {
         if (keyguard == null || !keyguard.isDeviceSecure()) {
             HookStatus.counted(FamilyNames.MESSAGES_LOCK, NO_PHONE_LOCK);
             Utils.showToastLong(wholeApp()
-                    ? L10n.t("Set a phone screen lock so HushGram can lock Instagram.")
-                    : L10n.t("Set a phone screen lock so HushGram can lock messages."));
+                    ? L10n.t("Set a phone screen lock so Instagram Plus can lock Instagram.")
+                    : L10n.t("Set a phone screen lock so Instagram Plus can lock messages."));
             confirmed.run();
             return;
         }

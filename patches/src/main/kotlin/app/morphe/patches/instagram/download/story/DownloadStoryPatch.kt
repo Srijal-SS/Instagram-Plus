@@ -97,7 +97,7 @@ val downloadStoryPatch = bytecodePatch(
     description = "Adds Download to the menu of anyone's story. Videos save at the quality you choose and photos " +
         "at their largest size, and Download as photo saves a still from a video story. " +
         "A Download button at the top of a story is a separate switch, off to start, and so is a Copy text button " +
-        "that opens Google Lens on the story. Turn them on or off in HushGram settings > Stories.",
+        "that opens Google Lens on the story. Turn them on or off in Instagram Plus Settings > Stories.",
     default = true,
 ) {
     category("Downloads")

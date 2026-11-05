@@ -201,7 +201,7 @@ public final class SaveTree {
     /** What the settings row and the first save say when the folder's grant went. */
     public static String lostMessage(Context context, Uri tree) {
         String folder = tree == null ? Settings.SAVE_TREE.get() : label(context, tree);
-        return L10n.f("HushGram can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.",
+        return L10n.f("Instagram Plus can't reach %1$s anymore, so saves go to Movies and Pictures. Pick the folder again.",
                 L10n.isolate(folder));
     }
 

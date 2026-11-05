@@ -44,7 +44,7 @@ internal const val DAMPING_CHECK = "Damping ratio must be non-negative"
 val smoothStoryOpenPatch = bytecodePatch(
     name = "Smooth story opening",
     description = "Opens a story from the stories row with a slower, gentler zoom instead of Instagram's quick " +
-        "spring. Starts off. Turn it on in HushGram settings > Stories.",
+        "spring. Starts off. Turn it on in Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
     dependsOn(settingsPatch, instagramExtensionPatch)

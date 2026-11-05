@@ -79,7 +79,7 @@ internal const val NOTES_MAP_ROW = "FriendMapEntryPoint"
 val hideNotesRowPatch = bytecodePatch(
     name = "Hide the notes row",
     description = "Takes the row of notes, and the Map bubble in it, off the top of your messages. Your chats " +
-        "stay. A second switch takes only the Map bubble. Both start off. Turn them on in HushGram settings > Messages.",
+        "stay. A second switch takes only the Map bubble. Both start off. Turn them on in Instagram Plus Settings > Messages.",
     default = true,
 ) {
     category("Messages")

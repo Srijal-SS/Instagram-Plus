@@ -88,7 +88,7 @@ val startOnFollowingPatch = bytecodePatch(
         "fourth, Fall back to Following, opens Home on Following for an account whose For you brings only " +
         "suggested posts, unless you picked a feed. A fifth, Mix in Following, shows a page of posts from " +
         "accounts you follow after each page of For you. Restart Instagram to see the change. Starts off. Turn " +
-        "it on in HushGram settings > Feed.",
+        "it on in Instagram Plus Settings > Feed.",
 ) {
     category("Feed")
     dependsOn(settingsPatch, instagramExtensionPatch)

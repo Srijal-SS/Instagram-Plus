@@ -28,7 +28,7 @@ internal const val HIDE_CAPTIONS_STATUS = "hideCaptions"
 val hideCaptionsPatch = bytecodePatch(
     name = "Hide captions",
     description = "Takes the caption off posts in your feed and off reels. The post stays, and the comments sheet " +
-        "still shows it. Starts off. Turn it on in HushGram settings > Feed.",
+        "still shows it. Starts off. Turn it on in Instagram Plus Settings > Feed.",
 ) {
     category("Interaction")
     dependsOn(settingsPatch, instagramExtensionPatch)

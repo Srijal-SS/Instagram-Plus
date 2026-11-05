@@ -36,7 +36,7 @@ final class SettingsHeader extends Preference {
         super(context);
         setKey(KEY);
         // What it shows, for anything that reads rows by their titles.
-        setTitle("HushGram");
+        setTitle("Instagram Plus");
         setPersistent(false);
         setSelectable(false);
     }
@@ -63,12 +63,12 @@ final class SettingsHeader extends Preference {
 
         TextView name = new TextView(context);
         name.setTag(NAME);
-        name.setText("HushGram");
-        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
-        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        name.setText("Instagram Plus");
+        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
+        name.setTextColor(colors.title);
+        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         name.setGravity(Gravity.CENTER);
         name.setAccessibilityHeading(true);
-        ShimmerTitle.wear(name);
         LinearLayout.LayoutParams nameSpace = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         nameSpace.topMargin = Math.round(12 * density);
@@ -89,11 +89,10 @@ final class SettingsHeader extends Preference {
     }
 
     /**
-     * HushGram's own launcher icon when this build has the app icon patch, or the patched mark the
-     * status card wears.
+     * Instagram Plus icon or the mark the status card wears.
      */
     static Drawable icon(Context context, ScreenColors colors) {
-        Drawable own = AppIcon.preview(context, AppIconChoice.HUSHGRAM);
-        return own != null ? own : SettingsIcons.icon(context, SettingsIcons.PATCHED, colors.heading);
+        Drawable own = AppIcon.preview(context, AppIconChoice.INSTAGRAM);
+        return own != null ? own : SettingsIcons.icon(context, SettingsIcons.FEED, colors.heading);
     }
 }

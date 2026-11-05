@@ -353,7 +353,7 @@ public final class ProfileExtras {
                 && ripple.resourceId != 0) {
             button.setBackgroundResource(ripple.resourceId);
         }
-        button.setContentDescription(L10n.t(context, "HushGram profile actions"));
+        button.setContentDescription(L10n.t(context, "Instagram Plus profile actions"));
         final WeakReference<View> owner = new WeakReference<>(bar);
         button.setOnClickListener(view -> press(view, owner.get()));
         return button;

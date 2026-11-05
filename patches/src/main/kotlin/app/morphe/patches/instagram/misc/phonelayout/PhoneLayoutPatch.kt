@@ -59,7 +59,7 @@ val phoneLayoutPatch = bytecodePatch(
     name = "Phone layout on big screens",
     description = "On a foldable or tablet, Instagram keeps its phone layout across the whole screen, with the tab bar " +
         "at the bottom instead of down the side. Restart Instagram to see the change. Starts off. Turn it on in " +
-        "HushGram settings > Layout.",
+        "Instagram Plus Settings > Layout.",
 ) {
     category("Fixes")
     dependsOn(settingsPatch, instagramExtensionPatch)

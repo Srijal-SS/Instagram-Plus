@@ -59,7 +59,7 @@ private const val STRING = "Ljava/lang/String;"
 val keepStoriesPlayingOnZoomPatch = bytecodePatch(
     name = "Keep stories playing while zooming",
     description = "Keeps a story playing while you pinch to zoom it, instead of pausing it. A story you hold still " +
-        "first stays paused. Starts off. Turn it on in HushGram settings > Stories.",
+        "first stays paused. Starts off. Turn it on in Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
     dependsOn(settingsPatch, instagramExtensionPatch)

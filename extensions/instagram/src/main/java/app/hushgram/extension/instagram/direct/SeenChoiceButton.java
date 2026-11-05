@@ -123,7 +123,7 @@ public final class SeenChoiceButton {
         SeenChoices.Choice now = ThreadSeen.choiceOf(account, thread);
         PopupMenu popup = new PopupMenu(anchor.getContext(), anchor);
         Menu menu = popup.getMenu();
-        menu.add(GROUP, 0, 0, L10n.t("Use the HushGram setting"));
+        menu.add(GROUP, 0, 0, L10n.t("Use the Instagram Plus setting"));
         menu.add(GROUP, 1, 1, L10n.t("Hold Seen in this chat"));
         menu.add(GROUP, 2, 2, L10n.t("Send Seen in this chat"));
         menu.setGroupCheckable(GROUP, true, true);

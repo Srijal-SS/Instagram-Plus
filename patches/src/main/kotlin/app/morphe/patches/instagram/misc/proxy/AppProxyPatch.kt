@@ -35,7 +35,7 @@ private fun refuse(detail: String): Nothing = throw PatchException("$PATCH: $det
 val appProxyPatch = bytecodePatch(
     name = "App-only proxy",
     description = "Sends Instagram through an HTTP proxy you set, without changing the proxy for other apps or " +
-        "the phone. You need to set a server too. Starts off. Turn it on in HushGram settings > Ads and privacy.",
+        "the phone. You need to set a server too. Starts off. Turn it on in Instagram Plus Settings > Ads and privacy.",
 ) {
     category("Privacy")
     dependsOn(settingsPatch, instagramExtensionPatch)

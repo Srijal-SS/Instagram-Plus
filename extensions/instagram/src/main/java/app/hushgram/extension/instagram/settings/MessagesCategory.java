@@ -175,7 +175,7 @@ final class MessagesCategory {
                 messages.addPreference(toggle(context, Settings.EXPORT_CHAT, L10n.t("Export a chat as text"),
                         L10n.t("Open a chat, tap the clock button next to the call buttons at the top, or long press "
                                 + "the chat's name, and pick Export chat. The whole chat is saved as a text file in "
-                                + "Downloads, HushGram folder, one line per message.")));
+                                + "Downloads, Instagram folder, one line per message.")));
             }
             if (build.contains(PatchFamily.ASK_BEFORE_CALL)) {
                 messages.addPreference(toggle(context, Settings.ASK_BEFORE_CALL, L10n.t("Ask before a call"),

@@ -108,7 +108,7 @@ val keepReelsAutoScrollPatch = bytecodePatch(
     name = "Keep Reels auto scroll on",
     description = "Keeps Instagram's auto scroll in Reels turned on after you leave Reels or restart Instagram, " +
         "until you turn it off yourself. It can also move on to the next reel when one ends on accounts where " +
-        "Instagram doesn't offer auto scroll. Starts off. Turn it on in HushGram settings > Reels.",
+        "Instagram doesn't offer auto scroll. Starts off. Turn it on in Instagram Plus Settings > Reels.",
 ) {
     category("Reels")
     dependsOn(settingsPatch, instagramExtensionPatch)

@@ -47,7 +47,7 @@ final class PatchTimeCategory {
                 patched.addPreference(mark(info(context, L10n.t("No Play Store updates"),
                         L10n.t("Google Play won't offer Meta's updates over this build. To go back to the normal "
                                 + "Instagram, uninstall this one first, which deletes Instagram's data on this "
-                                + "phone. Later HushGram builds need Change version code too, or they won't install "
+                                + "phone. Later Instagram Plus builds need Change version code too, or they won't install "
                                 + "over this one.")), SettingsIcons.UPDATES));
             }
         }

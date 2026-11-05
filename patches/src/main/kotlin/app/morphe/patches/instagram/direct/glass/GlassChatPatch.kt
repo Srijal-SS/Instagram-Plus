@@ -26,7 +26,7 @@ val glassChatPatch = bytecodePatch(
     name = "Glass in chats",
     description = "Gives a chat's top bar frosted glass that blurs the messages under it (Android 12 and newer) and " +
         "puts the back, call and video buttons on round glass circles. Starts off. Turn it on in " +
-        "HushGram settings > Messages.",
+        "Instagram Plus Settings > Messages.",
 ) {
     category("Messages")
     dependsOn(settingsPatch, instagramExtensionPatch, videoSurfacePatch)

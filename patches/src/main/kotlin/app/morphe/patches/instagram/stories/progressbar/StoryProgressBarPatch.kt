@@ -24,7 +24,7 @@ import app.morphe.patches.shared.compat.AppCompatibilities
 val storyProgressBarPatch = bytecodePatch(
     name = "Thicker story progress bar",
     description = "Draws the progress bar along the top of a story twice or three times as thick. Its segments " +
-        "and timing stay as they were. Starts off. Turn it on in HushGram settings > Stories.",
+        "and timing stay as they were. Starts off. Turn it on in Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
     dependsOn(settingsPatch, instagramExtensionPatch)

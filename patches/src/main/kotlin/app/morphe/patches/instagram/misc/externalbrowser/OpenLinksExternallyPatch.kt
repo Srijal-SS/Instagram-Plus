@@ -51,7 +51,7 @@ val openLinksExternallyPatch = bytecodePatch(
     name = "Open links in external browser",
     description = "Opens web links you tap in your usual browser instead of Instagram's built-in one, without " +
         "Instagram's click tracker. Ads and Meta's own sites (Instagram, Facebook, Messenger, Threads) still open " +
-        "in the app. On by default. Turn it off in HushGram settings > Ads and privacy.",
+        "in the app. On by default. Turn it off in Instagram Plus Settings > Ads and privacy.",
     default = true,
 ) {
     category("Privacy")

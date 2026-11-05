@@ -76,7 +76,7 @@ val emojiStylePatch = bytecodePatch(
     name = "Emoji style",
     description = "Shows every emoji in Google's style instead of your phone's own, or in a free emoji pack " +
         "(Twemoji, OpenMoji, Blobmoji) or a color emoji font file you pick. The full change shows after you " +
-        "restart Instagram. Starts off. Turn it on in HushGram settings > Layout.",
+        "restart Instagram. Starts off. Turn it on in Instagram Plus Settings > Layout.",
     default = true,
 ) {
     category("Interface")

@@ -183,7 +183,7 @@ val swipeChatReelsPatch = bytecodePatch(
     name = "Swipe through a chat's reels",
     description = "Swiping up on a reel you opened from a chat goes through the other reels shared in that chat before " +
         "any suggested reels, can stop after them and can leave out the ones you sent. All start off. Turn them on in " +
-        "HushGram settings > Messages.",
+        "Instagram Plus Settings > Messages.",
 ) {
     category("Messages")
     dependsOn(settingsPatch, instagramExtensionPatch)

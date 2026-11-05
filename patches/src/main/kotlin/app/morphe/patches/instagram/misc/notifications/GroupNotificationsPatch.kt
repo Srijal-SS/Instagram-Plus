@@ -52,7 +52,7 @@ val groupNotificationsPatch = bytecodePatch(
     name = "Group Instagram's notifications",
     description = "Puts Instagram's notifications in one group, or in a group for each type, so they don't fill " +
         "your notification shade. Tapping one still opens it. You can also mute the types you pick, like promo " +
-        "pushes. Starts off. Turn it on in HushGram settings > Notifications.",
+        "pushes. Starts off. Turn it on in Instagram Plus Settings > Notifications.",
     default = true,
 ) {
     category("Interface")

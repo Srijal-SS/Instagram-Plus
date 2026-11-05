@@ -53,7 +53,7 @@ private const val RESOURCES = "Landroid/content/res/Resources;"
 private val GET_COLOR = listOf(listOf("I"), listOf("I", THEME))
 
 /**
- * Instagram's blue turns into a color picked in HushGram settings, after a restart. Included in
+ * Instagram's blue turns into a color picked in Instagram Plus Settings, after a restart. Included in
  * the default selection with its switch off.
  *
  * Instagram reads its colors from the theme. Most reads go through one of two small statics taking
@@ -81,7 +81,7 @@ private val GET_COLOR = listOf(listOf("I"), listOf("I", THEME))
 val accentColorPatch = bytecodePatch(
     name = "Accent color",
     description = "Swaps Instagram's blue on Follow buttons, links and other highlights for purple, pink, red, orange, " +
-        "green, teal or your wallpaper's colors (Material You, on Android 12 and newer). Restart Instagram to see a change. Starts off. Turn it on in HushGram settings > Layout.",
+        "green, teal or your wallpaper's colors (Material You, on Android 12 and newer). Restart Instagram to see a change. Starts off. Turn it on in Instagram Plus Settings > Layout.",
     default = true,
 ) {
     category("Interface")

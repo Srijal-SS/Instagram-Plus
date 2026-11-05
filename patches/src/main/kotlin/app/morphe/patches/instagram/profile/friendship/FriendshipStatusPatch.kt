@@ -96,7 +96,7 @@ val friendshipStatusPatch = bytecodePatch(
         "shows who left your Followers list, with a Follower history of who left, came back or is new. The chip is blue for " +
         "Follows you, green for Following each other and red for Doesn't follow you, and it can go small under " +
         "the profile picture. On by default. Turn it " +
-        "off in HushGram settings > Profiles.",
+        "off in Instagram Plus Settings > Profiles.",
 ) {
     category("Profiles")
     dependsOn(settingsPatch, instagramExtensionPatch)

@@ -102,7 +102,7 @@ internal val HDR_CALLS = listOf(
 val turnOffHdrBoostsPatch = bytecodePatch(
     name = "Turn off HDR brightness boosts",
     description = "Stops HDR photos and reels from making the screen brighter than everything else. Starts off. " +
-        "Turn it on in HushGram settings > Playback.",
+        "Turn it on in Instagram Plus Settings > Playback.",
     default = true,
 ) {
     category("Playback")

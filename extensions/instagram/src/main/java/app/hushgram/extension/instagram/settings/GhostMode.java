@@ -102,7 +102,7 @@ final class GhostMode {
         boolean on = !on(switches);
         for (BooleanSetting setting : switches) setting.save(on);
         Utils.showToastShort(message(switches, on,
-                L10n.t("Ghost mode partly changed. Check HushGram settings.")));
+                L10n.t("Ghost mode partly changed. Check Instagram Plus Settings.")));
         return on;
     }
 

@@ -41,7 +41,7 @@ private const val STRING = "Ljava/lang/String;"
 val storiesPriorityPatch = bytecodePatch(
     name = "Stories priority",
     description = "Puts the accounts on your list first in the stories row at the top of Home while they have a " +
-        "story you haven't watched. Starts off. Turn it on and type the accounts in HushGram settings > Stories.",
+        "story you haven't watched. Starts off. Turn it on and type the accounts in Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
     dependsOn(settingsPatch, instagramExtensionPatch)

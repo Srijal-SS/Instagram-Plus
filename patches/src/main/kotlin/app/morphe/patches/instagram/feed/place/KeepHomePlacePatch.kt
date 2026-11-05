@@ -131,7 +131,7 @@ internal object AppResetReturnFingerprint : Fingerprint(
 val keepHomePlacePatch = bytecodePatch(
     name = "Keep your place in Home",
     description = "Coming back to Instagram leaves Home on the post you were on, however long you were away, " +
-        "instead of reloading it and jumping to the top. Starts off. Turn it on in HushGram settings > Feed.",
+        "instead of reloading it and jumping to the top. Starts off. Turn it on in Instagram Plus Settings > Feed.",
 ) {
     category("Feed")
     dependsOn(settingsPatch, instagramExtensionPatch)
