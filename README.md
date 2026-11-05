@@ -24,7 +24,7 @@ Instagram Plus is a set of [Morphe](https://morphe.software) patches for Instagr
 
 Most switches start off, so a freshly patched Instagram looks like Instagram until you turn something on. It's the Instagram member of a small family. [Hushfacebook](https://github.com/SysAdminDoc/Hushfacebook) does the same job for Facebook, and Instagram Plus is built on its foundation.
 
-The latest release is [v0.0.18](https://github.com/Srijal-SS/HushGram/releases/tag/v0.0.18), with 139 patches. Add it to Morphe Manager with [this link](https://morphe.software/add-source?github=Srijal-SS%2FHushGram).
+The latest release is [v0.0.18](https://github.com/Srijal-SS/Instagram-Plus/releases/tag/v0.0.18), with 154 patches. Add it to Morphe Manager with [this link](https://morphe.software/add-source?github=Srijal-SS%2FInstagram-Plus).
 
 What changed in each version is in the [changelog](CHANGELOG.md).
 
@@ -33,13 +33,13 @@ This project has no connection to Meta or to the Morphe project. Neither endorse
 ## Install
 
 1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.4.0 or newer.
-2. Add Instagram Plus as a patch source by opening [this link](https://morphe.software/add-source?github=Srijal-SS%2FHushGram) on your phone. Or in Manager open **Sources**, tap **+**, choose **Remote** and enter `github.com/Srijal-SS/HushGram`. Use Instagram Plus as your only Instagram source, since mixing in another one can stop patching.
+2. Add Instagram Plus as a patch source by opening [this link](https://morphe.software/add-source?github=Srijal-SS%2FInstagram-Plus) on your phone. Or in Manager open **Sources**, tap **+**, choose **Remote** and enter `github.com/Srijal-SS/Instagram-Plus`. Use Instagram Plus as your only Instagram source, since mixing in another one can stop patching.
 3. Get Instagram 454.0.0.54.77 from APKMirror. Take [the bundle labelled (arm64-v8a) (480dpi) (Android 9.0+), build 386014758](https://www.apkmirror.com/apk/instagram/instagram-instagram/instagram-454-0-0-54-77-release/). APKMirror lists three arm64 480dpi bundles for this version, so check the build number. The version's other builds work too (see [Supported Instagram builds](#supported-instagram-builds)).
 4. Uninstall the Instagram you got from the Play Store. The patched app is signed with your own key, so Android won't install it over Meta's. Uninstalling signs you out, so have your password and two-factor codes ready. On a rooted phone, Manager's Root Mount can lay Instagram Plus over the Play Store app instead, and you stay signed in.
 5. In Morphe Manager, pick the Instagram file, keep the default patch selection or change it, and patch.
 6. Open Instagram Plus Settings and turn on what you want. It's at the top of Instagram's Settings and activity. A long press on the Instagram logo at the top of your feed opens it too.
 
-Prefer a local source? Download the `.mpp` file from the [latest release](https://github.com/Srijal-SS/HushGram/releases/latest) and add it through **Sources > + > Local**. It won't update itself, and it's a patch bundle, not an Instagram APK.
+Prefer a local source? Download the `.mpp` file from the [latest release](https://github.com/Srijal-SS/Instagram-Plus/releases/latest) and add it through **Sources > + > Local**. It won't update itself, and it's a patch bundle, not an Instagram APK.
 
 When a patch can't find its target in your Instagram file, patching stops with a message saying what's missing instead of handing you an app that quietly does nothing. Please report a stop like that.
 
@@ -393,7 +393,7 @@ The tables cover German, Spanish, Indonesian, Italian, Korean, Brazilian Portugu
 
 The patches themselves, and the Instagram side of the ported features, were written here. Every source file says where it came from in its header, and [provenance.json](provenance.json) maps each file to the project and commit it came from, with its licence. [docs/sources.md](docs/sources.md) covers the other Instagram patch sources and what each one does, and its ledger, [sources/instagram-sources.json](sources/instagram-sources.json), pins each source's licence.
 
-The emoji packs in `Emoji pack` aren't part of Instagram Plus. Each one downloads from its maker when you pick it, and HushGram checks it against the exact file before using it. [Twemoji](https://github.com/mozilla/twemoji-colr) is Twitter's art under CC BY 4.0, made into a font by Mozilla. [OpenMoji](https://github.com/hfg-gmuend/openmoji) is CC BY-SA 4.0 and [Blobmoji](https://github.com/C1710/blobmoji) is Apache 2.0.
+The emoji packs in `Emoji pack` aren't part of Instagram Plus. Each one downloads from its maker when you pick it, and Instagram Plus checks it against the exact file before using it. [Twemoji](https://github.com/mozilla/twemoji-colr) is Twitter's art under CC BY 4.0, made into a font by Mozilla. [OpenMoji](https://github.com/hfg-gmuend/openmoji) is CC BY-SA 4.0 and [Blobmoji](https://github.com/C1710/blobmoji) is Apache 2.0.
 
 ## License
 
