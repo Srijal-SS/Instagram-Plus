@@ -559,12 +559,12 @@ final class GlassScrollHide {
             shrunk = true;
             bar.animate().cancel();
             bar.setPivotX(bar.getWidth() / 2f);
-            bar.setPivotY(bar.getHeight());
+            bar.setPivotY(bar.getHeight() / 2f);
             bar.animate()
-                    .scaleX(0.82f)
-                    .scaleY(0.82f)
-                    .translationY(bar.getHeight() * 0.20f)
-                    .alpha(0.92f)
+                    .scaleX(0.84f)
+                    .scaleY(0.84f)
+                    .translationY(-4 * density)
+                    .alpha(0.95f)
                     .setDuration(SLIDE_MS)
                     .setInterpolator(new DecelerateInterpolator())
                     .start();

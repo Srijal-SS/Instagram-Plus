@@ -311,6 +311,10 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
     private final Set<String> expandedCategories = new java.util.LinkedHashSet<>();
     /** The last expanded section, used to return to it after a restart. */
     @Nullable private String lastCategory;
+    /** The active category subpage, or null when viewing the main overview list. */
+    @Nullable private PreferenceCategory activeCategory;
+    private int overviewScrollPosition = -1;
+    private int overviewScrollTop = 0;
     /** The button at the top that switches between the list of categories and one long list. */
     @Nullable private Row viewToggle;
     /** Under it, while the categories are listed: switches them between rows and a grid of tiles (#494). */
@@ -396,7 +400,8 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         state.putInt("hushgram_document_sequence", documentSequence);
         state.putString("hushgram_configuration_export", configurationExportToken);
         state.putStringArrayList("hushgram_expanded_categories", new ArrayList<>(expandedCategories));
-        if (lastCategory != null) state.putString("hushgram_open_category", lastCategory);
+        if (activeCategory != null) state.putString("hushgram_open_category", activeCategory.getKey());
+        else if (lastCategory != null) state.putString("hushgram_open_category", lastCategory);
         ListView list = listView();
         boolean searching = !searchQuery.trim().isEmpty();
         View first = list == null ? null : list.getChildAt(0);
@@ -816,7 +821,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             group.setKey(CATEGORY_ROW_KEY + iconOf(group));
             mark(group, iconOf(group));
             group.setOnPreferenceClickListener(tapped -> {
-                toggleCategory(group);
+                openCategory(group);
                 return true;
             });
         }
@@ -829,6 +834,12 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         }
         expandedCategories.retainAll(available);
         if (restoredCategory != null && available.contains(restoredCategory)) {
+            for (PreferenceCategory cat : searchableRows.keySet()) {
+                if (cat.getKey().equals(restoredCategory)) {
+                    activeCategory = cat;
+                    break;
+                }
+            }
             expandedCategories.add(restoredCategory);
             lastCategory = restoredCategory;
         } else if (restoredCategory != null) restoredPosition = -1;
@@ -845,35 +856,32 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         return Settings.CATEGORY_PAGES.savedValue();
     }
 
-    /** Expand in place. Keep the visible anchor instead of scrolling to the top of settings. */
-    private void toggleCategory(PreferenceCategory group) {
+    /** Opens a dedicated subpage for this category instead of expanding inline. */
+    private void openCategory(PreferenceCategory group) {
         if (!categoryPages() || !searchQuery.trim().isEmpty()) return;
         ListView list = listView();
-        int position = list == null ? -1 : list.getFirstVisiblePosition();
-        Object anchor = list == null || position < 0 || position >= list.getCount()
-                ? null : list.getItemAtPosition(position);
-        View first = list == null ? null : list.getChildAt(0);
-        int top = first == null ? 0 : first.getTop() - list.getPaddingTop();
-        if (expandedCategories.remove(group.getKey())) {
-            NewRowDots.left(group);
-            if (group.getKey().equals(lastCategory)) lastCategory = null;
-        } else {
-            expandedCategories.add(group.getKey());
-            lastCategory = group.getKey();
+        if (list != null) {
+            overviewScrollPosition = list.getFirstVisiblePosition();
+            View first = list.getChildAt(0);
+            overviewScrollTop = first == null ? 0 : first.getTop() - list.getPaddingTop();
         }
+        activeCategory = group;
+        lastCategory = group.getKey();
+        expandedCategories.clear();
+        expandedCategories.add(group.getKey());
+        NewRowDots.left(group);
         focusPage();
         filterSettings();
-        if (list != null && anchor != null) {
+        if (list != null) {
             list.post(() -> {
                 if (list != listView()) return;
-                for (int i = 0; i < list.getCount(); i++) {
-                    if (list.getItemAtPosition(i) == anchor) {
-                        list.setSelectionFromTop(i, top);
-                        break;
-                    }
-                }
+                list.setSelection(0);
             });
         }
+    }
+
+    private void toggleCategory(PreferenceCategory group) {
+        openCategory(group);
     }
 
     /**
@@ -908,40 +916,36 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
     }
 
     /**
-     * A tile was tapped: its section opens on this page, below the tiles, and any other one folds,
-     * as if each had a page of its own. The tile of the section already open only scrolls to it.
+     * A tile was tapped: its section opens in a dedicated subpage.
      */
     private void openFromGrid(Heading section) {
         if (!categoryPages() || !Settings.CATEGORY_GRID.savedValue() || !searchQuery.trim().isEmpty()) return;
-        String key = section.getKey();
-        if (!expandedCategories.contains(key)) {
-            for (PreferenceCategory other : searchableRows.keySet()) {
-                if (other != section && !other.getKey().equals(key) && expandedCategories.remove(other.getKey())) {
-                    NewRowDots.left(other);
-                }
-            }
-            expandedCategories.add(key);
-        }
-        lastCategory = key;
-        focusPage();
-        filterSettings();
+        openCategory(section);
         if (categoryGrid != null) categoryGrid.refresh();
-        ListView list = listView();
-        if (list == null) return;
-        list.post(() -> {
-            if (list != listView()) return;
-            for (int i = 0; i < list.getCount(); i++) {
-                if (list.getItemAtPosition(i) == section) {
-                    list.setSelectionFromTop(i, 0);
-                    return;
-                }
-            }
-        });
     }
 
-    /** Back clears a search first. Expanded sections do not add a navigation level. */
+    /** Back clears a search first, or navigates back from a category subpage to the main overview. */
     boolean closeCategory() {
-        return endSearch();
+        if (endSearch()) return true;
+        if (activeCategory != null) {
+            activeCategory = null;
+            expandedCategories.clear();
+            focusPage();
+            filterSettings();
+            ListView list = listView();
+            if (list != null) {
+                list.post(() -> {
+                    if (list != listView()) return;
+                    if (overviewScrollPosition >= 0 && overviewScrollPosition < list.getCount()) {
+                        list.setSelectionFromTop(overviewScrollPosition, overviewScrollTop);
+                    } else {
+                        list.setSelection(0);
+                    }
+                });
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -993,12 +997,17 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         body.requestFocus();
     }
 
-    /** The bar's title: the search while there is one, else HushGram unless the header shows it. */
+    /** The bar's title: the search while there is one, active category on a subpage, else HushGram unless the header shows it. */
     private void showTitle() {
         if (!(getParentFragment() instanceof SettingsDialog)) return;
         boolean searching = !searchText(searchQuery).trim().isEmpty();
-        ((SettingsDialog) getParentFragment()).showTitle(
-                searching ? L10n.t("Search settings") : null, headerNameShown());
+        if (searching) {
+            ((SettingsDialog) getParentFragment()).showTitle(L10n.t("Search settings"), false);
+        } else if (activeCategory != null) {
+            ((SettingsDialog) getParentFragment()).showTitle(activeCategory.getTitle(), false);
+        } else {
+            ((SettingsDialog) getParentFragment()).showTitle(null, headerNameShown());
+        }
     }
 
     /**
@@ -1432,15 +1441,15 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
         rankForSearch(terms);
         // Search reveals matching rows without changing the sections the person expanded.
         boolean listing = pages && terms.length == 0;
+        boolean inSubpage = listing && activeCategory != null;
         boolean black = Settings.SETTINGS_BLACK_LOOK.savedValue();
         for (Preference top : new Preference[]{header, statusCard, beforeSignIn, viewToggle, gridToggle, search}) {
             if (top == null) continue;
             // A tap hid the notice for good and took it off the screen. It stays off.
             if (top == beforeSignIn && Settings.SIGN_IN_NOTICE_HIDDEN.savedValue()) continue;
-            // The header stays while searching. Taking a row off above the field moved the field's
-            // place in the list mid-word, and a hardware keyboard's next key was dropped.
-            boolean hidden = top == statusCard ? !HushgramPause.isPaused()
-                    : top == gridToggle ? !listing : top == header && !black;
+            // In a subpage, all top overview elements are hidden.
+            boolean hidden = inSubpage || (top == statusCard ? !HushgramPause.isPaused()
+                    : top == gridToggle ? !listing : top == header && !black);
             if (hidden) {
                 if (top.getParent() == screen) screen.removePreference(top);
             } else if (top.getParent() != screen) screen.addPreference(top);
@@ -1464,7 +1473,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             }
         }
         // Tiles stand in for the folded sections' headings, so those headings stay off the page.
-        boolean gridOn = listing && Settings.CATEGORY_GRID.savedValue();
+        boolean gridOn = listing && !inSubpage && Settings.CATEGORY_GRID.savedValue();
         List<Heading> tiles = new ArrayList<>();
         int matches = 0;
         for (Map.Entry<PreferenceCategory, List<Preference>> section : searchableRows.entrySet()) {
@@ -1473,7 +1482,8 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             // and stays open after, so unlocking doesn't fold the row just tapped.
             boolean held = listing && group == recovery && recoveryHeldOpen();
             if (held) expandedCategories.add(group.getKey());
-            boolean expanded = !listing || expandedCategories.contains(group.getKey());
+            boolean isTarget = inSubpage ? (group == activeCategory) : true;
+            boolean expanded = (!listing || inSubpage) && isTarget;
             boolean filled = false;
             for (Preference row : section.getValue()) {
                 String text = searchText(group.getTitle()) + " " + searchText(row.getTitle()) + " "
@@ -1482,7 +1492,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
                 for (String term : terms) if (!text.contains(term)) { match = false; break; }
                 if (match) matches++;
                 filled |= match || group == recovery;
-                if (expanded && (match || group == recovery)) {
+                if (isTarget && expanded && (match || group == recovery)) {
                     if (row.getParent() != group) group.addPreference(row);
                 } else if (row.getParent() == group) group.removePreference(row);
             }
@@ -1490,19 +1500,23 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             if (group == downloads) {
                 for (SaveRow save : saveRows.values()) {
                     filled = true;
-                    if (expanded && save.getParent() != group) group.addPreference(save);
-                    else if (!expanded && save.getParent() == group) group.removePreference(save);
+                    if (isTarget && expanded && save.getParent() != group) group.addPreference(save);
+                    else if ((!isTarget || !expanded) && save.getParent() == group) group.removePreference(save);
                 }
                 if (lastCarouselSave != null && SaveControl.batchOutcome() != null) {
                     filled = true;
-                    if (expanded && lastCarouselSave.getParent() != group) group.addPreference(lastCarouselSave);
-                    else if (!expanded && lastCarouselSave.getParent() == group) group.removePreference(lastCarouselSave);
+                    if (isTarget && expanded && lastCarouselSave.getParent() != group) group.addPreference(lastCarouselSave);
+                    else if ((!isTarget || !expanded) && lastCarouselSave.getParent() == group) group.removePreference(lastCarouselSave);
                 }
             }
-            if (group instanceof Heading) ((Heading) group).display(listing && !held, expanded, black);
+            if (group instanceof Heading) {
+                boolean collapsible = listing && !inSubpage && !held;
+                ((Heading) group).display(collapsible, expanded, black);
+            }
             boolean tile = gridOn && filled && group instanceof Heading;
             if (tile) tiles.add((Heading) group);
-            if (filled && !(tile && !expanded)) {
+            boolean showGroup = isTarget && filled && !(tile && !expanded);
+            if (showGroup) {
                 if (group.getParent() != screen) screen.addPreference(group);
             } else if (group.getParent() == screen) screen.removePreference(group);
         }
@@ -1521,7 +1535,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
             String text = searchText(row.getTitle()) + " " + searchText(row.getSummary()) + looseAliases[i];
             boolean match = true;
             for (String term : terms) if (!text.contains(term)) { match = false; break; }
-            boolean shown = match;
+            boolean shown = !inSubpage && (terms.length == 0 || match);
             if (terms.length > 0 && match) matches++;
             if (shown) {
                 if (row.getParent() != screen) screen.addPreference(row);
@@ -3147,7 +3161,7 @@ public final class HushgramPreferenceFragment extends AbstractPreferenceFragment
 
     /** The last expanded section to reveal after restarting, or the top of the main list. */
     String currentPage() {
-        return categoryPages() && expandedCategories.contains(lastCategory) ? lastCategory : "";
+        return categoryPages() ? (activeCategory != null ? activeCategory.getKey() : expandedCategories.contains(lastCategory) ? lastCategory : "") : "";
     }
 
     /**

@@ -383,6 +383,7 @@ public final class ScreenColors {
 
     /** A section title. */
     void paintHeading(View row) {
+        row.setBackground(null);
         TextView title = row.findViewById(android.R.id.title);
         if (title != null) {
             title.setTextColor(summary);
