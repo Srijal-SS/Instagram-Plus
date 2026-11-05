@@ -65,7 +65,7 @@ public final class SettingsDialog extends DialogFragment {
     private Button retry;
     private TextView heading;
     private TextView restart;
-    private ModernSettingsView modernView;
+    ModernSettingsView modernView;
     /** The lock's checks on this dialog's window while it's started. */
     private Window lockWindow;
     private ViewTreeObserver.OnPreDrawListener lockDraw;
@@ -399,60 +399,38 @@ public final class SettingsDialog extends DialogFragment {
                 OnBackInvokedDispatcher dispatcher = dialog.getOnBackInvokedDispatcher();
                 if (dispatcher == null) return null;
                 OnBackAnimationCallback callback = new OnBackAnimationCallback() {
-                    private int swipeEdge = BackEvent.EDGE_LEFT;
-
                     @Override
                     public void onBackStarted(BackEvent backEvent) {
-                        swipeEdge = backEvent.getSwipeEdge();
-                        View view = settingsDialog.getActiveBackView();
-                        if (view != null) {
-                            view.setPivotX(swipeEdge == BackEvent.EDGE_LEFT ? 0 : view.getWidth());
-                            view.setPivotY(view.getHeight() / 2f);
+                        if (settingsDialog.modernView != null) {
+                            settingsDialog.modernView.onBackStarted(backEvent);
                         }
                     }
 
                     @Override
                     public void onBackProgressed(BackEvent backEvent) {
-                        View view = settingsDialog.getActiveBackView();
-                        if (view == null) return;
-                        float progress = backEvent.getProgress();
-                        float shift = progress * view.getWidth() * 0.38f;
-                        view.setTranslationX(swipeEdge == BackEvent.EDGE_LEFT ? shift : -shift);
-                        float scale = 1.0f - progress * 0.08f;
-                        view.setScaleX(scale);
-                        view.setScaleY(scale);
-                        view.setAlpha(1.0f - progress * 0.25f);
+                        if (settingsDialog.modernView != null) {
+                            settingsDialog.modernView.onBackProgressed(backEvent);
+                        }
                     }
 
                     @Override
                     public void onBackInvoked() {
-                        View view = settingsDialog.getActiveBackView();
-                        if (view != null) {
-                            view.animate().cancel();
-                            view.setTranslationX(0f);
-                            view.setScaleX(1.0f);
-                            view.setScaleY(1.0f);
-                            view.setAlpha(1.0f);
+                        if (settingsDialog.modernView != null) {
+                            settingsDialog.modernView.onBackInvoked();
+                        } else {
+                            settingsDialog.closeCategory();
                         }
-                        settingsDialog.closeCategory();
                         if (onComplete != null) onComplete.run();
                     }
 
                     @Override
                     public void onBackCancelled() {
-                        View view = settingsDialog.getActiveBackView();
-                        if (view == null) return;
-                        view.animate()
-                                .translationX(0f)
-                                .scaleX(1.0f)
-                                .scaleY(1.0f)
-                                .alpha(1.0f)
-                                .setDuration(220)
-                                .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                                .start();
+                        if (settingsDialog.modernView != null) {
+                            settingsDialog.modernView.onBackCancelled();
+                        }
                     }
                 };
-                dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback);
+                dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_OVERLAY, callback);
                 return callback;
             } catch (Throwable t) {
                 Logger.printException(() -> "Could not register API 34 back animation callback", t);
@@ -471,7 +449,7 @@ public final class SettingsDialog extends DialogFragment {
                     settingsDialog.closeCategory();
                     if (onComplete != null) onComplete.run();
                 };
-                dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback);
+                dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_OVERLAY, callback);
                 return callback;
             } catch (Throwable t) {
                 Logger.printException(() -> "Could not register API 33 back callback", t);
