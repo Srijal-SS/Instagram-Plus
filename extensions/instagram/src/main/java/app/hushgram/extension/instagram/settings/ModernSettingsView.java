@@ -5,6 +5,7 @@
 package app.hushgram.extension.instagram.settings;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
@@ -32,6 +33,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.window.BackEvent;
@@ -43,14 +45,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import app.hushgram.extension.instagram.direct.LockDelay;
+import app.hushgram.extension.instagram.direct.UnlockWith;
+import app.hushgram.extension.instagram.download.DownloadQuality;
+import app.hushgram.extension.instagram.download.HoldFingers;
+import app.hushgram.extension.instagram.download.HoldTime;
+import app.hushgram.extension.instagram.feed.CornerSize;
+import app.hushgram.extension.instagram.media.PlaybackQuality;
+import app.hushgram.extension.instagram.misc.AppIconChoice;
+import app.hushgram.extension.instagram.misc.EmojiChoice;
+import app.hushgram.extension.instagram.misc.FontChoice;
+import app.hushgram.extension.instagram.misc.GlassCorners;
+import app.hushgram.extension.instagram.misc.GlassHeight;
+import app.hushgram.extension.instagram.misc.GlassLift;
+import app.hushgram.extension.instagram.misc.GlassReelsHide;
+import app.hushgram.extension.instagram.misc.HapticStyle;
+import app.hushgram.extension.instagram.profile.FollowLabelPlace;
+import app.hushgram.extension.instagram.reels.ReelTapChoice;
+import app.hushgram.extension.instagram.reels.StartTab;
+import app.hushgram.extension.instagram.reels.TabBarLayoutChoice;
+import app.hushgram.extension.instagram.stories.StoryRingSize;
+import app.hushgram.extension.instagram.stories.StoryTimeMode;
 import app.hushgram.extension.shared.L10n;
 import app.hushgram.extension.shared.Utils;
 import app.hushgram.extension.shared.settings.BooleanSetting;
+import app.hushgram.extension.shared.settings.EnumSetting;
+import app.hushgram.extension.shared.settings.IntegerSetting;
 
 /**
  * Completely redesigned native settings interface matching Instagram's modern Android design.
  * Built with pure modern views (ScrollView + LinearLayout), full-width rows, monochrome glyphs,
- * native Instagram switches, subpage slide transitions, edge-swipe back gestures, and instant live search.
+ * native Instagram switches, subpage slide transitions, edge-swipe back gestures, option pickers, and live search.
  */
 public final class ModernSettingsView extends FrameLayout {
     private static final int COLOR_BG = 0xFF000000;
@@ -84,17 +109,70 @@ public final class ModernSettingsView extends FrameLayout {
     private final List<Category> categories = new ArrayList<>();
     private final List<SettingItem> allItems = new ArrayList<>();
 
+    public interface OptionSupplier {
+        String[] getLabels();
+        int getSelectedIndex();
+        void onSelect(int index);
+        boolean isRestartNeeded();
+    }
+
+    public interface SliderSupplier {
+        int getMin();
+        int getMax();
+        int getCurrent();
+        String formatValue(int value);
+        void onValueChange(int value);
+        boolean isRestartNeeded();
+    }
+
+    public static <E extends Enum<E>> OptionSupplier fromEnum(
+            EnumSetting<E> setting, E[] values, String[] labels) {
+        return new OptionSupplier() {
+            @Override public String[] getLabels() { return labels; }
+            @Override public int getSelectedIndex() {
+                E current = setting.savedValue();
+                for (int i = 0; i < values.length; i++) {
+                    if (values[i] == current) return i;
+                }
+                return 0;
+            }
+            @Override public void onSelect(int index) {
+                if (index >= 0 && index < values.length) {
+                    setting.save(values[index]);
+                }
+            }
+            @Override public boolean isRestartNeeded() { return setting.rebootApp; }
+        };
+    }
+
+    public static SliderSupplier fromInt(IntegerSetting setting, int min, int max, String unit) {
+        return new SliderSupplier() {
+            @Override public int getMin() { return min; }
+            @Override public int getMax() { return max; }
+            @Override public int getCurrent() { return setting.savedValue(); }
+            @Override public String formatValue(int value) { return value + " " + unit; }
+            @Override public void onValueChange(int value) { setting.save(value); }
+            @Override public boolean isRestartNeeded() { return setting.rebootApp; }
+        };
+    }
+
     public static final class SettingItem {
         final String title;
         final String summary;
         @Nullable final BooleanSetting setting;
+        @Nullable final OptionSupplier choice;
+        @Nullable final SliderSupplier slider;
         @Nullable final Runnable action;
         final String categoryTitle;
 
-        SettingItem(String title, String summary, @Nullable BooleanSetting setting, @Nullable Runnable action, String categoryTitle) {
+        SettingItem(String title, String summary, @Nullable BooleanSetting setting,
+                    @Nullable OptionSupplier choice, @Nullable SliderSupplier slider,
+                    @Nullable Runnable action, String categoryTitle) {
             this.title = title;
             this.summary = summary;
             this.setting = setting;
+            this.choice = choice;
+            this.slider = slider;
             this.action = action;
             this.categoryTitle = categoryTitle;
         }
@@ -113,12 +191,22 @@ public final class ModernSettingsView extends FrameLayout {
         }
 
         Category add(String title, String summary, BooleanSetting setting) {
-            items.add(new SettingItem(title, summary, setting, null, this.title));
+            items.add(new SettingItem(title, summary, setting, null, null, null, this.title));
+            return this;
+        }
+
+        Category addChoice(String title, String summary, OptionSupplier choice) {
+            items.add(new SettingItem(title, summary, null, choice, null, null, this.title));
+            return this;
+        }
+
+        Category addSlider(String title, String summary, SliderSupplier slider) {
+            items.add(new SettingItem(title, summary, null, null, slider, null, this.title));
             return this;
         }
 
         Category addAction(String title, String summary, Runnable action) {
-            items.add(new SettingItem(title, summary, null, action, this.title));
+            items.add(new SettingItem(title, summary, null, null, null, action, this.title));
             return this;
         }
     }
@@ -228,6 +316,8 @@ public final class ModernSettingsView extends FrameLayout {
                 .add(L10n.t("Feed Video Seek Bar"), L10n.t("Show an interactive scrub bar on feed video posts"), Settings.FEED_SEEK_BAR)
                 .add(L10n.t("Long Press to Zoom"), L10n.t("Press and hold any feed photo or video to zoom in"), Settings.LONG_PRESS_TO_ZOOM)
                 .add(L10n.t("Rounded Post Corners"), L10n.t("Apply modern rounded corners to post media"), Settings.ROUNDED_POST_CORNERS)
+                .addChoice(L10n.t("Media Corner Size"), L10n.t("Pick roundness of post photo and video corners"),
+                        fromEnum(Settings.ROUNDED_CORNER_SIZE, CornerSize.values(), new String[]{L10n.t("Subtle (8dp)"), L10n.t("Rounded (16dp)")}))
                 .add(L10n.t("Peek Carousel Pages"), L10n.t("Show preview edges of adjacent carousel pages"), Settings.PEEK_CAROUSEL_PAGES)
                 .add(L10n.t("Carousel Navigation Arrows"), L10n.t("Show left and right navigation arrows on carousels"), Settings.CAROUSEL_ARROWS)
                 .add(L10n.t("Carousel Dots Pill"), L10n.t("Encase carousel page indicator dots in a subtle capsule"), Settings.CAROUSEL_DOTS_PILL)
@@ -239,6 +329,10 @@ public final class ModernSettingsView extends FrameLayout {
                 L10n.t("Auto-advance, seek bar, loop controls, clear mode, speed"), SettingsIcons.REELS)
                 .add(L10n.t("Auto-Advance Reels"), L10n.t("Automatically advance to next reel when video ends"), Settings.REEL_AUTO_ADVANCE)
                 .add(L10n.t("Disable Reel Video Looping"), L10n.t("Prevent reels from repeating continuously"), Settings.STOP_VIDEO_LOOPING)
+                .addChoice(L10n.t("Reel Single Tap Action"), L10n.t("What tapping on a reel video triggers"),
+                        fromEnum(Settings.REEL_TAP_CHOICE, ReelTapChoice.values(), new String[]{L10n.t("Instagram Default"), L10n.t("Toggle Pause / Play"), L10n.t("Toggle Mute / Unmute")}))
+                .addChoice(L10n.t("Default Playback Quality"), L10n.t("Preferred resolution for video playback"),
+                        fromEnum(Settings.PLAYBACK_QUALITY, PlaybackQuality.values(), new String[]{L10n.t("Auto (Default)"), L10n.t("Data Saver"), L10n.t("480p"), L10n.t("720p"), L10n.t("Highest Available")}))
                 .add(L10n.t("Interactive Reel Seek Bar"), L10n.t("Display scrub seek bar on reel videos"), Settings.REEL_SEEK_BAR)
                 .add(L10n.t("Thicker Reel Seek Bar"), L10n.t("Increase height of seek bar for easier scrubbing"), Settings.BIG_REEL_SEEK_BAR)
                 .add(L10n.t("Seek Bar on Chat Reels"), L10n.t("Show seek bar on reels shared inside direct messages"), Settings.DM_REEL_SEEK_BAR)
@@ -265,9 +359,14 @@ public final class ModernSettingsView extends FrameLayout {
                 .add(L10n.t("Loop Video Stories"), L10n.t("Repeat video stories until manually advanced"), Settings.LOOP_STORIES)
                 .add(L10n.t("Smooth Story Transitions"), L10n.t("Enable smooth opening and closing animations for stories"), Settings.SMOOTH_STORY_OPEN)
                 .add(L10n.t("Stop Story Auto-Advance"), L10n.t("Pause automatically and wait for manual tap to advance"), Settings.BLOCK_STORY_AUTO_ADVANCE)
+                .addChoice(L10n.t("Story Timestamp Format"), L10n.t("Choose how story post time is displayed"),
+                        fromEnum(Settings.STORY_TIME_MODE, StoryTimeMode.values(), new String[]{L10n.t("Exact Date and Time"), L10n.t("Time Left Until Expired"), L10n.t("Time of Day Only")}))
                 .add(L10n.t("Show Exact Story Timestamp"), L10n.t("Display exact time posted instead of relative hours"), Settings.SHOW_STORY_TIME)
                 .add(L10n.t("Show Hidden Story Mentions"), L10n.t("Highlight hidden mentions and tags added to stories"), Settings.SHOW_STORY_MENTIONS)
                 .add(L10n.t("Red Story Mentions"), L10n.t("Highlight discovered hidden mentions in distinct red"), Settings.RED_STORY_MENTIONS)
+                .addChoice(L10n.t("Story Ring Size"), L10n.t("Adjust size of story rings in tray"),
+                        fromEnum(Settings.STORY_RING_SCALE, new StoryRingSize[]{StoryRingSize.PERCENT_50, StoryRingSize.SMALLEST, StoryRingSize.INSTAGRAM, StoryRingSize.LARGER, StoryRingSize.LARGEST, StoryRingSize.PERCENT_150},
+                                new String[]{L10n.t("50% (Tiny)"), L10n.t("70% (Small)"), L10n.t("100% (Default)"), L10n.t("115% (Larger)"), L10n.t("130% (Large)"), L10n.t("150% (Huge)")}))
                 .add(L10n.t("Start Stories With Sound"), L10n.t("Always play story audio unmuted"), Settings.START_STORIES_WITH_SOUND)
                 .add(L10n.t("Disable Swipe to Reply"), L10n.t("Prevent accidental reply input when swiping up"), Settings.STOP_STORY_SWIPE_REPLY)
                 .add(L10n.t("Hide Story Reply Box"), L10n.t("Remove the bottom message input field on stories"), Settings.HIDE_STORY_REPLY_BOX)
@@ -310,6 +409,10 @@ public final class ModernSettingsView extends FrameLayout {
                 .add(L10n.t("Glass in Chats"), L10n.t("Enable translucent glass aesthetic in chat header and input"), Settings.GLASS_CHAT)
                 .add(L10n.t("Full Screen Messages"), L10n.t("Maximize chat view area to edge-to-edge"), Settings.FULL_SCREEN_MESSAGES)
                 .add(L10n.t("Lock Your Messages"), L10n.t("Require fingerprint or biometric lock to open Direct"), Settings.LOCK_MESSAGES)
+                .addChoice(L10n.t("Lock Delay"), L10n.t("How long after leaving Instagram to re-lock messages"),
+                        fromEnum(Settings.LOCK_AGAIN, LockDelay.values(), new String[]{L10n.t("Immediately"), L10n.t("After 1 Minute"), L10n.t("After 5 Minutes"), L10n.t("After 15 Minutes"), L10n.t("After 1 Hour")}))
+                .addChoice(L10n.t("Unlock Authentication Method"), L10n.t("Choose credential to unlock protected chats"),
+                        fromEnum(Settings.UNLOCK_WITH, UnlockWith.values(), new String[]{L10n.t("Device Screen Lock"), L10n.t("HushGram PIN"), L10n.t("Biometrics Only")}))
                 .add(L10n.t("Lock All of Instagram"), L10n.t("Require biometric authentication to open Instagram"), Settings.LOCK_APP);
         categories.add(direct);
 
@@ -342,6 +445,12 @@ public final class ModernSettingsView extends FrameLayout {
         Category downloads = new Category(L10n.t("Media & Downloads"),
                 L10n.t("Hold to download, download buttons, HD photos/videos, quality"), SettingsIcons.DOWNLOADS)
                 .add(L10n.t("Hold to Download"), L10n.t("Press and hold posts or stories to save media to gallery"), Settings.HOLD_TO_DOWNLOAD)
+                .addChoice(L10n.t("Hold Duration"), L10n.t("How long fingers must remain held to save"),
+                        fromEnum(Settings.HOLD_TIME, HoldTime.values(), new String[]{L10n.t("0.5 seconds"), L10n.t("1.0 second (Default)"), L10n.t("1.5 seconds")}))
+                .addChoice(L10n.t("Hold Fingers Count"), L10n.t("Number of simultaneous fingers to trigger download"),
+                        fromEnum(Settings.HOLD_FINGERS, HoldFingers.values(), new String[]{L10n.t("Two Fingers (Default)"), L10n.t("Three Fingers")}))
+                .addChoice(L10n.t("Media Download Quality"), L10n.t("Preferred resolution ceiling for downloaded videos"),
+                        fromEnum(Settings.DOWNLOAD_QUALITY, DownloadQuality.values(), new String[]{L10n.t("Best (Highest Available)"), L10n.t("1080p"), L10n.t("720p"), L10n.t("480p"), L10n.t("360p"), L10n.t("Smallest File Size")}))
                 .add(L10n.t("Download Feed Videos"), L10n.t("Allow saving feed videos directly to your device"), Settings.DOWNLOAD_VIDEOS)
                 .add(L10n.t("Download Video Covers"), L10n.t("Option to save thumbnail cover art for videos"), Settings.DOWNLOAD_FEED_COVER)
                 .add(L10n.t("Download Feed Photos"), L10n.t("Allow saving feed images directly to your device"), Settings.DOWNLOAD_PHOTOS)
@@ -371,6 +480,8 @@ public final class ModernSettingsView extends FrameLayout {
         Category profiles = new Category(L10n.t("Profiles & Followers"),
                 L10n.t("Follow status, unfollowers tracker, suggestions, clean profile"), SettingsIcons.PERSON)
                 .add(L10n.t("Show If a Profile Follows You"), L10n.t("Display 'Follows you' badge on user profiles"), Settings.SHOW_FRIENDSHIP_STATUS)
+                .addChoice(L10n.t("Follow Status Position"), L10n.t("Where the friendship indicator chip is placed"),
+                        fromEnum(Settings.FOLLOW_LABEL_PLACE, FollowLabelPlace.values(), new String[]{L10n.t("Under Followers Count"), L10n.t("Under Profile Picture")}))
                 .add(L10n.t("Mark Who Doesn't Follow Back"), L10n.t("Highlight non-followers in your Following list"), Settings.MARK_FOLLOWING_LIST)
                 .add(L10n.t("Put Non-Followers First"), L10n.t("Sort your Following list with accounts not following back at top"), Settings.FOLLOWING_NOT_BACK_FIRST)
                 .add(L10n.t("Track Recent Unfollowers"), L10n.t("Monitor accounts that unfollow you locally"), Settings.TRACK_UNFOLLOWERS)
@@ -419,6 +530,26 @@ public final class ModernSettingsView extends FrameLayout {
         Category tabBar = new Category(L10n.t("Glass Tab Bar & Navigation"),
                 L10n.t("Liquid glass bar, minimize on scroll, blur, hide tabs, header buttons"), SettingsIcons.TAB_BAR)
                 .add(L10n.t("iOS Floating Glass Tab Bar"), L10n.t("Enable modern liquid glass bottom bar with backdrop blur"), Settings.GLASS_TAB_BAR)
+                .addChoice(L10n.t("Start Tab on Launch"), L10n.t("Choose which tab opens automatically when starting Instagram"),
+                        fromEnum(Settings.START_TAB, StartTab.values(), new String[]{L10n.t("Home Feed"), L10n.t("Always Home"), L10n.t("Explore / Search"), L10n.t("Direct Messages"), L10n.t("Reels"), L10n.t("Profile")}))
+                .addChoice(L10n.t("Tab Bar Layout Mode"), L10n.t("Select bottom tab bar distribution style"),
+                        fromEnum(Settings.TAB_BAR_LAYOUT, TabBarLayoutChoice.values(), new String[]{L10n.t("Instagram Default"), L10n.t("Swipeable Tabs"), L10n.t("Classic Fixed")}))
+                .addChoice(L10n.t("Haptic Feedback Style"), L10n.t("Select the physical vibration tick when tabs switch"),
+                        fromEnum(Settings.GLASS_TAB_BAR_HAPTIC_STYLE, HapticStyle.values(), new String[]{L10n.t("Short Tick"), L10n.t("System Click (Default)"), L10n.t("Soft Pulse"), L10n.t("Full Strength")}))
+                .addChoice(L10n.t("Glass Bar Height"), L10n.t("Pill capsule thickness"),
+                        fromEnum(Settings.GLASS_TAB_BAR_HEIGHT, GlassHeight.values(), new String[]{L10n.t("Compact (48dp)"), L10n.t("Standard (54dp)"), L10n.t("Tall (60dp)")}))
+                .addChoice(L10n.t("Glass Corner Roundness"), L10n.t("Corner roundness of the glass pill"),
+                        fromEnum(Settings.GLASS_TAB_BAR_CORNERS, GlassCorners.values(), new String[]{L10n.t("Standard (12dp)"), L10n.t("Rounder (20dp)"), L10n.t("Fully Round Capsule")}))
+                .addChoice(L10n.t("Floating Bottom Lift"), L10n.t("Height above bottom gesture navigation bar"),
+                        fromEnum(Settings.GLASS_TAB_BAR_LIFT, GlassLift.values(), new String[]{L10n.t("Flush (0dp)"), L10n.t("Raised (+8dp)"), L10n.t("Floating High (+16dp)")}))
+                .addChoice(L10n.t("Hide on Reels Delay"), L10n.t("How long untouched before tab bar hides on reels"),
+                        fromEnum(Settings.GLASS_TAB_BAR_REELS_HIDE, GlassReelsHide.values(), new String[]{L10n.t("Never"), L10n.t("After 2 Seconds"), L10n.t("After 3 Seconds"), L10n.t("After 5 Seconds"), L10n.t("After 8 Seconds")}))
+                .addSlider(L10n.t("Background Blur Radius"), L10n.t("GPU blur intensity behind glass bar"),
+                        fromInt(Settings.GLASS_TAB_BAR_BLUR_RADIUS, 5, 60, "px"))
+                .addSlider(L10n.t("Glass Tint Opacity"), L10n.t("Dark frosted tint opacity percentage"),
+                        fromInt(Settings.GLASS_TAB_BAR_OPACITY, 10, 100, "%"))
+                .addSlider(L10n.t("Edge Light Refraction Strength"), L10n.t("Light bending refraction strength at capsule rim"),
+                        fromInt(Settings.GLASS_TAB_BAR_REFRACT_STRENGTH, 0, 80, "%"))
                 .add(L10n.t("Minimize Tab Bar While Scrolling"), L10n.t("Reduces tab bar size while scrolling down, keeping it docked like iOS Instagram"), Settings.GLASS_TAB_BAR_MINIMIZE_ON_SCROLL)
                 .add(L10n.t("Hide Tab Bar as You Scroll"), L10n.t("Slide tab bar completely off screen when scrolling down, sliding back when scrolling up"), Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL)
                 .add(L10n.t("Tab Bar Background Blur"), L10n.t("Real-time GPU blur behind the floating tab bar (Android 12+)"), Settings.GLASS_TAB_BAR_BLUR)
@@ -457,8 +588,14 @@ public final class ModernSettingsView extends FrameLayout {
 
         // 14. Appearance & System
         Category appearance = new Category(L10n.t("Appearance & System"),
-                L10n.t("Pure black AMOLED mode, shortcuts, background battery saving"), SettingsIcons.APPEARANCE)
+                L10n.t("Pure black AMOLED mode, icons, fonts, emoji, battery saving"), SettingsIcons.APPEARANCE)
                 .add(L10n.t("Pure Black AMOLED Mode"), L10n.t("True black #000000 background for OLED screens"), Settings.SETTINGS_BLACK_LOOK)
+                .addChoice(L10n.t("App Launcher Icon"), L10n.t("Choose launcher icon displayed on phone home screen"),
+                        fromEnum(Settings.APP_ICON, AppIconChoice.values(), new String[]{L10n.t("Instagram Official"), L10n.t("Instagram Plus (Purple)"), L10n.t("Dark AMOLED"), L10n.t("Plum"), L10n.t("Light White"), L10n.t("Sketch Pencil"), L10n.t("Gradient Glyph"), L10n.t("Retro Camera"), L10n.t("Pink")}))
+                .addChoice(L10n.t("App Typography Font"), L10n.t("Choose font typeface for in-app text rendering"),
+                        fromEnum(Settings.FONT, FontChoice.values(), new String[]{L10n.t("Instagram Default"), L10n.t("System Font"), L10n.t("Custom Font File")}))
+                .addChoice(L10n.t("Emoji Style Pack"), L10n.t("Choose emoji glyph pack for messages and comments"),
+                        fromEnum(Settings.EMOJI_FONT, EmojiChoice.values(), new String[]{L10n.t("Phone System Emoji"), L10n.t("Twitter Twemoji"), L10n.t("OpenMoji"), L10n.t("Blobmoji (Classic Android)"), L10n.t("Custom Emoji File")}))
                 .add(L10n.t("Settings Shortcut on App Icon"), L10n.t("Add Instagram Plus shortcut to launcher long-press menu"), Settings.SETTINGS_SHORTCUT)
                 .add(L10n.t("Open Settings from Logo Long Press"), L10n.t("Press and hold the Instagram logo on Home to open settings"), Settings.SETTINGS_LOGO_PRESS)
                 .add(L10n.t("Dismiss Update Warnings"), L10n.t("Disable 'This version of Instagram has expired' dialogs"), Settings.REMOVE_BUILD_EXPIRED_POPUP)
@@ -692,7 +829,7 @@ public final class ModernSettingsView extends FrameLayout {
         }
 
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        textParams.setMarginEnd(Math.round(12 * density));
+        textParams.setMarginEnd(Math.round(10 * density));
         row.addView(textCol, textParams);
 
         if (item.setting != null) {
@@ -708,6 +845,40 @@ public final class ModernSettingsView extends FrameLayout {
             });
             row.setOnClickListener(v -> toggle.toggle());
             row.addView(toggle, new LinearLayout.LayoutParams(Math.round(48 * density), Math.round(28 * density)));
+        } else if (item.choice != null) {
+            // Option choice setting (shows current option in blue + chevron)
+            TextView valueView = new TextView(context);
+            int idx = item.choice.getSelectedIndex();
+            String[] labels = item.choice.getLabels();
+            valueView.setText(idx >= 0 && idx < labels.length ? labels[idx] : "");
+            valueView.setTextColor(COLOR_ACCENT);
+            valueView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
+            valueView.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams valParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            valParams.setMarginEnd(Math.round(6 * density));
+            row.addView(valueView, valParams);
+
+            ImageView chevron = new ImageView(context);
+            Drawable chev = new ScreenColors.Chevron(0xFF737373, Math.round(1.8f * density), 0);
+            chevron.setImageDrawable(chev);
+            row.addView(chevron, new LinearLayout.LayoutParams(Math.round(14 * density), Math.round(20 * density)));
+            row.setOnClickListener(v -> showChoiceDialog(item, valueView));
+        } else if (item.slider != null) {
+            // Numeric Slider setting (shows current formatted value + chevron)
+            TextView valueView = new TextView(context);
+            valueView.setText(item.slider.formatValue(item.slider.getCurrent()));
+            valueView.setTextColor(COLOR_ACCENT);
+            valueView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
+            valueView.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams valParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            valParams.setMarginEnd(Math.round(6 * density));
+            row.addView(valueView, valParams);
+
+            ImageView chevron = new ImageView(context);
+            Drawable chev = new ScreenColors.Chevron(0xFF737373, Math.round(1.8f * density), 0);
+            chevron.setImageDrawable(chev);
+            row.addView(chevron, new LinearLayout.LayoutParams(Math.round(14 * density), Math.round(20 * density)));
+            row.setOnClickListener(v -> showSliderDialog(item, valueView));
         } else if (item.action != null) {
             // Action chevron
             ImageView chevron = new ImageView(context);
@@ -717,6 +888,86 @@ public final class ModernSettingsView extends FrameLayout {
             row.addView(chevron, new LinearLayout.LayoutParams(Math.round(14 * density), Math.round(20 * density)));
         }
         return row;
+    }
+
+    private void showChoiceDialog(SettingItem item, TextView valueView) {
+        if (item.choice == null) return;
+        Activity act = dialog.getActivity();
+        if (act == null || act.isFinishing()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(act);
+        builder.setTitle(item.title);
+        String[] labels = item.choice.getLabels();
+        int selected = item.choice.getSelectedIndex();
+
+        builder.setSingleChoiceItems(labels, selected, (d, which) -> {
+            item.choice.onSelect(which);
+            valueView.setText(labels[which]);
+            if (item.choice.isRestartNeeded()) {
+                dialog.showRestart(true);
+            }
+            d.dismiss();
+        });
+        builder.setNegativeButton(L10n.t("Cancel"), null);
+        AlertDialog alert = builder.create();
+        ScreenColors.dialog(alert);
+        alert.show();
+    }
+
+    private void showSliderDialog(SettingItem item, TextView valueView) {
+        if (item.slider == null) return;
+        Activity act = dialog.getActivity();
+        if (act == null || act.isFinishing()) return;
+
+        float density = getResources().getDisplayMetrics().density;
+        LinearLayout layout = new LinearLayout(act);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(Math.round(24 * density), Math.round(16 * density), Math.round(24 * density), Math.round(8 * density));
+
+        TextView currentLabel = new TextView(act);
+        currentLabel.setText(item.slider.formatValue(item.slider.getCurrent()));
+        currentLabel.setTextColor(COLOR_ACCENT);
+        currentLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        currentLabel.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        currentLabel.setGravity(Gravity.CENTER);
+        currentLabel.setPadding(0, 0, 0, Math.round(16 * density));
+        layout.addView(currentLabel);
+
+        SeekBar seekBar = new SeekBar(act);
+        int min = item.slider.getMin();
+        int max = item.slider.getMax();
+        seekBar.setMax(max - min);
+        seekBar.setProgress(item.slider.getCurrent() - min);
+
+        seekBar.setProgressTintList(ColorStateList.valueOf(COLOR_ACCENT));
+        seekBar.setThumbTintList(ColorStateList.valueOf(Color.WHITE));
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
+                int actual = min + progress;
+                currentLabel.setText(item.slider.formatValue(actual));
+            }
+            @Override public void onStartTrackingTouch(SeekBar sb) {}
+            @Override public void onStopTrackingTouch(SeekBar sb) {}
+        });
+        layout.addView(seekBar);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(act);
+        builder.setTitle(item.title);
+        builder.setView(layout);
+        builder.setPositiveButton(L10n.t("Save"), (d, which) -> {
+            int finalValue = min + seekBar.getProgress();
+            item.slider.onValueChange(finalValue);
+            valueView.setText(item.slider.formatValue(finalValue));
+            if (item.slider.isRestartNeeded()) {
+                dialog.showRestart(true);
+            }
+        });
+        builder.setNegativeButton(L10n.t("Cancel"), null);
+        AlertDialog alert = builder.create();
+        ScreenColors.dialog(alert);
+        alert.show();
     }
 
     private void styleSwitch(Switch toggle, float density) {
