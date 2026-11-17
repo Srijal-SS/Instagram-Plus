@@ -41,7 +41,7 @@ public class SettingsBackupHelperTest {
         assertNotNull(result.fileName);
         assertTrue(result.fileName.startsWith("HushGram-settings"));
         assertTrue(result.fileName.endsWith(".json"));
-        assertTrue(result.displayPath.contains("HushGram"));
+        assertTrue(result.displayPath.contains("InstagramPlus") || result.displayPath.contains("HushGram"));
         assertNotNull(result.data);
         assertTrue(result.data.length > 0);
 

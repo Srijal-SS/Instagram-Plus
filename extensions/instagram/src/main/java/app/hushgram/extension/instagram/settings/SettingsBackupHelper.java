@@ -42,7 +42,8 @@ import app.hushgram.extension.shared.Utils;
  * system document pickers, and clipboard.
  */
 public final class SettingsBackupHelper {
-    public static final String FOLDER = "HushGram";
+    public static final String FOLDER = "InstagramPlus";
+    public static final String LEGACY_FOLDER = "HushGram";
     public static final String RELATIVE_FOLDER = Environment.DIRECTORY_DOWNLOADS + "/" + FOLDER;
 
     private SettingsBackupHelper() {}
@@ -67,6 +68,7 @@ public final class SettingsBackupHelper {
         public final long modified;
         public final long size;
         public final String formattedDate;
+        public final String formattedSize;
 
         public BackupEntry(String name, Uri uri, long modified, long size) {
             this.name = name;
@@ -79,7 +81,20 @@ public final class SettingsBackupHelper {
             } else {
                 this.formattedDate = "";
             }
+            this.formattedSize = formatSize(size);
         }
+    }
+
+    /**
+     * Converts a raw file size in bytes to a human-readable string (e.g. 14.2 KB).
+     */
+    public static String formatSize(long bytes) {
+        if (bytes <= 0) return "0 B";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) {
+            return String.format(Locale.US, "%.1f KB", bytes / 1024.0);
+        }
+        return String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0));
     }
 
     /**
@@ -176,9 +191,15 @@ public final class SettingsBackupHelper {
                         MediaStore.MediaColumns.SIZE
                 };
                 String selection = "(" + MediaStore.MediaColumns.RELATIVE_PATH + " LIKE ? OR "
+                        + MediaStore.MediaColumns.RELATIVE_PATH + " LIKE ? OR "
+                        + MediaStore.MediaColumns.RELATIVE_PATH + " LIKE ? OR "
                         + MediaStore.MediaColumns.RELATIVE_PATH + " LIKE ?) AND "
                         + MediaStore.MediaColumns.DISPLAY_NAME + " LIKE ?";
-                String[] selectionArgs = new String[]{"%Download/" + FOLDER + "%", "%Downloads/" + FOLDER + "%", "%.json"};
+                String[] selectionArgs = new String[]{
+                        "%Download/" + FOLDER + "%", "%Downloads/" + FOLDER + "%",
+                        "%Download/" + LEGACY_FOLDER + "%", "%Downloads/" + LEGACY_FOLDER + "%",
+                        "%.json"
+                };
                 String sortOrder = MediaStore.MediaColumns.DATE_MODIFIED + " DESC";
 
                 try (Cursor cursor = resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,
@@ -206,16 +227,24 @@ public final class SettingsBackupHelper {
             }
         }
 
-        // 2. Direct public downloads directory
+        // 2. Direct public downloads directory (both new and legacy)
         try {
             File publicDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FOLDER);
             addFilesFromDir(publicDir, list, seenNames);
         } catch (Throwable ignored) {}
+        try {
+            File legacyPublicDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), LEGACY_FOLDER);
+            addFilesFromDir(legacyPublicDir, list, seenNames);
+        } catch (Throwable ignored) {}
 
-        // 3. App-specific downloads directory
+        // 3. App-specific downloads directory (both new and legacy)
         try {
             File appDir = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), FOLDER);
             addFilesFromDir(appDir, list, seenNames);
+        } catch (Throwable ignored) {}
+        try {
+            File legacyAppDir = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), LEGACY_FOLDER);
+            addFilesFromDir(legacyAppDir, list, seenNames);
         } catch (Throwable ignored) {}
 
         // Sort descending by date modified
@@ -287,7 +316,8 @@ public final class SettingsBackupHelper {
                 CharSequence text = cm.getPrimaryClip().getItemAt(0).getText();
                 if (text != null) {
                     String str = text.toString().trim();
-                    if (str.startsWith("{") && str.contains("\"project\"") && str.contains("HushGram")) {
+                    if (str.startsWith("{") && str.contains("\"project\"") &&
+                            (str.contains("HushGram") || str.contains("InstagramPlus") || str.contains("Instagram-Plus"))) {
                         return str;
                     }
                 }
@@ -305,7 +335,7 @@ public final class SettingsBackupHelper {
                     context.getSystemService(Context.CLIPBOARD_SERVICE);
             if (cm != null) {
                 android.content.ClipData clip = android.content.ClipData.newPlainText(
-                        "HushGram Settings", new String(bytes, StandardCharsets.UTF_8));
+                        "Instagram Plus Settings", new String(bytes, StandardCharsets.UTF_8));
                 cm.setPrimaryClip(clip);
                 Utils.showToastShort(L10n.t("Backup copied to clipboard"));
             }

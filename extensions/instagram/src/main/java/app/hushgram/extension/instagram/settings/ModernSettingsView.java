@@ -620,8 +620,8 @@ public final class ModernSettingsView extends FrameLayout {
                 L10n.t("Clear media cache, backup and restore settings configuration"), SettingsIcons.STORAGE)
                 .add(L10n.t("Date in Backup Filenames"), L10n.t("Include export timestamp in backup filenames"), Settings.DATE_SETTINGS_EXPORT)
                 .add(L10n.t("Clear Media Cache"), L10n.t("Wipe cached photos, videos and stories to free up storage"), Settings.CLEAR_MEDIA_CACHE)
-                .addAction(L10n.t("Export Settings Backup"), L10n.t("Save all your settings to a backup file in Download/HushGram"), this::exportSettings)
-                .addAction(L10n.t("Import Settings Backup"), L10n.t("Restore settings from Download/HushGram or device storage"), this::importSettings);
+                .addAction(L10n.t("Export Settings Backup"), L10n.t("Save all your settings to a backup file in Download/InstagramPlus"), this::exportSettings)
+                .addAction(L10n.t("Import Settings Backup"), L10n.t("Restore settings from Download/InstagramPlus or device storage"), this::importSettings);
         categories.add(storage);
 
         // 16. Support & About
@@ -1381,6 +1381,32 @@ public final class ModernSettingsView extends FrameLayout {
 
     private byte[] pendingExportData;
 
+    private TextView createDialogButton(Context context, String text, int textColor, int bgColor, int strokeColor, float density) {
+        TextView btn = new TextView(context);
+        btn.setText(text);
+        btn.setTextColor(textColor);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f);
+        btn.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        btn.setGravity(Gravity.CENTER);
+        btn.setClickable(true);
+        btn.setFocusable(true);
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(bgColor);
+        bg.setCornerRadius(12 * density);
+        if (strokeColor != 0) {
+            bg.setStroke(Math.round(1 * density), strokeColor);
+        }
+
+        GradientDrawable mask = new GradientDrawable();
+        mask.setColor(Color.WHITE);
+        mask.setCornerRadius(12 * density);
+
+        RippleDrawable ripple = new RippleDrawable(ColorStateList.valueOf(0x25FFFFFF), bg, mask);
+        btn.setBackground(ripple);
+        return btn;
+    }
+
     private void exportSettings() {
         Activity act = dialog.getActivity();
         if (act == null || act.isFinishing()) return;
@@ -1389,23 +1415,171 @@ public final class ModernSettingsView extends FrameLayout {
             SettingsBackupHelper.ExportResult result = SettingsBackupHelper.exportToDownloads(act);
             Utils.showToastLong(L10n.t("Settings exported to ") + result.displayPath);
 
+            float density = act.getResources().getDisplayMetrics().density;
             AlertDialog.Builder builder = new AlertDialog.Builder(act);
-            builder.setTitle(L10n.t("Settings Exported"));
-            builder.setMessage(L10n.t("Backup saved successfully to:") + "\n\n📁 " + result.displayPath
-                    + "\n\n" + L10n.t("You can share this backup file or save a copy to another folder."));
+            AlertDialog[] alertHolder = new AlertDialog[1];
 
-            builder.setPositiveButton(L10n.t("Share"), (d, w) -> {
+            LinearLayout root = new LinearLayout(act);
+            root.setOrientation(LinearLayout.VERTICAL);
+            int padH = Math.round(20 * density);
+            int padV = Math.round(20 * density);
+            root.setPadding(padH, padV, padH, padV);
+
+            // Header: Success Icon Badge + Title + Subtitle
+            LinearLayout header = new LinearLayout(act);
+            header.setOrientation(LinearLayout.VERTICAL);
+            header.setGravity(Gravity.CENTER_HORIZONTAL);
+
+            FrameLayout iconBadge = new FrameLayout(act);
+            int badgeSize = Math.round(52 * density);
+            GradientDrawable badgeBg = new GradientDrawable();
+            badgeBg.setColor(0x1F34C759); // 12% translucent emerald green
+            badgeBg.setCornerRadius(26 * density);
+            iconBadge.setBackground(badgeBg);
+
+            ImageView iconView = new ImageView(act);
+            int glyphSize = Math.round(26 * density);
+            Drawable glyph = SettingsIcons.icon(act, SettingsIcons.EXPORT, 0xFF34C759);
+            iconView.setImageDrawable(glyph);
+            iconBadge.addView(iconView, new FrameLayout.LayoutParams(glyphSize, glyphSize, Gravity.CENTER));
+
+            header.addView(iconBadge, new LinearLayout.LayoutParams(badgeSize, badgeSize));
+
+            TextView titleView = new TextView(act);
+            titleView.setText(L10n.t("Settings Exported"));
+            titleView.setTextColor(COLOR_TEXT_PRIMARY);
+            titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+            titleView.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+            titleView.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            titleParams.topMargin = Math.round(12 * density);
+            header.addView(titleView, titleParams);
+
+            TextView subView = new TextView(act);
+            subView.setText(L10n.t("Your backup file is saved and ready to share."));
+            subView.setTextColor(COLOR_TEXT_SECONDARY);
+            subView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            subView.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams subParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            subParams.topMargin = Math.round(4 * density);
+            subParams.bottomMargin = Math.round(16 * density);
+            header.addView(subView, subParams);
+
+            root.addView(header);
+
+            // File details card
+            LinearLayout fileCard = new LinearLayout(act);
+            fileCard.setOrientation(LinearLayout.VERTICAL);
+            GradientDrawable cardBg = new GradientDrawable();
+            cardBg.setColor(0xFF18181C);
+            cardBg.setCornerRadius(14 * density);
+            cardBg.setStroke(Math.round(1 * density), 0xFF282830);
+            fileCard.setBackground(cardBg);
+            int fPad = Math.round(14 * density);
+            fileCard.setPadding(fPad, fPad, fPad, fPad);
+
+            // Row: File icon + Name & details
+            LinearLayout cardRow = new LinearLayout(act);
+            cardRow.setOrientation(LinearLayout.HORIZONTAL);
+            cardRow.setGravity(Gravity.CENTER_VERTICAL);
+
+            FrameLayout fileBadge = new FrameLayout(act);
+            int fbSize = Math.round(36 * density);
+            GradientDrawable fbBg = new GradientDrawable();
+            fbBg.setColor(0xFF222228);
+            fbBg.setCornerRadius(10 * density);
+            fileBadge.setBackground(fbBg);
+
+            ImageView fileIcon = new ImageView(act);
+            int fiSize = Math.round(18 * density);
+            Drawable fiGlyph = SettingsIcons.icon(act, SettingsIcons.STORAGE, COLOR_TEXT_PRIMARY);
+            fileIcon.setImageDrawable(fiGlyph);
+            fileBadge.addView(fileIcon, new FrameLayout.LayoutParams(fiSize, fiSize, Gravity.CENTER));
+
+            LinearLayout.LayoutParams fbParams = new LinearLayout.LayoutParams(fbSize, fbSize);
+            fbParams.setMarginEnd(Math.round(12 * density));
+            cardRow.addView(fileBadge, fbParams);
+
+            LinearLayout fileTextCol = new LinearLayout(act);
+            fileTextCol.setOrientation(LinearLayout.VERTICAL);
+
+            TextView fileName = new TextView(act);
+            fileName.setText(result.fileName);
+            fileName.setTextColor(COLOR_TEXT_PRIMARY);
+            fileName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
+            fileName.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+            fileName.setSingleLine(true);
+            fileName.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+            fileTextCol.addView(fileName);
+
+            TextView fileSize = new TextView(act);
+            fileSize.setText(SettingsBackupHelper.formatSize(result.data.length) + " • " + L10n.t("Just now"));
+            fileSize.setTextColor(COLOR_TEXT_SECONDARY);
+            fileSize.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+            fileTextCol.addView(fileSize);
+
+            cardRow.addView(fileTextCol, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            fileCard.addView(cardRow);
+
+            // Path pill
+            TextView pathView = new TextView(act);
+            pathView.setText("📁 " + result.displayPath);
+            pathView.setTextColor(0xFF3897F0);
+            pathView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            GradientDrawable pathBg = new GradientDrawable();
+            pathBg.setColor(0xFF202026);
+            pathBg.setCornerRadius(8 * density);
+            pathView.setBackground(pathBg);
+            pathView.setPadding(Math.round(10 * density), Math.round(6 * density), Math.round(10 * density), Math.round(6 * density));
+            LinearLayout.LayoutParams pathParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            pathParams.topMargin = Math.round(10 * density);
+            fileCard.addView(pathView, pathParams);
+
+            root.addView(fileCard);
+
+            // Primary: Share Backup
+            TextView shareBtn = createDialogButton(act, L10n.t("Share Backup"), Color.WHITE, COLOR_ACCENT, 0, density);
+            shareBtn.setOnClickListener(v -> {
+                if (alertHolder[0] != null) alertHolder[0].dismiss();
                 SettingsBackupHelper.shareBackup(act, result.fileName, result.uri, result.data);
             });
+            LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, Math.round(44 * density));
+            shareParams.topMargin = Math.round(16 * density);
+            root.addView(shareBtn, shareParams);
 
-            builder.setNeutralButton(L10n.t("Save As..."), (d, w) -> {
+            // Secondary: Save Copy To...
+            TextView saveAsBtn = createDialogButton(act, L10n.t("Save Copy To..."), COLOR_TEXT_PRIMARY, 0xFF18181C, 0xFF32323A, density);
+            saveAsBtn.setOnClickListener(v -> {
+                if (alertHolder[0] != null) alertHolder[0].dismiss();
                 pendingExportData = result.data;
                 dialog.launchExportPicker(result.fileName);
             });
+            LinearLayout.LayoutParams saveAsParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, Math.round(44 * density));
+            saveAsParams.topMargin = Math.round(8 * density);
+            root.addView(saveAsBtn, saveAsParams);
 
-            builder.setNegativeButton(L10n.t("Done"), null);
+            // Done Button
+            TextView doneBtn = new TextView(act);
+            doneBtn.setText(L10n.t("Done"));
+            doneBtn.setTextColor(COLOR_TEXT_SECONDARY);
+            doneBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            doneBtn.setGravity(Gravity.CENTER);
+            doneBtn.setClickable(true);
+            doneBtn.setFocusable(true);
+            doneBtn.setPadding(0, Math.round(12 * density), 0, Math.round(4 * density));
+            doneBtn.setOnClickListener(v -> {
+                if (alertHolder[0] != null) alertHolder[0].dismiss();
+            });
+            root.addView(doneBtn);
 
+            builder.setView(root);
             AlertDialog alert = builder.create();
+            alertHolder[0] = alert;
             ScreenColors.dialog(alert);
             alert.show();
         } catch (Exception ex) {
@@ -1418,25 +1592,221 @@ public final class ModernSettingsView extends FrameLayout {
         Activity act = dialog.getActivity();
         if (act == null || act.isFinishing()) return;
 
+        float density = act.getResources().getDisplayMetrics().density;
         List<SettingsBackupHelper.BackupEntry> backups = SettingsBackupHelper.findBackups(act);
         String clipboardText = SettingsBackupHelper.getClipboardBackup(act);
 
-        List<String> options = new ArrayList<>();
-        List<Runnable> actions = new ArrayList<>();
+        AlertDialog.Builder builder = new AlertDialog.Builder(act);
+        AlertDialog[] alertHolder = new AlertDialog[1];
 
+        LinearLayout root = new LinearLayout(act);
+        root.setOrientation(LinearLayout.VERTICAL);
+        int padH = Math.round(20 * density);
+        int padV = Math.round(20 * density);
+        root.setPadding(padH, padV, padH, padV);
+
+        // Header: Badge Icon + Title + Subtitle
+        LinearLayout header = new LinearLayout(act);
+        header.setOrientation(LinearLayout.VERTICAL);
+        header.setGravity(Gravity.CENTER_HORIZONTAL);
+
+        FrameLayout iconBadge = new FrameLayout(act);
+        int badgeSize = Math.round(52 * density);
+        GradientDrawable badgeBg = new GradientDrawable();
+        badgeBg.setColor(0x1F0095F6); // 12% accent
+        badgeBg.setCornerRadius(26 * density);
+        iconBadge.setBackground(badgeBg);
+
+        ImageView iconView = new ImageView(act);
+        int glyphSize = Math.round(26 * density);
+        Drawable glyph = SettingsIcons.icon(act, SettingsIcons.DOWNLOADS, COLOR_ACCENT);
+        iconView.setImageDrawable(glyph);
+        iconBadge.addView(iconView, new FrameLayout.LayoutParams(glyphSize, glyphSize, Gravity.CENTER));
+
+        header.addView(iconBadge, new LinearLayout.LayoutParams(badgeSize, badgeSize));
+
+        TextView titleView = new TextView(act);
+        titleView.setText(L10n.t("Restore Settings"));
+        titleView.setTextColor(COLOR_TEXT_PRIMARY);
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+        titleView.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        titleView.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        titleParams.topMargin = Math.round(12 * density);
+        header.addView(titleView, titleParams);
+
+        TextView subView = new TextView(act);
+        subView.setText(L10n.t("Choose a backup file or restore from clipboard."));
+        subView.setTextColor(COLOR_TEXT_SECONDARY);
+        subView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        subView.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams subParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        subParams.topMargin = Math.round(4 * density);
+        subParams.bottomMargin = Math.round(16 * density);
+        header.addView(subView, subParams);
+
+        root.addView(header);
+
+        // Clipboard Quick Restore Card
         if (clipboardText != null) {
-            options.add("📋 " + L10n.t("Restore from Clipboard"));
-            actions.add(() -> applyImport(clipboardText.getBytes(StandardCharsets.UTF_8)));
+            LinearLayout clipCard = new LinearLayout(act);
+            clipCard.setOrientation(LinearLayout.HORIZONTAL);
+            clipCard.setGravity(Gravity.CENTER_VERTICAL);
+            clipCard.setClickable(true);
+            clipCard.setFocusable(true);
+
+            GradientDrawable clipBg = new GradientDrawable();
+            clipBg.setColor(0xFF14202E);
+            clipBg.setCornerRadius(14 * density);
+            clipBg.setStroke(Math.round(1.5f * density), COLOR_ACCENT);
+
+            GradientDrawable clipMask = new GradientDrawable();
+            clipMask.setColor(Color.WHITE);
+            clipMask.setCornerRadius(14 * density);
+
+            RippleDrawable clipRipple = new RippleDrawable(ColorStateList.valueOf(0x250095F6), clipBg, clipMask);
+            clipCard.setBackground(clipRipple);
+            int cPadH = Math.round(14 * density);
+            int cPadV = Math.round(12 * density);
+            clipCard.setPadding(cPadH, cPadV, cPadH, cPadV);
+
+            ImageView clipIcon = new ImageView(act);
+            int clipIconSize = Math.round(22 * density);
+            Drawable clipGlyph = SettingsIcons.icon(act, SettingsIcons.WRITING, COLOR_ACCENT);
+            clipIcon.setImageDrawable(clipGlyph);
+            LinearLayout.LayoutParams clipIconParams = new LinearLayout.LayoutParams(clipIconSize, clipIconSize);
+            clipIconParams.setMarginEnd(Math.round(12 * density));
+            clipCard.addView(clipIcon, clipIconParams);
+
+            LinearLayout clipTextCol = new LinearLayout(act);
+            clipTextCol.setOrientation(LinearLayout.VERTICAL);
+            TextView clipTitle = new TextView(act);
+            clipTitle.setText(L10n.t("Restore from Clipboard"));
+            clipTitle.setTextColor(COLOR_TEXT_PRIMARY);
+            clipTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f);
+            clipTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+            clipTextCol.addView(clipTitle);
+
+            TextView clipSub = new TextView(act);
+            clipSub.setText(L10n.t("Valid backup detected in clipboard"));
+            clipSub.setTextColor(0xFF3897F0);
+            clipSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            clipTextCol.addView(clipSub);
+
+            clipCard.addView(clipTextCol, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+            TextView restorePill = new TextView(act);
+            restorePill.setText(L10n.t("Restore"));
+            restorePill.setTextColor(Color.WHITE);
+            restorePill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            restorePill.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+            GradientDrawable pillBg = new GradientDrawable();
+            pillBg.setColor(COLOR_ACCENT);
+            pillBg.setCornerRadius(14 * density);
+            restorePill.setBackground(pillBg);
+            restorePill.setPadding(Math.round(12 * density), Math.round(6 * density), Math.round(12 * density), Math.round(6 * density));
+            clipCard.addView(restorePill);
+
+            clipCard.setOnClickListener(v -> {
+                if (alertHolder[0] != null) alertHolder[0].dismiss();
+                applyImport(clipboardText.getBytes(StandardCharsets.UTF_8));
+            });
+
+            LinearLayout.LayoutParams clipCardParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            clipCardParams.bottomMargin = Math.round(14 * density);
+            root.addView(clipCard, clipCardParams);
         }
 
+        // Backups list or Empty State
         if (!backups.isEmpty()) {
+            TextView sectionLabel = new TextView(act);
+            sectionLabel.setText(L10n.t("SAVED BACKUPS"));
+            sectionLabel.setTextColor(COLOR_TEXT_MUTED);
+            sectionLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            sectionLabel.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+            LinearLayout.LayoutParams secParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            secParams.bottomMargin = Math.round(8 * density);
+            root.addView(sectionLabel, secParams);
+
+            ScrollView listScroll = new ScrollView(act);
+            listScroll.setVerticalScrollBarEnabled(true);
+            listScroll.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
+            LinearLayout listContent = new LinearLayout(act);
+            listContent.setOrientation(LinearLayout.VERTICAL);
+
             for (SettingsBackupHelper.BackupEntry entry : backups) {
-                String label = "📁 " + entry.name;
+                LinearLayout card = new LinearLayout(act);
+                card.setOrientation(LinearLayout.HORIZONTAL);
+                card.setGravity(Gravity.CENTER_VERTICAL);
+                card.setClickable(true);
+                card.setFocusable(true);
+
+                GradientDrawable itemBg = new GradientDrawable();
+                itemBg.setColor(0xFF18181C);
+                itemBg.setCornerRadius(14 * density);
+                itemBg.setStroke(Math.round(1 * density), 0xFF282830);
+
+                GradientDrawable itemMask = new GradientDrawable();
+                itemMask.setColor(Color.WHITE);
+                itemMask.setCornerRadius(14 * density);
+
+                RippleDrawable itemRipple = new RippleDrawable(ColorStateList.valueOf(0x20FFFFFF), itemBg, itemMask);
+                card.setBackground(itemRipple);
+                int itemPadH = Math.round(12 * density);
+                int itemPadV = Math.round(11 * density);
+                card.setPadding(itemPadH, itemPadV, itemPadH, itemPadV);
+
+                FrameLayout fileBadge = new FrameLayout(act);
+                int fbSize = Math.round(36 * density);
+                GradientDrawable fbBg = new GradientDrawable();
+                fbBg.setColor(0xFF222228);
+                fbBg.setCornerRadius(10 * density);
+                fileBadge.setBackground(fbBg);
+
+                ImageView fileIcon = new ImageView(act);
+                int fiSize = Math.round(18 * density);
+                Drawable fiGlyph = SettingsIcons.icon(act, SettingsIcons.STORAGE, COLOR_TEXT_PRIMARY);
+                fileIcon.setImageDrawable(fiGlyph);
+                fileBadge.addView(fileIcon, new FrameLayout.LayoutParams(fiSize, fiSize, Gravity.CENTER));
+
+                LinearLayout.LayoutParams fbParams = new LinearLayout.LayoutParams(fbSize, fbSize);
+                fbParams.setMarginEnd(Math.round(12 * density));
+                card.addView(fileBadge, fbParams);
+
+                LinearLayout textCol = new LinearLayout(act);
+                textCol.setOrientation(LinearLayout.VERTICAL);
+
+                TextView nameView = new TextView(act);
+                nameView.setText(entry.name);
+                nameView.setTextColor(COLOR_TEXT_PRIMARY);
+                nameView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
+                nameView.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+                nameView.setSingleLine(true);
+                nameView.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+                textCol.addView(nameView);
+
+                TextView metaView = new TextView(act);
+                String meta = entry.formattedSize;
                 if (!entry.formattedDate.isEmpty()) {
-                    label += " (" + entry.formattedDate + ")";
+                    meta += " • " + entry.formattedDate;
                 }
-                options.add(label);
-                actions.add(() -> {
+                metaView.setText(meta);
+                metaView.setTextColor(COLOR_TEXT_SECONDARY);
+                metaView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+                textCol.addView(metaView);
+
+                card.addView(textCol, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+                ImageView chevView = new ImageView(act);
+                chevView.setImageDrawable(new ScreenColors.Chevron(0xFF555560, Math.round(1.6f * density), 0));
+                card.addView(chevView, new LinearLayout.LayoutParams(Math.round(12 * density), Math.round(16 * density)));
+
+                card.setOnClickListener(v -> {
+                    if (alertHolder[0] != null) alertHolder[0].dismiss();
                     try {
                         byte[] bytes = SettingsBackupHelper.readBytes(act, entry.uri);
                         applyImport(bytes);
@@ -1445,30 +1815,128 @@ public final class ModernSettingsView extends FrameLayout {
                         Utils.showToastLong(L10n.t("Could not read backup file: ") + ex.getMessage());
                     }
                 });
+
+                LinearLayout.LayoutParams itemParams = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                itemParams.bottomMargin = Math.round(8 * density);
+                listContent.addView(card, itemParams);
             }
+
+            listScroll.addView(listContent);
+            LinearLayout.LayoutParams scrollParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    Math.min(backups.size() * Math.round(64 * density), Math.round(220 * density)));
+            root.addView(listScroll, scrollParams);
+        } else if (clipboardText == null) {
+            // Empty state
+            LinearLayout emptyState = new LinearLayout(act);
+            emptyState.setOrientation(LinearLayout.VERTICAL);
+            emptyState.setGravity(Gravity.CENTER_HORIZONTAL);
+            emptyState.setPadding(0, Math.round(12 * density), 0, Math.round(12 * density));
+
+            FrameLayout emptyBadge = new FrameLayout(act);
+            int ebSize = Math.round(56 * density);
+            GradientDrawable ebBg = new GradientDrawable();
+            ebBg.setColor(0xFF18181F);
+            ebBg.setCornerRadius(28 * density);
+            emptyBadge.setBackground(ebBg);
+
+            ImageView emptyIcon = new ImageView(act);
+            int eiSize = Math.round(28 * density);
+            Drawable eiGlyph = SettingsIcons.icon(act, SettingsIcons.STORAGE, COLOR_TEXT_MUTED);
+            emptyIcon.setImageDrawable(eiGlyph);
+            emptyBadge.addView(emptyIcon, new FrameLayout.LayoutParams(eiSize, eiSize, Gravity.CENTER));
+            emptyState.addView(emptyBadge, new LinearLayout.LayoutParams(ebSize, ebSize));
+
+            TextView emptyTitle = new TextView(act);
+            emptyTitle.setText(L10n.t("No Local Backups Found"));
+            emptyTitle.setTextColor(COLOR_TEXT_PRIMARY);
+            emptyTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            emptyTitle.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+            emptyTitle.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams etParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            etParams.topMargin = Math.round(10 * density);
+            emptyState.addView(emptyTitle, etParams);
+
+            TextView emptySub = new TextView(act);
+            emptySub.setText(L10n.t("Place your backup .json files in:") + "\n📁 Download/InstagramPlus/\n\n"
+                    + L10n.t("Or tap below to choose from device storage."));
+            emptySub.setTextColor(COLOR_TEXT_SECONDARY);
+            emptySub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+            emptySub.setGravity(Gravity.CENTER);
+            emptySub.setLineSpacing(Math.round(2 * density), 1.15f);
+            LinearLayout.LayoutParams esParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            esParams.topMargin = Math.round(6 * density);
+            esParams.bottomMargin = Math.round(12 * density);
+            emptyState.addView(emptySub, esParams);
+
+            root.addView(emptyState);
         }
 
-        options.add("📂 " + L10n.t("Browse from device storage..."));
-        actions.add(() -> dialog.launchImportPicker());
+        // Browse Device Storage Button
+        LinearLayout browseCard = new LinearLayout(act);
+        browseCard.setOrientation(LinearLayout.HORIZONTAL);
+        browseCard.setGravity(Gravity.CENTER);
+        browseCard.setClickable(true);
+        browseCard.setFocusable(true);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(act);
-        builder.setTitle(L10n.t("Import Settings Backup"));
+        GradientDrawable browseBg = new GradientDrawable();
+        browseBg.setColor(0xFF18181C);
+        browseBg.setCornerRadius(14 * density);
+        browseBg.setStroke(Math.round(1 * density), 0xFF2E2E38);
 
-        if (backups.isEmpty() && clipboardText == null) {
-            builder.setMessage(L10n.t("No backup files found in:") + "\n\n📁 Download/HushGram/\n\n"
-                    + L10n.t("Place your backup .json file in Download/HushGram/, or tap Browse to select from device storage."));
-            builder.setPositiveButton(L10n.t("Browse"), (d, w) -> dialog.launchImportPicker());
-            builder.setNegativeButton(L10n.t("Cancel"), null);
-        } else {
-            builder.setItems(options.toArray(new String[0]), (d, which) -> {
-                if (which >= 0 && which < actions.size()) {
-                    actions.get(which).run();
-                }
-            });
-            builder.setNegativeButton(L10n.t("Cancel"), null);
-        }
+        GradientDrawable browseMask = new GradientDrawable();
+        browseMask.setColor(Color.WHITE);
+        browseMask.setCornerRadius(14 * density);
 
+        RippleDrawable browseRipple = new RippleDrawable(ColorStateList.valueOf(0x20FFFFFF), browseBg, browseMask);
+        browseCard.setBackground(browseRipple);
+        browseCard.setPadding(Math.round(14 * density), Math.round(12 * density), Math.round(14 * density), Math.round(12 * density));
+
+        ImageView browseIcon = new ImageView(act);
+        int biSize = Math.round(18 * density);
+        Drawable biGlyph = SettingsIcons.icon(act, SettingsIcons.SEARCH, COLOR_ACCENT);
+        browseIcon.setImageDrawable(biGlyph);
+        LinearLayout.LayoutParams biParams = new LinearLayout.LayoutParams(biSize, biSize);
+        biParams.setMarginEnd(Math.round(8 * density));
+        browseCard.addView(browseIcon, biParams);
+
+        TextView browseText = new TextView(act);
+        browseText.setText(L10n.t("Browse Device Storage..."));
+        browseText.setTextColor(COLOR_TEXT_PRIMARY);
+        browseText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        browseText.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        browseCard.addView(browseText);
+
+        browseCard.setOnClickListener(v -> {
+            if (alertHolder[0] != null) alertHolder[0].dismiss();
+            dialog.launchImportPicker();
+        });
+
+        LinearLayout.LayoutParams browseParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        browseParams.topMargin = Math.round(10 * density);
+        root.addView(browseCard, browseParams);
+
+        // Cancel Button
+        TextView cancelBtn = new TextView(act);
+        cancelBtn.setText(L10n.t("Cancel"));
+        cancelBtn.setTextColor(COLOR_TEXT_SECONDARY);
+        cancelBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        cancelBtn.setGravity(Gravity.CENTER);
+        cancelBtn.setClickable(true);
+        cancelBtn.setFocusable(true);
+        cancelBtn.setPadding(0, Math.round(12 * density), 0, Math.round(4 * density));
+        cancelBtn.setOnClickListener(v -> {
+            if (alertHolder[0] != null) alertHolder[0].dismiss();
+        });
+        root.addView(cancelBtn);
+
+        builder.setView(root);
         AlertDialog alert = builder.create();
+        alertHolder[0] = alert;
         ScreenColors.dialog(alert);
         alert.show();
     }
@@ -1488,16 +1956,107 @@ public final class ModernSettingsView extends FrameLayout {
             }
             Utils.showToastLong(summary);
 
+            float density = act.getResources().getDisplayMetrics().density;
             AlertDialog.Builder builder = new AlertDialog.Builder(act);
-            builder.setTitle(L10n.t("Settings Imported"));
-            builder.setMessage(summary + "\n\n" + L10n.t("Restart Instagram now to apply all imported settings?"));
-            builder.setPositiveButton(L10n.t("Restart Now"), (d, w) -> {
+            AlertDialog[] alertHolder = new AlertDialog[1];
+
+            LinearLayout root = new LinearLayout(act);
+            root.setOrientation(LinearLayout.VERTICAL);
+            int padH = Math.round(20 * density);
+            int padV = Math.round(20 * density);
+            root.setPadding(padH, padV, padH, padV);
+
+            // Header: Checkmark Badge + Title
+            LinearLayout header = new LinearLayout(act);
+            header.setOrientation(LinearLayout.VERTICAL);
+            header.setGravity(Gravity.CENTER_HORIZONTAL);
+
+            FrameLayout iconBadge = new FrameLayout(act);
+            int badgeSize = Math.round(52 * density);
+            GradientDrawable badgeBg = new GradientDrawable();
+            badgeBg.setColor(0x1F34C759); // 12% translucent emerald green
+            badgeBg.setCornerRadius(26 * density);
+            iconBadge.setBackground(badgeBg);
+
+            ImageView iconView = new ImageView(act);
+            int glyphSize = Math.round(26 * density);
+            Drawable glyph = SettingsIcons.icon(act, SettingsIcons.DOWNLOADS, 0xFF34C759);
+            iconView.setImageDrawable(glyph);
+            iconBadge.addView(iconView, new FrameLayout.LayoutParams(glyphSize, glyphSize, Gravity.CENTER));
+
+            header.addView(iconBadge, new LinearLayout.LayoutParams(badgeSize, badgeSize));
+
+            TextView titleView = new TextView(act);
+            titleView.setText(L10n.t("Settings Imported"));
+            titleView.setTextColor(COLOR_TEXT_PRIMARY);
+            titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+            titleView.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+            titleView.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            titleParams.topMargin = Math.round(12 * density);
+            header.addView(titleView, titleParams);
+
+            // Summary Card
+            LinearLayout summaryCard = new LinearLayout(act);
+            summaryCard.setOrientation(LinearLayout.VERTICAL);
+            GradientDrawable cardBg = new GradientDrawable();
+            cardBg.setColor(0xFF18181C);
+            cardBg.setCornerRadius(14 * density);
+            cardBg.setStroke(Math.round(1 * density), 0xFF282830);
+            summaryCard.setBackground(cardBg);
+            int cPad = Math.round(14 * density);
+            summaryCard.setPadding(cPad, cPad, cPad, cPad);
+
+            TextView sumView = new TextView(act);
+            sumView.setText(summary);
+            sumView.setTextColor(COLOR_TEXT_PRIMARY);
+            sumView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            sumView.setGravity(Gravity.CENTER);
+            summaryCard.addView(sumView);
+
+            TextView restartNote = new TextView(act);
+            restartNote.setText(L10n.t("Restart Instagram now to apply all imported settings?"));
+            restartNote.setTextColor(COLOR_TEXT_SECONDARY);
+            restartNote.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+            restartNote.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams rnParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rnParams.topMargin = Math.round(6 * density);
+            summaryCard.addView(restartNote, rnParams);
+
+            LinearLayout.LayoutParams scParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            scParams.topMargin = Math.round(14 * density);
+            header.addView(summaryCard, scParams);
+
+            root.addView(header);
+
+            // Restart Now Button
+            TextView restartBtn = createDialogButton(act, L10n.t("Restart Now"), Color.WHITE, COLOR_ACCENT, 0, density);
+            restartBtn.setOnClickListener(v -> {
+                if (alertHolder[0] != null) alertHolder[0].dismiss();
                 RestartNow.restart(act);
             });
-            builder.setNegativeButton(L10n.t("Later"), (d, w) -> {
+            LinearLayout.LayoutParams restartParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, Math.round(44 * density));
+            restartParams.topMargin = Math.round(16 * density);
+            root.addView(restartBtn, restartParams);
+
+            // Later Button
+            TextView laterBtn = createDialogButton(act, L10n.t("Later"), COLOR_TEXT_SECONDARY, 0xFF18181C, 0xFF32323A, density);
+            laterBtn.setOnClickListener(v -> {
+                if (alertHolder[0] != null) alertHolder[0].dismiss();
                 dialog.showRestart(true);
             });
+            LinearLayout.LayoutParams laterParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, Math.round(44 * density));
+            laterParams.topMargin = Math.round(8 * density);
+            root.addView(laterBtn, laterParams);
+
+            builder.setView(root);
             AlertDialog alert = builder.create();
+            alertHolder[0] = alert;
             ScreenColors.dialog(alert);
             alert.show();
 
