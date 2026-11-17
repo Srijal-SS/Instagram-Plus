@@ -98,7 +98,7 @@ public final class ConfigurationBackup {
 
     /** The suggested document name, with optional local time in safe, locale-independent digits. */
     static String fileName(Date when, boolean dated) {
-        return "HushGram-settings" + (dated
+        return "InstagramPlus-settings" + (dated
                 ? "-" + new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(when) : "") + ".json";
     }
 
@@ -436,7 +436,8 @@ public final class ConfigurationBackup {
         try {
             JSONObject root = SettingsJson.parseObject(bytes, LIMITS);
             boolean listed = root.has(PROFILES);
-            if (root.length() != (listed ? 4 : 3) || !"HushGram".equals(root.get("project"))
+            Object project = root.opt("project");
+            if (root.length() != (listed ? 4 : 3) || (!"HushGram".equals(project) && !"InstagramPlus".equals(project))
                     || !(root.get("schema") instanceof Integer) || root.getInt("schema") != 1
                     || !(root.get("settings") instanceof JSONObject)
                     || listed && !(root.get(PROFILES) instanceof JSONArray)) throw invalid();

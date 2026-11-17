@@ -155,7 +155,7 @@ public class ConfigurationDocumentsTest {
             assertEquals(Intent.ACTION_CREATE_DOCUMENT, picked.intent.getAction());
             assertEquals("application/json", picked.intent.getType());
             assertTrue(picked.intent.hasCategory(Intent.CATEGORY_OPENABLE));
-            assertEquals("HushGram-settings.json", picked.intent.getStringExtra(Intent.EXTRA_TITLE));
+            assertEquals("InstagramPlus-settings.json", picked.intent.getStringExtra(Intent.EXTRA_TITLE));
             Shadows.shadowOf(activity.get()).receiveResult(picked.intent, Activity.RESULT_OK, new Intent().setData(DOCUMENT));
             finish();
             JSONObject file = new JSONObject(output.toString(StandardCharsets.UTF_8.name()));
@@ -295,15 +295,15 @@ public class ConfigurationDocumentsTest {
         try {
             Locale.setDefault(Locale.forLanguageTag("ar-EG"));
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-            assertEquals("HushGram-settings-1970-01-01_00-00-00.json",
+            assertEquals("InstagramPlus-settings-1970-01-01_00-00-00.json",
                     ConfigurationBackup.fileName(new Date(0), true));
-            assertEquals("HushGram-settings-1970-01-01_00-00-01.json",
+            assertEquals("InstagramPlus-settings-1970-01-01_00-00-01.json",
                     ConfigurationBackup.fileName(new Date(1_000), true));
             Locale.setDefault(Locale.forLanguageTag("th-TH"));
             TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
-            assertEquals("HushGram-settings-1969-12-31_19-00-00.json",
+            assertEquals("InstagramPlus-settings-1969-12-31_19-00-00.json",
                     ConfigurationBackup.fileName(new Date(0), true));
-            assertEquals("HushGram-settings.json", ConfigurationBackup.fileName(new Date(0), false));
+            assertEquals("InstagramPlus-settings.json", ConfigurationBackup.fileName(new Date(0), false));
         } finally {
             Locale.setDefault(originalLocale);
             TimeZone.setDefault(originalZone);
@@ -330,7 +330,7 @@ public class ConfigurationDocumentsTest {
             assertEquals("application/json", picked.intent.getType());
             assertTrue(picked.intent.hasCategory(Intent.CATEGORY_OPENABLE));
             assertTrue(picked.intent.getStringExtra(Intent.EXTRA_TITLE).matches(
-                    "HushGram-settings-[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}\\.json"));
+                    "InstagramPlus-settings-[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}\\.json"));
             Shadows.shadowOf(activity.get()).receiveResult(picked.intent, Activity.RESULT_OK, new Intent().setData(DOCUMENT));
             finish();
             JSONObject exported = new JSONObject(output.toString(StandardCharsets.UTF_8.name()));

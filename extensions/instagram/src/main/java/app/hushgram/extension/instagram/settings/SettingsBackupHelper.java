@@ -98,7 +98,7 @@ public final class SettingsBackupHelper {
     }
 
     /**
-     * Exports current settings to Download/HushGram/ with optional timestamp in the filename.
+     * Exports current settings to Download/InstagramPlus/ with optional timestamp in the filename.
      */
     public static ExportResult exportToDownloads(Context context) throws IOException {
         String fileName = ConfigurationBackup.fileName(new Date(), Settings.DATE_SETTINGS_EXPORT.savedValue());
@@ -109,7 +109,7 @@ public final class SettingsBackupHelper {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContentResolver resolver = context.getContentResolver();
-            // If replacing HushGram-settings.json (dated=false), remove older file with same name
+            // If replacing InstagramPlus-settings.json (dated=false), remove older file with same name
             try {
                 String sel = MediaStore.MediaColumns.RELATIVE_PATH + " LIKE ? AND "
                         + MediaStore.MediaColumns.DISPLAY_NAME + " = ?";
