@@ -80,9 +80,17 @@ echo "=== 4. Dexing extensions with d8 ==="
 "$D8" --min-api 28 --classpath "$ANDROID_JAR" --classpath "$BUILD_DIR/shared.jar" \
   --output "$BUILD_DIR/dex/instagram" $(find "$BUILD_DIR/instagram" -name "*.class")
 
-echo "=== 5. Packaging patches-0.0.18.mpp ==="
+echo "=== 5. Packaging patches bundle ==="
 python3 -c "
-import os, shutil, zipfile
+import os, shutil, zipfile, time
+
+version = '0.0.20'
+with open('$ROOT_DIR/gradle.properties') as gp:
+    for line in gp:
+        if line.strip().startswith('version'):
+            version = line.split('=')[1].strip()
+
+print(f'Building patches-{version}.mpp...')
 
 staging = '$BUILD_DIR/staging'
 if os.path.exists(staging):
@@ -109,11 +117,11 @@ for root, dirs, files in os.walk(res_dir):
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
         shutil.copy2(src_path, dest_path)
 
-manifest = '''Manifest-Version: 1.0
+manifest = f'''Manifest-Version: 1.0
 Name: Instagram Plus
 Description: Instagram Plus patches for the Instagram app, built for Morphe. Hides ads, cleans tracking keys off the links you share, keeps usage events on your phone, and keeps a patched build from locking you out.
-Version: 0.0.18
-Timestamp: 1793484620000
+Version: {version}
+Timestamp: {int(time.time() * 1000)}
 Source: https://github.com/Srijal-SS/Instagram-Plus
 Author: Srijal-SS
 Contact: https://github.com/Srijal-SS/Instagram-Plus/issues
@@ -125,7 +133,7 @@ Patcher-Version: 2.1.0
 with open(os.path.join(staging, 'META-INF', 'MANIFEST.MF'), 'w', newline='\n') as f:
     f.write(manifest)
 
-out_mpp = '$ROOT_DIR/patches-0.0.18.mpp'
+out_mpp = f'$ROOT_DIR/patches-{version}.mpp'
 with zipfile.ZipFile(out_mpp, 'w', compression=zipfile.ZIP_DEFLATED) as z:
     manifest_path = os.path.join(staging, 'META-INF', 'MANIFEST.MF')
     z.write(manifest_path, 'META-INF/MANIFEST.MF')
@@ -141,8 +149,8 @@ with zipfile.ZipFile(out_mpp, 'w', compression=zipfile.ZIP_DEFLATED) as z:
 
 for d in ['$ROOT_DIR/patches/build/release', '$ROOT_DIR/patches/build/libs']:
     os.makedirs(d, exist_ok=True)
-    shutil.copy2(out_mpp, os.path.join(d, 'patches-0.0.18.mpp'))
+    shutil.copy2(out_mpp, os.path.join(d, f'patches-{version}.mpp'))
 
-print('Successfully built patches-0.0.18.mpp (' + str(os.path.getsize(out_mpp)) + ' bytes)!')
+print(f'Successfully built patches-{version}.mpp ({os.path.getsize(out_mpp)} bytes)!')
 "
 
