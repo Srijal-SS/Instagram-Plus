@@ -1207,14 +1207,15 @@ once-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->followUpStub(Landroi
 once-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->summaryCard(Landroid/view/View;)Landroid/view/View; in instance (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)L*; holding const:0x7f0e0b2d
 once-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->summaryCard(Landroid/view/View;)Landroid/view/View; in instance (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)L*; holding const:0x7f0e101f
 # About this reel (#42): the Reels viewer's More menu asks the summary factory in two places and
-# passes each answer through aboutThisReel() once, in its AI discovery menu check (the method
-# holding the hasAiDiscoveryMenu marker) and in its header items (the getBottomSheetHeaderItems
-# marker). The feed's menus ask the same factory and hold no string, so no rule picks them;
+# passes each answer through aboutThisReel() once, in its menu builder (the instance method) and in
+# its header items (the static one), both loading the name the menu logs itself under. 456 dropped
+# the hasAiDiscoveryMenu and getBottomSheetHeaderItems markers (LX/09IW;->A0d and A0B on 386214574).
+# The feed's menus ask the same factory and hold no string, so no rule picks them;
 # AboutThisReelHookTest checks every ask on the fixture. The summary row's binder, the method
 # holding "overflow_open" and "defer_eligibility_enabled", adds the Ask Meta AI box with its one
 # addView(View), which calls askMetaAiBox() instead. Left out, the block or its box stays with its switch on.
-shared-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->aboutThisReel(Ljava/lang/Object;)Ljava/lang/Object; in instance (Landroid/view/View;L*;L*;)V holding android_purge_26_q3_ClipsOrganicMediaItemViewMoreOptionsController_hasAiDiscoveryMenu
-shared-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->aboutThisReel(Ljava/lang/Object;)Ljava/lang/Object; in static (Landroid/view/View;L*;L*;Lcom/instagram/feed/media/Media;L*;ZZZ)V holding android_purge_26_q3_ClipsOrganicMediaItemViewMoreOptionsController_getBottomSheetHeaderItems
+shared-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->aboutThisReel(Ljava/lang/Object;)Ljava/lang/Object; in instance (Landroid/view/View;L*;L*;)V holding ClipsOrganicMediaItemViewMoreOptionsController
+shared-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->aboutThisReel(Ljava/lang/Object;)Ljava/lang/Object; in static (Landroid/view/View;L*;L*;Lcom/instagram/feed/media/Media;L*;ZZZ)V holding ClipsOrganicMediaItemViewMoreOptionsController
 once-call Lapp/hushgram/extension/instagram/metaai/MetaAi;->askMetaAiBox(Landroid/view/ViewGroup;Landroid/view/View;)V in instance ()V holding overflow_open defer_eligibility_enabled
 # The share sheet's target builder, the one static method holding these four target names (450
 # 0nuj.A00), passes the answer of its "hatch" case's name check through shareTarget(), once, between
@@ -2796,10 +2797,10 @@ once-call Lapp/hushgram/extension/instagram/reels/ReelSeekBar;->photoTouchOnly(I
 once-call Lapp/hushgram/extension/instagram/reels/ReelSeekTouch;->listen(Landroid/view/View;Landroid/view/View$OnTouchListener;)V in static (L*;IZZ)V holding android_purge_26_q2_ClipsProgressController_prepareExpandedTouchView
 
 # Keep Reels auto scroll on hands the choice made with one of Instagram's auto scroll switches to
-# ReelAutoScroll.chosen first thing in the Reels auto scroll plugin's handler for them (0CrH.A00 on
-# 449, the one method holding its marker below). The Reels tab's long-press action calls chosen
-# too, right after it saves its choice, so the handler's second rule is shared-call: once there and
-# in no other method holding the marker. That action (0XvB.F5o on 449) loads no string of its own,
+# ReelAutoScroll.chosen first thing in the Reels auto scroll plugin's handler for them (0D6m.A00 on
+# 456's 386214574, the one method loading the tap event below). The Reels tab's long-press action
+# calls chosen too, right after it saves its choice, so the handler's second rule is shared-call:
+# once there and in no other method loading that event. That action (0XvB.F5o on 449) loads no string of its own,
 # so it rests on KeepReelsAutoScrollHookTest. Every answer of the saved auto scroll preference's
 # getter passes through ReelAutoScroll.saved, which remembers nothing: the getter loads no string,
 # so it's the one static method answering a boolean in the class whose initializer loads the
@@ -2817,34 +2818,35 @@ once-call Lapp/hushgram/extension/instagram/reels/ReelSeekTouch;->listen(Landroi
 # armeabi-v7a build takes its thread list key from a string table, so no string of it does.
 # Both pick one method on the three 452 builds. Two methods read the
 # memory itself (the manager's one boolean) and pass what they read through answer once, right
-# after the read: the Reels viewer's state (07Bj.A0V on 449, the one method holding its marker
-# below) and the picture in picture fragment's onCreate (0Xrc.onCreate). The test finds every read
+# after the read: the Reels viewer's state (08LX.A0R on 456's 386214574, the one method loading
+# both flags below; the plugin's check loads the first one too, and answers at its returns) and the
+# picture in picture fragment's onCreate (0bTz.onCreate), which loads the fragment's name. The test finds every read
 # of that boolean on the 449 fixture and checks each is answered. Left out, auto scroll goes back
 # to Instagram's rules; twice or elsewhere, it isn't the hook the patch wrote.
-start-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->chosen(I)V in instance (Landroidx/fragment/app/FragmentActivity;Lcom/instagram/common/session/UserSession;L*;Lkotlin/jvm/functions/Function0;IJZ)V holding android_purge_26_q3_ClipsOptInAutoscrollPluginImpl_handleAutoscrollModeClick
-shared-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->chosen(I)V in instance (Landroidx/fragment/app/FragmentActivity;Lcom/instagram/common/session/UserSession;L*;Lkotlin/jvm/functions/Function0;IJZ)V holding android_purge_26_q3_ClipsOptInAutoscrollPluginImpl_handleAutoscrollModeClick
+start-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->chosen(I)V in instance (Landroidx/fragment/app/FragmentActivity;Lcom/instagram/common/session/UserSession;L*;Lkotlin/jvm/functions/Function0;IJZ)V pooled holding instagram_clips_viewer_autoplay_tap
+shared-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->chosen(I)V in instance (Landroidx/fragment/app/FragmentActivity;Lcom/instagram/common/session/UserSession;L*;Lkotlin/jvm/functions/Function0;IJZ)V pooled holding instagram_clips_viewer_autoplay_tap
 shared-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->saved(I)Z in static (L*;)Z class-holding preference_clips_auto_scroll_enabled
-shared-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->answer(I)Z in instance (*)L*; holding android_purge_26_q3_VideoPlaybackUseCase_getUiState
-shared-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->answer(I)Z in instance (Landroid/os/Bundle;)V holding android_purge_26_q2_ClipsPiPFragment_onCreate
-once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->stored(I)V in instance (Landroidx/fragment/app/FragmentActivity;Lcom/instagram/common/session/UserSession;L*;Lkotlin/jvm/functions/Function0;IJZ)V sites 2 holding android_purge_26_q3_ClipsOptInAutoscrollPluginImpl_handleAutoscrollModeClick
+shared-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->answer(I)Z in instance (*)L*; holding const:0x8108f0000a331b const:0x810237000b07d9
+shared-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->answer(I)Z in instance (Landroid/os/Bundle;)V pooled holding clips_pip_fragment
+once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->stored(I)V in instance (Landroidx/fragment/app/FragmentActivity;Lcom/instagram/common/session/UserSession;L*;Lkotlin/jvm/functions/Function0;IJZ)V sites 2 pooled holding instagram_clips_viewer_autoplay_tap
 once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->timerSet(J)V in instance ()Ljava/lang/Object; calling static Ljava/lang/System;->currentTimeMillis()J sites 3 holding Landroidx/compose/foundation/lazy/LazyListState;->A02()LX/*; const:0x36ee80 const:0x5265c00
-# The auto scroller's constructor (048m.<init> on 453.0.0.57.79's 385914557, the one method holding
-# the scroll buffer marker below, loaded straight on all eight 453 builds) keeps the server switch
+# The auto scroller's constructor (0AMZ.<init> on 456's 386214574, the one method loading the scroll
+# buffer flag below) keeps the server switch
 # that lets its progress ticks move on before a reel loops, then the lead time clamped to 10..400 ms.
 # Each write is handed through its hook first, ReelAutoScroll.lead for the switch and leadTime for
 # the time, at the write's control flow label so the clamp's branches to the time's write land on
 # it (#473). Left out, the reel starts over before the next one slides in; twice or elsewhere, it
 # isn't the hook the patch wrote.
-once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->lead(I)Z in instance (*)V holding android_purge_26_q2_ClipsViewerExperimentUtil_getAutoscrollScrollBufferMs
-once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->leadTime(I)I in instance (*)V holding android_purge_26_q2_ClipsViewerExperimentUtil_getAutoscrollScrollBufferMs
+once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->lead(I)Z in instance (*)V holding const:0x8208f0000c13eb
+once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->leadTime(I)I in instance (*)V holding const:0x8208f0000c13eb
 # Move on when a reel ends (#175) is for accounts Instagram offers no auto scroll to. There the Reels
 # viewer builds no scroller, so its one read of whether auto scroll is offered passes through
 # ReelAutoScroll.install right after it, in front of the branch that skips building the scroller. The
-# builder is the one static method taking a Context first that loads the trace section below, on all
-# seven 450 builds. The check it reads and the menus that read it too call install nowhere. Left out,
+# builder is the one static method that loads the trace section below: the Reels viewer's setup on
+# 456's arm64 and x86 builds, the scroller's own static factory on the armeabi-v7a one. The check it reads and the menus that read it too call install nowhere. Left out,
 # the switch does nothing where Instagram offers no auto scroll. Twice or elsewhere, it isn't the hook
 # the patch wrote.
-once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->install(I)Z in static (Landroid/content/Context;*)V holding ClipsViewerFragment.onCreate:clipsAutoScroller
+once-call Lapp/hushgram/extension/instagram/reels/ReelAutoScroll;->install(I)Z in static (*)* pooled holding ClipsViewerFragment.onCreate:clipsAutoScroller
 #
 # Stop Reels scrolling hands the Reels pager to ReelScrolling.pager right after the Reels viewer's
 # pager setup stores it (04QD.HRh on 452, the one method holding the setup marker below; 453
@@ -3180,16 +3182,19 @@ once-call Lapp/hushgram/extension/instagram/profile/ReelSort;->sortable(I)Z in i
 # Sent follow requests (#690) hands SentRequests.seen the session, the account and the follow status
 # right before each return of the follow button helper's status read (04gP.A03 on 454, the one
 # instance (session, account) method of the helper FollowButtonBase.getHelper() answers that answers
-# the follow status enum), which every follow button asks each time it shows an account. It loads the
-# account's "id" hash and the two status field hashes it reads. Left out, no request is ever listed;
-# twice or elsewhere, a status is counted twice or a status that isn't the button's is read.
+# the follow status enum), which every follow button asks each time it shows an account. On 456 it
+# gets the status from the helper's static (status, session, account) resolver (04Hj.A00 on
+# 386214574), which loads the account's "id" hash and the follow status field hash, so the helper
+# class holds them. Left out, no request is ever listed; twice or elsewhere, a status is counted
+# twice or a status that isn't the button's is read.
 # SentFollowRequestsHookTest checks where it lands on each declared build.
-once-call Lapp/hushgram/extension/instagram/profile/SentRequests;->seen(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V in instance (Lcom/instagram/common/session/UserSession;LX/*;)LX/*; sites returns holding const:0xd1b const:0x46ae0f6e const:0xd973299e
+once-call Lapp/hushgram/extension/instagram/profile/SentRequests;->seen(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V in instance (Lcom/instagram/common/session/UserSession;LX/*;)LX/*; calling static LX/*;->*(LX/*;Lcom/instagram/common/session/UserSession;LX/*;)LX/*; sites returns class-holding const:0xd1b const:0x46ae0f6e
 # A profile header's follow button skips the status read: the helper's static (status, session,
-# helper, account) method (04gP.A01 on 454) asks the status read's resolver itself, and the same
-# call goes right after that answer comes back. It loads the same three hashes. Left out, a request
-# sent from a profile's header is never listed; twice or elsewhere, it isn't the hook the patch wrote.
-once-call Lapp/hushgram/extension/instagram/profile/SentRequests;->seen(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V in static (LX/*;Lcom/instagram/common/session/UserSession;LX/*;LX/*;ZZ)V calling instance LX/*;->*(LX/*;LX/*;Ljava/lang/String;)LX/*; holding const:0xd1b const:0x46ae0f6e const:0xd973299e
+# helper, account) method (04gP.A01 on 454, 04Hj.A02 on 386214574) asks the status read's resolver
+# itself, and the same call goes right after the status comes back. Its class holds the same two
+# hashes. Left out, a request sent from a profile's header is never listed; twice or elsewhere, it
+# isn't the hook the patch wrote.
+once-call Lapp/hushgram/extension/instagram/profile/SentRequests;->seen(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V in static (LX/*;Lcom/instagram/common/session/UserSession;LX/*;LX/*;ZZ)V calling static LX/*;->*(LX/*;Lcom/instagram/common/session/UserSession;LX/*;)LX/*; class-holding const:0xd1b const:0x46ae0f6e
 # Download voice messages (#20) hands VoiceMessage.offer the answer to whether a message's kind can be
 # saved, and the message, right after the menu model's builder asks it (09xN.invoke on 450, the
 # lambda building the long-press menu's model, the one method of this shape loading these strings
@@ -3465,11 +3470,14 @@ once-call Lapp/hushgram/extension/instagram/comment/CommentSearch;->contentShown
 # holds no string, so its rule takes the label from its class (454's label names line 3633, 453's
 # named 3634). Left out, new rows stay gray; twice or elsewhere, it isn't the hook the patch wrote.
 # On 455 the swipe background's row names line 3791, and the swipe background is inlined into that
-# row's invoke on 386113968 (0Z9T) but outlined elsewhere (0Z4F.A02 on 386113969), so its rule takes
-# the two Compose group keys it loads on every build.
-once-call Lapp/hushgram/extension/instagram/misc/NewRowTint;->color(J)J in static (*)Ljava/lang/Object; pooled holding com.instagram.newsfeed.ui.buildAnnotatedString\s(NewsfeedStoryMessageState.kt:59)
-once-call Lapp/hushgram/extension/instagram/misc/NewRowTint;->color(J)J in (*)Ljava/lang/Object; sites 2 holding const:0x8866a52c const:0xd1f974d9
-once-call Lapp/hushgram/extension/instagram/misc/NewRowTint;->color(J)J in instance (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; pooled holding com.instagram.newsfeed.compose.ui.StartAvatar.<anonymous>.<anonymous>\s(NewsfeedStoryRow.kt:359)
+# row's invoke on 386113968 (0Z9T) but outlined elsewhere (0Z4F.A02 on 386113969).
+# 456 drops the trace labels and starts each trace with its key alone, so the rules take the keys
+# the labels went with: the row text's buildAnnotatedString (0Qd2.A01 on 386214574), the row's
+# lambda with its swipe background inlined on every 456 build (0OKO.invoke), and the avatar's ring
+# (0R30.invoke).
+once-call Lapp/hushgram/extension/instagram/misc/NewRowTint;->color(J)J in static (*)Ljava/lang/Object; holding const:0x6b7b1e32
+once-call Lapp/hushgram/extension/instagram/misc/NewRowTint;->color(J)J in instance (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; sites 2 holding const:0xabc6d658 const:0xd1f974d9
+once-call Lapp/hushgram/extension/instagram/misc/NewRowTint;->color(J)J in instance (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; holding const:0x676a129d
 # Hide Notes on profile pictures answers the reads of Instagram's is_consumption_disabled flag for
 # profiles through ProfileNotes.consumptionDisabled, right after each read's move-result. One read
 # is in the profile header builder, the instance void method taking a View first and a boolean last
@@ -3524,12 +3532,13 @@ once-call Lapp/hushgram/extension/instagram/stories/StoryUploadQuality;->resolut
 # 2160p (#37) goes past the 1440 that step knows, so StoryUploadQuality.renderWidth takes the width its
 # cap (0MiN.A00 on 454) answered, with the clip's width, right after the cap. Left out, 2160p uploads at 1440.
 once-call Lapp/hushgram/extension/instagram/stories/StoryUploadQuality;->renderWidth(II)I in static (Landroid/content/Context;Lcom/instagram/common/session/UserSession;LX/*;IZZZZ)LX/*; calling static LX/*;->*(Landroid/content/Context;IZZZ)I holding const:0x438 const:0x5a0
-# Its Photo quality choice (#37) hands StoryUploadQuality.photoQuality the JPEG quality first in the static
-# factory (0BWX.A02 on 454) of the class that compresses with it. Left out, Photo quality does nothing.
-# That class calls Bitmap.compress on arm64 and Redex's outlined copy (0BQC.A1b) on armeabi-v7a, so the
-# rule names the string its save holds on every ABI.
-start-call Lapp/hushgram/extension/instagram/stories/StoryUploadQuality;->photoQuality(I)I in static (Landroid/graphics/Bitmap;LX/*;II)LX/*; class-holding SavePhotoUtil_save_jpeg_error
-once-call Lapp/hushgram/extension/instagram/stories/StoryUploadQuality;->photoQuality(I)I in static (Landroid/graphics/Bitmap;LX/*;II)LX/*; class-holding SavePhotoUtil_save_jpeg_error
+# Its Photo quality choice (#37) hands StoryUploadQuality.photoQuality the JPEG quality first in the photo's
+# save (0Lp0.A04 on 386214574), the one ()Z method of the class whose every Bitmap.compress reads its
+# quality field, and writes the answer back to that field. 456's factory (0Lp0.A01) names the picture
+# types itself and takes one int, so no call has the shape 455 hooked (0CX9.A02). Left out, Photo quality does nothing.
+# The save loads its error string itself on every ABI.
+start-call Lapp/hushgram/extension/instagram/stories/StoryUploadQuality;->photoQuality(I)I in instance ()Z holding SavePhotoUtil_save_jpeg_error
+once-call Lapp/hushgram/extension/instagram/stories/StoryUploadQuality;->photoQuality(I)I in instance ()Z holding SavePhotoUtil_save_jpeg_error
 # Its Photo size choice (#37) hands StoryUploadQuality.photoTier each of the 3072, 4096 and 8192 flags
 # first in Instagram's photo size step (0D3B.A01 on 454), the instance method loading the aspect ratio
 # error, so three calls. Fewer calls leave a size Photo size can't turn on.
