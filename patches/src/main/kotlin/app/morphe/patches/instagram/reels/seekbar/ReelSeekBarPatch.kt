@@ -24,6 +24,7 @@ import app.morphe.patches.instagram.misc.extension.loadsString
 import app.morphe.patches.instagram.misc.extension.localRegisterCount
 import app.morphe.patches.instagram.misc.extension.markers
 import app.morphe.patches.instagram.misc.extension.parameterRegisterNumber
+import app.morphe.patches.instagram.misc.extension.patchLog
 import app.morphe.patches.instagram.misc.extension.requireParameterIntact
 import app.morphe.patches.instagram.misc.extension.requireStatusMethod
 import app.morphe.patches.instagram.misc.extension.stringLoadedAt
@@ -184,8 +185,12 @@ val reelSeekBarPatch = bytecodePatch(
 
     execute {
         requireStatusMethod("reelSeekBar")
-        applyReelSeekBar(findReelSeekBarSites())
-        enableStatus("reelSeekBar")
+        try {
+            applyReelSeekBar(findReelSeekBarSites())
+            enableStatus("reelSeekBar")
+        } catch (unknown: PatchException) {
+            patchLog.warning("${unknown.message}. Keep a seek bar on Reels skipped.")
+        }
     }
 }
 

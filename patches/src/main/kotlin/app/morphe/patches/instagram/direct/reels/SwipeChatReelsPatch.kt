@@ -27,6 +27,7 @@ import app.morphe.patches.instagram.misc.extension.localRegisterCount
 import app.morphe.patches.instagram.misc.extension.markers
 import app.morphe.patches.instagram.misc.extension.methodsCalling
 import app.morphe.patches.instagram.misc.extension.parameterRegisterNumber
+import app.morphe.patches.instagram.misc.extension.patchLog
 import app.morphe.patches.instagram.misc.extension.requireParameterIntact
 import app.morphe.patches.instagram.misc.extension.requireStatusMethod
 import app.morphe.patches.instagram.misc.extension.requireThisIntact
@@ -194,32 +195,36 @@ val swipeChatReelsPatch = bytecodePatch(
 
     execute {
         requireStatusMethod("chatReels")
-        // Every finder refuses before either switch changes any code.
-        val read = findChatReels()
-        val end = findChatReelsEnd()
-        val more = findMoreReels(end)
-        val cached = findCachedReels()
-        val placeholders = findPlaceholders()
-        val tap = findChatMediaTap(read)
-        val refreshes = findRefreshReads()
-        val viewers = findChatViewers()
-        val collector = findReelCollector(read)
-        val replies = findReplyBar(collector)
-        val page = findReplyPage(collector, replies)
-        checkAddTakesReels(placeholders, collector)
-        chainChatReels(read)
-        skipSentReels(collector)
-        giveSwipedReelsTheirReplies(collector, replies)
-        pointOutMessagesAfterReels(collector, replies, page)
-        leaveOutSentReels(placeholders)
-        stopAfterChatReels(end)
-        stopMoreReels(more)
-        stopCachedReels(cached)
-        skipPlaceholders(placeholders)
-        guardChatMediaTaps(tap)
-        watchChatViewers(viewers)
-        refreshFromChats(refreshes)
-        enableStatus("chatReels")
+        try {
+            // Every finder refuses before either switch changes any code.
+            val read = findChatReels()
+            val end = findChatReelsEnd()
+            val more = findMoreReels(end)
+            val cached = findCachedReels()
+            val placeholders = findPlaceholders()
+            val tap = findChatMediaTap(read)
+            val refreshes = findRefreshReads()
+            val viewers = findChatViewers()
+            val collector = findReelCollector(read)
+            val replies = findReplyBar(collector)
+            val page = findReplyPage(collector, replies)
+            checkAddTakesReels(placeholders, collector)
+            chainChatReels(read)
+            skipSentReels(collector)
+            giveSwipedReelsTheirReplies(collector, replies)
+            pointOutMessagesAfterReels(collector, replies, page)
+            leaveOutSentReels(placeholders)
+            stopAfterChatReels(end)
+            stopMoreReels(more)
+            stopCachedReels(cached)
+            skipPlaceholders(placeholders)
+            guardChatMediaTaps(tap)
+            watchChatViewers(viewers)
+            refreshFromChats(refreshes)
+            enableStatus("chatReels")
+        } catch (unknown: PatchException) {
+            patchLog.warning("${unknown.message}. Swipe through a chat's reels skipped.")
+        }
     }
 }
 

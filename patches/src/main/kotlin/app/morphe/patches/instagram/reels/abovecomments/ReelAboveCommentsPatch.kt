@@ -20,6 +20,7 @@ import app.morphe.patches.instagram.misc.extension.jumpTargets
 import app.morphe.patches.instagram.misc.extension.localRegisterCount
 import app.morphe.patches.instagram.misc.extension.markers
 import app.morphe.patches.instagram.misc.extension.parameterRegisterNumber
+import app.morphe.patches.instagram.misc.extension.patchLog
 import app.morphe.patches.instagram.misc.extension.requireParameterIntact
 import app.morphe.patches.instagram.misc.extension.requireStatusMethod
 import app.morphe.patches.instagram.misc.extension.requireThisIntact
@@ -101,8 +102,12 @@ val reelAboveCommentsPatch = bytecodePatch(
 
     execute {
         requireStatusMethod("reelAboveComments")
-        reelAboveComments()
-        enableStatus("reelAboveComments")
+        try {
+            reelAboveComments()
+            enableStatus("reelAboveComments")
+        } catch (unknown: PatchException) {
+            patchLog.warning("${unknown.message}. Control the reel above comments skipped.")
+        }
     }
 }
 

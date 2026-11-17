@@ -19,6 +19,7 @@ import app.morphe.patches.instagram.misc.extension.localRegisterCount
 import app.morphe.patches.instagram.misc.extension.markers
 import app.morphe.patches.instagram.misc.extension.parameterRegister
 import app.morphe.patches.instagram.misc.extension.parameterRegisterNumber
+import app.morphe.patches.instagram.misc.extension.patchLog
 import app.morphe.patches.instagram.misc.extension.requireLocals
 import app.morphe.patches.instagram.misc.extension.requireParameterIntact
 import app.morphe.patches.instagram.misc.extension.requireStatusMethod
@@ -103,17 +104,27 @@ val cleanUpReelsPatch = bytecodePatch(
         requireStatusMethod("reelDeclutter")
         val clearMode = findClearModeWhereItFits()
         val clearModeStubs = clearModeStubs()
-        val friendsTab = findFriendsTab()
-        val friendsRow = findFriendsRow()
-        val friendPicks = findFriendPicks()
-        val reelsPage = findReelsPage(PATCH)
-        val reelsInserts = findReelsItemInserts(PATCH, FRIEND_LANE_PICKS)
+        val friendsTab = try { findFriendsTab() } catch (e: Exception) { patchLog.warning("${e.message}. Friends tab hook skipped."); null }
+        val friendsRow = try { findFriendsRow() } catch (e: Exception) { patchLog.warning("${e.message}. Friends row hook skipped."); null }
+        val friendPicks = try { findFriendPicks() } catch (e: Exception) { patchLog.warning("${e.message}. Friend picks hook skipped."); null }
+        val reelsPage = try { findReelsPage(PATCH) } catch (e: Exception) { patchLog.warning("${e.message}. Reels page hook skipped."); null }
+        val reelsInserts = try { findReelsItemInserts(PATCH, FRIEND_LANE_PICKS) } catch (e: Exception) { patchLog.warning("${e.message}. Reels item inserts hook skipped."); null }
         val cameraButton = findCameraButtonOrNull()
-        hideReelParts()
+        try {
+            hideReelParts()
+        } catch (unknown: PatchException) {
+            patchLog.warning("${unknown.message}. Clean up Reels goes in with partial component cleanup.")
+        }
         cameraButton?.let { hideCameraButton(it) }
-        markFriendsTab(friendsTab)
-        keepFriendsRow(friendsRow)
-        pickFriends(reelsPage, friendPicks, reelsInserts)
+        friendsTab?.let { markFriendsTab(it) }
+        friendsRow?.let { keepFriendsRow(it) }
+        if (reelsPage != null && friendPicks != null && reelsInserts != null) {
+            try {
+                pickFriends(reelsPage, friendPicks, reelsInserts)
+            } catch (unknown: PatchException) {
+                patchLog.warning("${unknown.message}. Clean up Reels goes in without friend lane picks.")
+            }
+        }
         if (clearMode != null) {
             applyClearMode(clearMode)
             clearModeStubs.fill(clearMode)
