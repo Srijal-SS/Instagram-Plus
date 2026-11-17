@@ -11,8 +11,10 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -40,6 +42,7 @@ import android.window.OnBackInvokedDispatcher;
 import app.hushgram.extension.instagram.direct.MessagesLock;
 import app.hushgram.extension.shared.L10n;
 import app.hushgram.extension.shared.Logger;
+import app.hushgram.extension.shared.Utils;
 
 /**
  * The HushGram screen: a full screen, black dialog with a title bar and the preference list. It is
@@ -697,6 +700,52 @@ public final class SettingsDialog extends DialogFragment {
     private int dp(int value) {
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value,
                 getResources().getDisplayMetrics()));
+    }
+
+    public static final int REQUEST_CODE_IMPORT = 8011;
+    public static final int REQUEST_CODE_EXPORT = 8012;
+
+    public void launchImportPicker() {
+        Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        picker.addCategory(Intent.CATEGORY_OPENABLE);
+        picker.setType("*/*");
+        try {
+            startActivityForResult(picker, REQUEST_CODE_IMPORT);
+        } catch (Exception e1) {
+            try {
+                Intent fallback = new Intent(Intent.ACTION_GET_CONTENT);
+                fallback.addCategory(Intent.CATEGORY_OPENABLE);
+                fallback.setType("*/*");
+                startActivityForResult(fallback, REQUEST_CODE_IMPORT);
+            } catch (Exception e2) {
+                Utils.showToastLong(L10n.t(getContext(), "No file picker available on this device"));
+            }
+        }
+    }
+
+    public void launchExportPicker(String suggestedName) {
+        Intent picker = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        picker.addCategory(Intent.CATEGORY_OPENABLE);
+        picker.setType("application/json");
+        picker.putExtra(Intent.EXTRA_TITLE, suggestedName);
+        try {
+            startActivityForResult(picker, REQUEST_CODE_EXPORT);
+        } catch (Exception ex) {
+            Utils.showToastLong(L10n.t(getContext(), "No file picker available on this device"));
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
+            Uri uri = data.getData();
+            if (requestCode == REQUEST_CODE_IMPORT && modernView != null) {
+                modernView.importFromUri(uri);
+            } else if (requestCode == REQUEST_CODE_EXPORT && modernView != null) {
+                modernView.exportToUri(uri);
+            }
+        }
     }
 
     /** Whether the phone's language reads right to left, so the way back points right. */

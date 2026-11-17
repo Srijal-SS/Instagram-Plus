@@ -41,6 +41,7 @@ import android.window.BackEvent;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -67,6 +68,7 @@ import app.hushgram.extension.instagram.reels.TabBarLayoutChoice;
 import app.hushgram.extension.instagram.stories.StoryRingSize;
 import app.hushgram.extension.instagram.stories.StoryTimeMode;
 import app.hushgram.extension.shared.L10n;
+import app.hushgram.extension.shared.Logger;
 import app.hushgram.extension.shared.Utils;
 import app.hushgram.extension.shared.settings.BooleanSetting;
 import app.hushgram.extension.shared.settings.EnumSetting;
@@ -618,8 +620,8 @@ public final class ModernSettingsView extends FrameLayout {
                 L10n.t("Clear media cache, backup and restore settings configuration"), SettingsIcons.STORAGE)
                 .add(L10n.t("Date in Backup Filenames"), L10n.t("Include export timestamp in backup filenames"), Settings.DATE_SETTINGS_EXPORT)
                 .add(L10n.t("Clear Media Cache"), L10n.t("Wipe cached photos, videos and stories to free up storage"), Settings.CLEAR_MEDIA_CACHE)
-                .addAction(L10n.t("Export Settings Backup"), L10n.t("Save all your settings and preferences to a backup file"), this::exportSettings)
-                .addAction(L10n.t("Import Settings Backup"), L10n.t("Restore your settings from a previously saved backup file"), this::importSettings);
+                .addAction(L10n.t("Export Settings Backup"), L10n.t("Save all your settings to a backup file in Download/HushGram"), this::exportSettings)
+                .addAction(L10n.t("Import Settings Backup"), L10n.t("Restore settings from Download/HushGram or device storage"), this::importSettings);
         categories.add(storage);
 
         // 16. Support & About
@@ -1377,17 +1379,167 @@ public final class ModernSettingsView extends FrameLayout {
 
     // --- Action Handlers ---
 
+    private byte[] pendingExportData;
+
     private void exportSettings() {
         Activity act = dialog.getActivity();
-        if (act != null) {
-            Utils.showToastLong(L10n.t("Exporting settings..."));
+        if (act == null || act.isFinishing()) return;
+
+        try {
+            SettingsBackupHelper.ExportResult result = SettingsBackupHelper.exportToDownloads(act);
+            Utils.showToastLong(L10n.t("Settings exported to ") + result.displayPath);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(act);
+            builder.setTitle(L10n.t("Settings Exported"));
+            builder.setMessage(L10n.t("Backup saved successfully to:") + "\n\n📁 " + result.displayPath
+                    + "\n\n" + L10n.t("You can share this backup file or save a copy to another folder."));
+
+            builder.setPositiveButton(L10n.t("Share"), (d, w) -> {
+                SettingsBackupHelper.shareBackup(act, result.fileName, result.uri, result.data);
+            });
+
+            builder.setNeutralButton(L10n.t("Save As..."), (d, w) -> {
+                pendingExportData = result.data;
+                dialog.launchExportPicker(result.fileName);
+            });
+
+            builder.setNegativeButton(L10n.t("Done"), null);
+
+            AlertDialog alert = builder.create();
+            ScreenColors.dialog(alert);
+            alert.show();
+        } catch (Exception ex) {
+            Logger.printException(() -> "Settings export failed", ex);
+            Utils.showToastLong(L10n.t("Failed to export settings: ") + ex.getMessage());
         }
     }
 
     private void importSettings() {
         Activity act = dialog.getActivity();
-        if (act != null) {
-            Utils.showToastLong(L10n.t("Select settings backup file to import"));
+        if (act == null || act.isFinishing()) return;
+
+        List<SettingsBackupHelper.BackupEntry> backups = SettingsBackupHelper.findBackups(act);
+        String clipboardText = SettingsBackupHelper.getClipboardBackup(act);
+
+        List<String> options = new ArrayList<>();
+        List<Runnable> actions = new ArrayList<>();
+
+        if (clipboardText != null) {
+            options.add("📋 " + L10n.t("Restore from Clipboard"));
+            actions.add(() -> applyImport(clipboardText.getBytes(StandardCharsets.UTF_8)));
+        }
+
+        if (!backups.isEmpty()) {
+            for (SettingsBackupHelper.BackupEntry entry : backups) {
+                String label = "📁 " + entry.name;
+                if (!entry.formattedDate.isEmpty()) {
+                    label += " (" + entry.formattedDate + ")";
+                }
+                options.add(label);
+                actions.add(() -> {
+                    try {
+                        byte[] bytes = SettingsBackupHelper.readBytes(act, entry.uri);
+                        applyImport(bytes);
+                    } catch (Exception ex) {
+                        Logger.printException(() -> "Failed to read backup " + entry.name, ex);
+                        Utils.showToastLong(L10n.t("Could not read backup file: ") + ex.getMessage());
+                    }
+                });
+            }
+        }
+
+        options.add("📂 " + L10n.t("Browse from device storage..."));
+        actions.add(() -> dialog.launchImportPicker());
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(act);
+        builder.setTitle(L10n.t("Import Settings Backup"));
+
+        if (backups.isEmpty() && clipboardText == null) {
+            builder.setMessage(L10n.t("No backup files found in:") + "\n\n📁 Download/HushGram/\n\n"
+                    + L10n.t("Place your backup .json file in Download/HushGram/, or tap Browse to select from device storage."));
+            builder.setPositiveButton(L10n.t("Browse"), (d, w) -> dialog.launchImportPicker());
+            builder.setNegativeButton(L10n.t("Cancel"), null);
+        } else {
+            builder.setItems(options.toArray(new String[0]), (d, which) -> {
+                if (which >= 0 && which < actions.size()) {
+                    actions.get(which).run();
+                }
+            });
+            builder.setNegativeButton(L10n.t("Cancel"), null);
+        }
+
+        AlertDialog alert = builder.create();
+        ScreenColors.dialog(alert);
+        alert.show();
+    }
+
+    void applyImport(byte[] bytes) {
+        Activity act = dialog.getActivity();
+        if (act == null || act.isFinishing()) return;
+
+        try {
+            ConfigurationBackup.Result result = ConfigurationBackup.restore(bytes);
+            String summary = L10n.f("Imported %1$d settings.", result.applied);
+            if (result.skipped > 0) {
+                summary += " " + L10n.f("Skipped %1$d unknown choices.", result.skipped);
+            }
+            if (result.held > 0) {
+                summary += " " + L10n.t("Lock switches stayed as they are.");
+            }
+            Utils.showToastLong(summary);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(act);
+            builder.setTitle(L10n.t("Settings Imported"));
+            builder.setMessage(summary + "\n\n" + L10n.t("Restart Instagram now to apply all imported settings?"));
+            builder.setPositiveButton(L10n.t("Restart Now"), (d, w) -> {
+                RestartNow.restart(act);
+            });
+            builder.setNegativeButton(L10n.t("Later"), (d, w) -> {
+                dialog.showRestart(true);
+            });
+            AlertDialog alert = builder.create();
+            ScreenColors.dialog(alert);
+            alert.show();
+
+            refreshSubpage();
+        } catch (Exception ex) {
+            Logger.printException(() -> "Failed to restore settings", ex);
+            Utils.showToastLong(L10n.t("Invalid backup file. Your settings were not changed."));
+        }
+    }
+
+    public void importFromUri(Uri uri) {
+        Activity act = dialog.getActivity();
+        if (act == null) return;
+        try {
+            byte[] bytes = SettingsBackupHelper.readBytes(act, uri);
+            applyImport(bytes);
+        } catch (Exception ex) {
+            Logger.printException(() -> "Could not read picked file", ex);
+            Utils.showToastLong(L10n.t("Could not read picked file: ") + ex.getMessage());
+        }
+    }
+
+    public void exportToUri(Uri uri) {
+        Activity act = dialog.getActivity();
+        if (act == null || pendingExportData == null) return;
+        try {
+            SettingsBackupHelper.exportToCustomUri(act, uri, pendingExportData);
+            Utils.showToastLong(L10n.t("Settings exported successfully."));
+            pendingExportData = null;
+        } catch (Exception ex) {
+            Logger.printException(() -> "Could not write to picked file", ex);
+            Utils.showToastLong(L10n.t("Could not save to selected file: ") + ex.getMessage());
+        }
+    }
+
+    public void refreshSubpage() {
+        if (activeCategory != null) {
+            subpageContent.removeAllViews();
+            subpageContent.addView(createSectionHeader(getContext(), activeCategory.title));
+            for (SettingItem item : activeCategory.items) {
+                subpageContent.addView(createSettingRow(getContext(), item));
+            }
         }
     }
 
