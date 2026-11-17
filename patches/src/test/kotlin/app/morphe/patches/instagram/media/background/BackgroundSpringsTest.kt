@@ -112,10 +112,10 @@ class BackgroundSpringsTest {
         val holders = FixtureDex.classesLoading(bundle, SPRING_UNREGISTERED)
         val context = PatchContexts.of((holders + ExtensionDex.classDef(BACKGROUND_PLAY)).distinctBy { it.type })
         val springs = context.findSpringActivate("test")
-        if ("386113969" in label) {
+        if ("386214574" in label) {
             assertEquals(
                 "$label: Instagram's names",
-                listOf("LX/01mB;->A03", "LX/01mB;->A01:LX/01ls;", "LX/01ls;->A03:$frameCallback"),
+                listOf("LX/02vT;->A03", "LX/02vT;->A01:LX/02vS;", "LX/02vS;->A03:$frameCallback"),
                 listOf("${springs.activate.definingClass}->${springs.activate.name}", springs.looper.toString(), springs.frames.toString()),
             )
         }

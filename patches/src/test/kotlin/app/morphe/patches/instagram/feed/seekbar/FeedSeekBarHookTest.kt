@@ -50,8 +50,8 @@ class FeedSeekBarHookTest {
      * The patch finds the feed's player and its progress callback, the holder's view and the
      * controller's seek (the one a SeekBar listener's onStopTrackingTouch makes), and the player's
      * pause and play that listener makes around the seek (#472), fills every stub and hands the
-     * callback to the extension first thing. Each build has its own names; on 455.0.0.51.72's arm64
-     * build 386113969 the player is 06yJ, and its GA1 reads the post from LX/07lE;->A03.
+     * callback to the extension first thing. Each build has its own names; on 456.0.0.53.78's arm64
+     * build 386214574 the player is 03hQ, and its GGa reads the post from LX/00i4;->A03.
      */
     @Test
     fun eachDeclaredBuildFindsTheSeekAndHooksThePlayer() {
@@ -60,12 +60,12 @@ class FeedSeekBarHookTest {
         for (version in versions) {
             for (bundle in Fixtures.files { it.extension == "apks" && it.name.contains("-$version-") }) {
                 val sites = builds(bundle, bundle.name)
-                if (version == "455.0.0.51.72") {
+                if (version == "456.0.0.53.78") {
                     assertEquals(
                         "${bundle.name}: the player, its progress callback, the holder's view, the seek, the pause and the play",
                         listOf(
-                            "LX/06yJ;", "GA1", "LX/0GBC;->CZO()Landroid/view/View;", "LX/04q9;->A0U(IZ)V",
-                            "LX/06yJ;->A0F(Ljava/lang/String;)V", "LX/06yJ;->A04(LX/06yJ;Ljava/lang/String;ZZZ)V",
+                            "LX/03hQ;", "GGa", "LX/0Hcn;->CbB()Landroid/view/View;", "LX/03Hj;->A0U(IZ)V",
+                            "LX/03hQ;->A0K(Ljava/lang/String;)V", "LX/03hQ;->A04(LX/03hQ;Ljava/lang/String;ZZZ)V",
                         ),
                         listOf(
                             sites.player, sites.progress, sites.view.toString(), sites.seek.toString(),
@@ -159,10 +159,10 @@ class FeedSeekBarHookTest {
         for (key in listOf(SPRITE_URLS, "thumbnail_width", "thumbnail_height", "thumbnails_per_row", "max_thumbnails_per_sprite", "thumbnail_duration")) {
             assertTrue("$label: the map holds $key", context.loadsString(sheet.builder, key))
         }
-        if (label.contains("386113969")) {
+        if (label.contains("386214574")) {
             assertEquals(
                 "$label: the post, its strip and the strip's map",
-                listOf("LX/07lE;->A03:Ljava/lang/Object;", "A2e", "LX/00JV;", "A02"),
+                listOf("LX/00i4;->A03:Ljava/lang/Object;", "A2a", "LX/07im;", "A02"),
                 listOf(sheet.media.toString(), sheet.getter.name, sheet.builder.definingClass, sheet.builder.name),
             )
         }
@@ -203,8 +203,8 @@ class FeedSeekBarHookTest {
             scrubber.map { it.definingClass to it.returnType },
         )
         assertEquals("$label: the map is the same builder's", sheet.builder.name, scrubber.last().name)
-        if (label.contains("386113969")) {
-            assertEquals("$label: the reel strip's getters", listOf("A3O", "DWB", "EDu"), scrubber.dropLast(1).map { it.name })
+        if (label.contains("386214574")) {
+            assertEquals("$label: the reel strip's getters", listOf("A3J", "DZL", "EI1"), scrubber.dropLast(1).map { it.name })
         }
         return sites
     }

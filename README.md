@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/version-0.0.20-E1306C" alt="Version 0.0.20">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%209%2B-3DDC84" alt="Platform Android 9+">
-  <img src="https://img.shields.io/badge/Instagram-455.0.0.51.72-E1306C" alt="Instagram 455.0.0.51.72">
+  <img src="https://img.shields.io/badge/Instagram-456.0.0.53.78-E1306C" alt="Instagram 456.0.0.53.78">
   <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.6.0%2B-8A2BE2" alt="For Morphe Manager 2.6.0 or newer">
 </p>
 
@@ -34,7 +34,7 @@ This project has no connection to Meta or to the Morphe project. Neither endorse
 
 1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.6.0 or newer.
 2. Add Instagram Plus as a patch source by opening [this link](https://morphe.software/add-source?github=Srijal-SS%2FInstagram-Plus) on your phone. Or in Manager open **Sources**, tap **+**, choose **Remote** and enter `github.com/Srijal-SS/Instagram-Plus`. Use Instagram Plus as your only Instagram source, since mixing in another one can stop patching.
-3. Get Instagram 455.0.0.51.72 from APKMirror. Take [the bundle labelled (arm64-v8a) (480-640dpi) (Android 9.0+), build 386113969](https://www.apkmirror.com/apk/instagram/instagram-instagram/instagram-455-0-0-51-72-release/). APKMirror lists five arm64 bundles for this version, so check the build number. The version's other builds work too (see [Supported Instagram builds](#supported-instagram-builds)).
+3. Get Instagram 456.0.0.53.78 from APKMirror. Take [the bundle labelled (arm64-v8a) (480dpi) (Android 9.0+), build 386214574](https://www.apkmirror.com/apk/instagram/instagram-instagram/instagram-456-0-0-53-78-release/). APKMirror lists more than one arm64 bundle for this version, so check the build number. The version's other builds work too (see [Supported Instagram builds](#supported-instagram-builds)).
 4. Uninstall the Instagram you got from the Play Store. The patched app is signed with your own key, so Android won't install it over Meta's. Uninstalling signs you out, so have your password and two-factor codes ready. On a rooted phone, Manager's Root Mount can lay Instagram Plus over the Play Store app instead, and you stay signed in.
 5. In Morphe Manager, pick the Instagram file, keep the default patch selection or change it, and patch.
 6. Open Instagram Plus Settings and turn on what you want. It's at the top of Instagram's Settings and activity. A long press on the Instagram logo at the top of your feed opens it too.
@@ -50,11 +50,11 @@ Android's developer verification doesn't touch a patched Instagram yet. Since Se
 > [!WARNING]
 > Meta's [Terms of Use](https://help.instagram.com/581066165581870) don't allow modified versions of its apps, and Meta can disable accounts that break them. Nobody outside Meta knows what gets an account suspended, so nobody can promise yours won't be.
 >
-> - **Assume Meta can tell.** A patched Instagram has a different signing certificate, and Instagram 455 carries Play Integrity and Keystore attestation code. `Restore trust on re-signed builds` keeps parts of the app working on a re-signed build, but it doesn't make the APK Meta-signed.
+> - **Assume Meta can tell.** A patched Instagram has a different signing certificate, and Instagram 456 carries Play Integrity and Keystore attestation code. `Restore trust on re-signed builds` keeps parts of the app working on a re-signed build, but it doesn't make the APK Meta-signed.
 > - **Try a spare account first** if you'd rather not put the one you care about on the line. People whose accounts were suspended on patched Instagram often describe a new or long-idle account signing in on a fresh install. That's what they saw, not a proven cause.
 > - **Keep the sign-in you have.** Update over the top with the same signing key, or use Root Mount on a rooted phone, rather than starting fresh each time.
 >
-> Instagram Plus doesn't post, like, follow or message for you, and it doesn't change how you sign in. It also leaves out paywall bypasses, saving deleted messages, saving the Instants people send you and keeping copies of stories after they expire. Other Instagram mods offer those. People using piko's Instagram patches have reported banned accounts, and I suspect features like these may be part of the reason. Nobody has proven it, so leaving them out is a precaution.
+> Instagram Plus doesn't post, like, follow or message for you, and it doesn't change how you sign in. It also leaves out Instagram Plus, saving deleted messages, saving the Instants people send you and keeping copies of stories after they expire. Other Instagram mods offer those. People using piko's Instagram patches have reported banned accounts, and I suspect features like these may be part of the reason. Nobody has proven it, so leaving them out is a precaution.
 
 ## Keep your signing key
 
@@ -64,7 +64,7 @@ Back it up right after your first patch. In Morphe Manager open **Settings → S
 
 ## Patches
 
-There are 185 patches for `com.instagram.android`, checked against Instagram 455.0.0.51.72. Manager's simple mode includes 181 of them, so you don't need Expert mode to get any feature below. A patch that comes in this way changes nothing until you turn its switch on in Instagram Plus Settings, and each description says where that switch is. A few start on: Hide ads, Sanitize sharing links, Open links in external browser, Remove build expired popup, Hide suggested posts, Hide suggested stories, Hide Meta AI's search and posts switches, Show if a profile follows you, Download any reel, Download any story, Keep the reel speed, Open reel links on that reel and Keep story buttons below the story. Story ring size and Default playback quality start on too, but they keep Instagram's own size and quality until you pick one. Tab bar layout has no switch at all and keeps the bar Instagram gives you until you pick another.
+There are 185 patches for `com.instagram.android`, checked against Instagram 456.0.0.53.78. Manager's simple mode includes 181 of them, so you don't need Expert mode to get any feature below. A patch that comes in this way changes nothing until you turn its switch on in Instagram Plus Settings, and each description says where that switch is. A few start on: Hide ads, Sanitize sharing links, Open links in external browser, Remove build expired popup, Hide suggested posts, Hide suggested stories, Hide Meta AI's search and posts switches, Show if a profile follows you, Download any reel, Download any story, Keep the reel speed, Open reel links on that reel and Keep story buttons below the story. Story ring size and Default playback quality start on too, but they keep Instagram's own size and quality until you pick one. Tab bar layout has no switch at all and keeps the bar Instagram gives you until you pick another.
 
 Four patches stay out of simple mode. Tick them in Manager's patch list (Expert mode, then **Choose patches**) if you want them:
 
@@ -145,7 +145,7 @@ In Expert mode the patches are grouped under Ads, Ghost mode, Privacy, Messages,
 | `Hide reels with few views` | Leaves out reels in the Reels tab with fewer views or likes than numbers you pick. Accounts you follow stay. Starts off. Turn it on in Instagram Plus Settings > Reels. | Included |
 | `Hide rows in Instagram's settings` | Lets you take the rows you don't use off Instagram's own Settings and activity screen. Open that screen once, then untick rows in Instagram Plus Settings > Layout > Rows in Instagram's settings. Every row shows to start. | Included |
 | `Hide suggested accounts in DMs` | Takes the Accounts to follow section off the bottom of your messages. Your chats and follow requests stay. Starts off. Turn it on in Instagram Plus Settings > Messages. | Included |
-| `Hide suggested accounts in Reels` | Leaves out the cards of accounts to follow that Instagram puts between reels. Every reel still plays. Starts off. Turn it on in Instagram Plus Settings > Reels. | Included |
+| `Hide suggested accounts in Reels` | Leaves out the cards of accounts to follow that Instagram puts between reels, and on a second switch its Catch up with friends pages of stories. Every reel still plays. Starts off. Turn them on in Instagram Plus Settings > Reels. | Included |
 | `Hide suggested people on profiles` | Takes Suggested for you and the Discover people button off profiles. Bios, counts and posts stay. More switches take Suggested for you off the follow lists, their Suggested tab and the Follow requests screen, Suggested subscriptions and the Discover people button off your own follow lists, the Complete your profile cards off your own profile, and People you don't follow back, suggested threads and people, and the Featured section off your notifications. Starts off. Turn it on in Instagram Plus Settings > Profiles. | Included |
 | `Hide suggested posts` | Removes posts from accounts you don't follow, suggested accounts, surveys and shopping rows from Home. It also takes shop tiles out of Explore and the shopping bag off posts with tagged products. Posts from accounts you follow stay. Extra switches can also hide the 'Are you interested in this post?' question on Home and Reels, the caught up card, the Join bar on channel posts, rows of stories about to expire, all videos, photos, carousels, posts you've liked, posts from business and creator accounts or posts from accounts you pick. A post's menu has Hide posts from this account to add one to that list, and those posts leave Home on the next refresh. On by default. Turn it off in Instagram Plus Settings > Feed. | Included |
 | `Hide suggested stories` | Removes stories from accounts you don't follow from the row at the top of Home. More switches hide rewinds and memories, keep only verified or unverified accounts, or hide the whole row. Starts on. Turn it off in Instagram Plus Settings > Stories. | Included |
@@ -271,12 +271,12 @@ Watched-story sorting leaves your own story and Instagram's special tray entries
 
 ## Settings
 
-Inside Instagram, long-press the Instagram logo at the top of your feed. A tap still does what Instagram made it do, and the long press works while Instagram Plus is paused. From your home screen, long-press Instagram's icon and tap **Instagram Plus Settings**. Or open **Settings and activity** from the menu on your profile and tap **Instagram Plus Settings** at the top. The shortcut works before you sign in too. Under **Settings entry** you can also pick a tab, or your profile's menu button, whose long press opens Instagram Plus Settings. Every way in has a switch there, so you can keep just the one you like. The last one still on can't be turned off.
+Inside Instagram, long-press the Instagram logo at the top of your feed. A tap still does what Instagram made it do, and the long press works while Instagram Plus is paused. From your home screen, long-press Instagram's icon and tap **Instagram Plus Settings**. Or open **Settings and activity** from the menu on your profile and tap **Instagram Plus Settings** at the top. The shortcut works before you sign in too. Under **Settings entry** you can also pick a tab, or your profile's menu button, whose long press opens Instagram Plus. Every way in has a switch there, so you can keep just the one you like. The last one still on can't be turned off.
 
 <p>
-  <img src="assets/settings-switches.png" alt="HushGram's main settings page with its header, search and the Feed category open" width="270">
-  <img src="assets/settings-pause-and-diagnostics.png" alt="HushGram Pause and diagnostics controls" width="270">
-  <img src="assets/settings-about.png" alt="HushGram's About category open, with the version and build identity" width="270">
+  <img src="assets/settings-switches.png" alt="Instagram Plus's main settings page with its header, search and the Feed category open" width="270">
+  <img src="assets/settings-pause-and-diagnostics.png" alt="Instagram Plus Pause and diagnostics controls" width="270">
+  <img src="assets/settings-about.png" alt="Instagram Plus's About category open, with the version and build identity" width="270">
 </p>
 
 Search is at the top of settings, with **Show all settings as a list** directly below it. The categories come in five groups (Privacy, Content, Media and storage, Look, and App), and the chips over the list show one group or All of them. Tap a category to open it on its own page. A row of chips under Search takes you to the other categories, and it stays pinned to the top as you scroll down a long page. Back returns to the list where you left it. Turn off **Categories on their own page** under Settings entry and categories expand in place instead, as many at once as you like. **Show categories as a grid** turns the category rows into two-column tiles. The controls you see depend on the patches you picked. The screenshots show a native rendering preview of the v0.0.17 settings.
@@ -306,10 +306,10 @@ If Instagram crashes within a minute of starting three times in a row, Instagram
 - **Can't find the settings.** Long-press Instagram's home screen icon and tap **Instagram Plus Settings**. If there's no way in at all, refresh the source in Manager and patch again.
 - **Switches do nothing.** Refreshing a source only downloads patches. The switches live inside the patched app, so patch and install again. Some switches need Instagram restarted, and their description says so.
 - **Package conflict or App not installed.** Android won't replace an app with one signed by a different key. Update with the key the installed build used, or uninstall the differently signed app first. That deletes its data, so make sure you can sign in again.
-- **Unsupported Version.** Manager is told one 455.0.0.51.72 build per kind of phone (the codes in [Supported Instagram builds](#supported-instagram-builds)), so it says this for a build meant for another kind of phone or any other version. The other screen density builds listed there patch cleanly in Instagram Plus's tests even though Manager calls them unsupported. Anything else may work, but nobody has checked it.
+- **Unsupported Version.** Manager is told one 456.0.0.53.78 build per kind of phone (the codes in [Supported Instagram builds](#supported-instagram-builds)), so it says this for a build meant for another kind of phone or any other version. The other screen density builds listed there patch cleanly in Instagram Plus's tests even though Manager calls them unsupported. Anything else may work, but nobody has checked it.
 - **Patching stops on one patch.** Check that you're patching a supported build, and if several patch sources are enabled, try Instagram Plus alone. If it still stops, open an issue naming the patch, your Manager version and the error.
-- **Patching runs out of memory.** Turn on **Use embedded VM** in Manager's settings and patch again. Instagram's DEX index and resource table can exceed a 256 MB heap before HushGram's patches run. Desktop 1.19.1 passed with a 512 MB heap. That desktop result hasn't been verified on Android.
-- **Instagram won't stay open long enough to reach settings.** Create an empty file named `hushgram-safe-mode` in `Android/data/com.instagram.android/files` (a computer or a file manager can reach it). HushGram starts paused until you delete it.
+- **Patching runs out of memory.** Turn on **Use embedded VM** in Manager's settings and patch again. Instagram's DEX index and resource table can exceed a 256 MB heap before Instagram Plus's patches run. Desktop 1.19.1 passed with a 512 MB heap. That desktop result hasn't been verified on Android.
+- **Instagram won't stay open long enough to reach settings.** Create an empty file named `hushgram-safe-mode` in `Android/data/com.instagram.android/files` (a computer or a file manager can reach it). Instagram Plus starts paused until you delete it.
 - **The Play Store keeps offering an Instagram update.** Open Instagram's page in the Play Store, tap the three dots at the top right and untick **Enable auto update**. **Change version code** stops the offers for good on a standard install, but read its warning in [Patches](#patches) first.
 - **Slow right after a Root Mount install.** Android's compiled copy of Instagram was made from Meta's code, so it runs Instagram uncompiled until it's compiled again. Run this in a root shell (`adb shell` then `su`, or Termux with `su`), reopen Instagram, and run it again whenever you mount a new Instagram Plus build:
 
@@ -321,30 +321,29 @@ If Instagram crashes within a minute of starting three times in a row, Instagram
 
 ### Two Instagrams on one phone
 
-`Install next to Instagram` builds a second Instagram that installs beside the one you have, say for a second account. Switch Manager to Expert mode, open **Choose patches** and tick it under Updates. Its options hold the package name (`com.instagram.android.plus` unless you change it), the name under its icon (`Instagram Plus`) and **Mark the icon**, which puts a small Instagram Plus badge on the copy's icon. Keep the package name you picked, because patching again with another one makes a third app instead of updating the second.
+`Install next to Instagram` builds a second Instagram that installs beside the one you have, say for a second account. Switch Manager to Expert mode, open **Choose patches** and tick it under Updates. Its options hold the package name (`com.instagram.android.hush` unless you change it), the name under its icon (`Instagram Clone`) and **Mark the icon**, which puts a small Instagram Plus badge on the copy's icon. Keep the package name you picked, because patching again with another one makes a third app instead of updating the second.
 
-The copy has its own data and its own sign-in, and Instagram Plus settings and downloads come along. Instagram's servers can see its package name when it signs in, and Instagram Plus doesn't hide that.
+The copy has its own data and its own sign-in, and Instagram Plus's settings and downloads come along. Instagram's servers can see its package name when it signs in, and Instagram Plus doesn't hide that.
 
 ### Getting help
 
-For something that's broken, use the [bug form](https://github.com/SysAdminDoc/HushGram/issues/new?template=bug_report.yml) and attach the diagnostic report it asks for. Ideas go on the [feature form](https://github.com/SysAdminDoc/HushGram/issues/new?template=feature_request.yml). Questions and setup help go in [Discussions](https://github.com/SysAdminDoc/HushGram/discussions). There's no Telegram or Discord group, so nothing gets lost between places. When Morphe Manager misbehaves with every app, not only Instagram, [Morphe's own tracker](https://github.com/MorpheApp/morphe-manager/issues) is the place.
+For something that's broken, use the [bug form](https://github.com/Srijal-SS/Instagram-Plus/issues/new?template=bug_report.yml) and attach the diagnostic report it asks for. Ideas go on the [feature form](https://github.com/Srijal-SS/Instagram-Plus/issues/new?template=feature_request.yml). Questions and setup help go in [Discussions](https://github.com/Srijal-SS/Instagram-Plus/discussions). There's no Telegram or Discord group, so nothing gets lost between places. When Morphe Manager misbehaves with every app, not only Instagram, [Morphe's own tracker](https://github.com/MorpheApp/morphe-manager/issues) is the place.
 
 ## Supported Instagram builds
 
 | Field | Value |
 | --- | --- |
 | Package | `com.instagram.android` |
-| Version | `455.0.0.51.72` |
-| arm64-v8a builds | `386113969`, for most phones. `386113916`, `386113923`, `386113929` and `386113958` are other builds of the same release |
-| armeabi-v7a builds | `386113968`, for older 32-bit phones. `386113915`, `386113922` and `386113928` are the same release for other screen densities |
-| x86 build | `386113970`, for emulators and Intel phones |
-| x86_64 builds | `386113971`, for 64-bit emulators. `386113918` is another build of the same release |
+| Version | `456.0.0.53.78` |
+| arm64-v8a builds | `386214574`, for most phones. `386214534` is another build of the same release |
+| armeabi-v7a build | `386214562`, for older 32-bit phones |
+| x86 build | `386214575`, for emulators and Intel phones. Meta published no x86_64 build of this version, so an x86_64 emulator with an arm translator takes the arm64 build |
 | Minimum Android version | Android 9 (API 28) for every ABI |
 | Where to get it | [APKMirror](https://www.apkmirror.com/apk/instagram/instagram-instagram/) |
 
 Other Instagram versions haven't been checked. Meta can publish different APKs under one version name, so go by the build number too.
 
-Patching raises the minimum to Android 9 for the armeabi-v7a and x86 builds, which Instagram ships with an Android 8 minimum. Instagram Plus settings use Android 9 APIs.
+Patching raises the minimum to Android 9 for the armeabi-v7a and x86 builds, which Instagram ships with an Android 8 minimum. Instagram Plus's settings use Android 9 APIs.
 
 Meta signs genuine Instagram builds with one of two certificates, and Morphe Manager warns before it patches an APK signed with any other key. To check a file yourself, run `apksigner verify --print-certs` (from Android's build tools) on the base APK and look for one of these certificate SHA-256 digests:
 
@@ -355,7 +354,7 @@ Meta signs genuine Instagram builds with one of two certificates, and Morphe Man
 
 ## Verify a download
 
-Each [release](https://github.com/SysAdminDoc/HushGram/releases) ships `SHA256SUMS.txt` beside the bundle. Every line is a SHA-256 hash, two spaces and a file name, and it covers the `.mpp` bundle, its SBOM (`.cdx.json`) and the release receipt. Download them from the same tag and compare:
+Each [release](https://github.com/Srijal-SS/Instagram-Plus/releases) ships `SHA256SUMS.txt` beside the bundle. Every line is a SHA-256 hash, two spaces and a file name, and it covers the `.mpp` bundle, its SBOM (`.cdx.json`) and the release receipt. Download them from the same tag and compare:
 
 ```bash
 sha256sum -c SHA256SUMS.txt --ignore-missing
@@ -407,13 +406,13 @@ To walk an already installed candidate, pass `-SkipPatch -SignedApk <signed.apk>
 
 ### Establishing a factory baseline
 
-When a patch depends on how Instagram behaves on its own, compare against the original Meta-signed package for the exact build. Check the version name and build code, verify the base APK's certificate with `apksigner verify --print-certs` against the digests in [Supported Instagram builds](#supported-instagram-builds), and install it with its matching splits on a clean emulator profile with no Morphe bundle applied. Record the Android version, ABI, display density, Instagram build, locale and signed-in state with each observation, and keep those results separate from anything seen on an Instagram Plus build. Turning every Instagram Plus switch off still leaves the patches' hooks in the app, so it isn't a stand-in.
+When a patch depends on how Instagram behaves on its own, compare against the original Meta-signed package for the exact build. Check the version name and build code, verify the base APK's certificate with `apksigner verify --print-certs` against the digests in [Supported Instagram builds](#supported-instagram-builds), and install it with its matching splits on a clean emulator profile with no Morphe bundle applied. Record the Android version, ABI, display density, Instagram build, locale and signed-in state with each observation, and keep those results separate from anything seen on a Instagram Plus build. Turning every Instagram Plus switch off still leaves the patches' hooks in the app, so it isn't a stand-in.
 
 ### Translating Instagram Plus
 
 Translations live in UTF-8 TSV files under `extensions/shared/library/src/main/l10n`, with the English text as the lookup key. `scripts/crowdin-l10n.py` prepares review worksheets, `scripts/sync-l10n.py import` brings a reviewed file back, and `scripts/gen-l10n.py` regenerates the class the extension carries. They need Python 3.12 or newer. The [translation guide](docs/translations.md) has the whole workflow and the review rules.
 
-The tables cover German, Spanish, Indonesian, Italian, Korean, Brazilian Portuguese, Thai, Turkish, Vietnamese, Simplified Chinese and Traditional Chinese (Taiwan). JhouHank contributed the Traditional Chinese table in [#313](https://github.com/SysAdminDoc/HushGram/pull/313), and MangaThatsFine the Thai one in [#593](https://github.com/SysAdminDoc/HushGram/pull/593). Traditional Chinese script preferences and Hong Kong or Macao locales use its Taiwan wording. The Simplified table is converted from it with OpenCC, using the names Instagram's mainland Chinese screens show (快拍, 帖子, 主页). Phones set to Simplified Chinese, or to Chinese for China or Singapore, read that one.
+The tables cover German, Spanish, Indonesian, Italian, Korean, Brazilian Portuguese, Thai, Turkish, Vietnamese, Simplified Chinese and Traditional Chinese (Taiwan). JhouHank contributed the Traditional Chinese table in [#313](https://github.com/Srijal-SS/Instagram-Plus/pull/313), and MangaThatsFine the Thai one in [#593](https://github.com/Srijal-SS/Instagram-Plus/pull/593). Traditional Chinese script preferences and Hong Kong or Macao locales use its Taiwan wording. The Simplified table is converted from it with OpenCC, using the names Instagram's mainland Chinese screens show (快拍, 帖子, 主页). Phones set to Simplified Chinese, or to Chinese for China or Singapore, read that one.
 
 ## Where the patches come from
 

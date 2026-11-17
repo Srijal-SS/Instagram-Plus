@@ -2796,6 +2796,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushgram_hide_reels_suggestions", FALSE);
 
     /**
+     * The pages of friends' stories Instagram puts between reels, titled "Catch up with friends"
+     * ({@link app.hushgram.extension.instagram.reels.ReelsSuggestions}, #730). Read as each page of
+     * reels arrives, so a change shows from the next page. Off to start.
+     */
+    public static final BooleanSetting HIDE_REELS_STORIES =
+            new BooleanSetting("hushgram_hide_reels_stories", FALSE);
+
+    /**
      * Reels whose post Instagram marks as a paid partnership, or as boosted
      * ({@link app.hushgram.extension.instagram.reels.PaidPartnershipReels}). Read as each page of
      * reels arrives, so a change shows from the next page. Off to start.
@@ -3761,6 +3769,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting PHOTO_REEL_SEEK_BAR =
             new BooleanSetting("hushgram_photo_reel_seek_bar", FALSE);
+
+    /**
+     * Instagram's seek bar stays hidden on every ordinary reel until you hold it (#680): no reel counts as long
+     * enough for the bar that always shows, and each gets the kind a hold brings up
+     * ({@link app.hushgram.extension.instagram.reels.ReelSeekBar#hidden}). A switch above that keeps the bar wins.
+     * Decided as each reel shows, so no restart. Off to start.
+     */
+    public static final BooleanSetting HIDE_REEL_SEEK_BAR =
+            new BooleanSetting("hushgram_hide_reel_seek_bar", FALSE);
 
     /**
      * The shape of the seek bars on feed videos, stories and reels (#586, #592), one choice for all
