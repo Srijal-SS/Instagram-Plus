@@ -13,7 +13,9 @@ import app.morphe.patches.instagram.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.instagram.misc.extension.classesLoadingString
 import app.morphe.patches.instagram.misc.extension.jumpTargets
 import app.morphe.patches.instagram.misc.extension.loadsString
+import app.morphe.patches.instagram.misc.extension.markers
 import app.morphe.patches.instagram.misc.extension.requireLocals
+import app.morphe.patches.instagram.misc.extension.typesMarked
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
@@ -48,9 +50,17 @@ internal class CameraButtonSite(
  * builds the button and stores it in the class's own View field. The class holds the viewer's setup
  * in one field, whose class carries the viewer's source.
  */
-internal fun BytecodePatchContext.findCameraButton(): CameraButtonSite {
-    val sites = classesLoadingString(SHOW_CAMERA_BUTTON).flatMap { classDef ->
-        if (classDef.methods.none { loadsString(it, SHOW_CAMERA_BUTTON) }) return@flatMap emptyList()
+internal fun BytecodePatchContext.findCameraButtonOrNull(): CameraButtonSite? {
+    val marked = typesMarked("Builder_setShowCameraButton", "setShowCameraButton")
+    val candidateClasses = if (marked.isNotEmpty()) {
+        marked.mapNotNull { classDefByOrNull(it) }
+    } else {
+        classesLoadingString(SHOW_CAMERA_BUTTON)
+    }
+    val sites = candidateClasses.flatMap { classDef ->
+        if (classDef.methods.none { loadsString(it, SHOW_CAMERA_BUTTON) || it.markers().any { m -> m.contains("setShowCameraButton") } }) {
+            return@flatMap emptyList()
+        }
         val builders = classDef.methods.filter { it.buildsOwnView(classDef.type) }
         if (builders.isEmpty()) return@flatMap emptyList()
         val holders = classDef.fields.filter { !AccessFlags.STATIC.isSet(it.accessFlags) }.mapNotNull { field ->
@@ -61,10 +71,13 @@ internal fun BytecodePatchContext.findCameraButton(): CameraButtonSite {
         val holder = holders.singleOrNull() ?: return@flatMap emptyList()
         builders.map { CameraButtonSite(it, holder.first, holder.second) }
     }
-    return sites.singleOrNull() ?: throw PatchException(
-        "$PATCH: expected one place adding Create to the top bar of a reel opened from Saved or a profile, found ${sites.size}",
-    )
+    return sites.singleOrNull()
 }
+
+internal fun BytecodePatchContext.findCameraButton(): CameraButtonSite =
+    findCameraButtonOrNull() ?: throw PatchException(
+        "$PATCH: expected one place adding Create to the top bar of a reel opened from Saved or a profile, found 0",
+    )
 
 private fun ClassDef.sourceFields() = fields.filter { it.type == CLIPS_VIEWER_SOURCE && !AccessFlags.STATIC.isSet(it.accessFlags) }
 

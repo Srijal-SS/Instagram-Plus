@@ -108,9 +108,9 @@ val cleanUpReelsPatch = bytecodePatch(
         val friendPicks = findFriendPicks()
         val reelsPage = findReelsPage(PATCH)
         val reelsInserts = findReelsItemInserts(PATCH, FRIEND_LANE_PICKS)
-        val cameraButton = findCameraButton()
+        val cameraButton = findCameraButtonOrNull()
         hideReelParts()
-        hideCameraButton(cameraButton)
+        cameraButton?.let { hideCameraButton(it) }
         markFriendsTab(friendsTab)
         keepFriendsRow(friendsRow)
         pickFriends(reelsPage, friendPicks, reelsInserts)
