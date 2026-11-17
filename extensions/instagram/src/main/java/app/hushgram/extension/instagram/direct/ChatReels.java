@@ -203,6 +203,10 @@ public final class ChatReels {
      * {@link #leaveOutSent(List, Object)}, or forgotten when it's the one tapped. [chat], the chat's
      * collector, keeps the message's note for {@link ChatReelsNotice} with that chat's. Never throws.
      */
+    public static boolean received(@Nullable Object message, @Nullable Object wrapper) {
+        return received(message, wrapper, null);
+    }
+
     public static boolean received(@Nullable Object message, @Nullable Object wrapper, @Nullable Object chat) {
         boolean sent;
         String id;
@@ -343,6 +347,10 @@ public final class ChatReels {
      * message. Nothing while the chat's reels aren't chained (see {@link #chaining()}), HushGram is
      * paused or the settings aren't ready, and nothing is ever sent. Never throws.
      */
+    public static void collected(@Nullable Object info, @Nullable Object wrapper) {
+        collected(info, wrapper, null);
+    }
+
     public static void collected(@Nullable Object info, @Nullable Object wrapper, @Nullable Object chat) {
         try {
             HookStatus.invoked(FamilyNames.CHAT_REELS);
