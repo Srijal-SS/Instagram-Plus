@@ -336,6 +336,11 @@ private fun requireSendLeavesItsBatchAlone(send: Method, build: Int, batchClass:
         val called = instruction.methodReference()
         val reads = when {
             instruction.opcode == Opcode.IF_EQZ || instruction.opcode == Opcode.IF_NEZ -> true
+            instruction.opcode == Opcode.CHECK_CAST -> true
+            instruction.opcode == Opcode.INSTANCE_OF && instruction is TwoRegisterInstruction &&
+                instruction.registerB == register && instruction.registerA != register -> true
+            instruction.opcode in IGETS && instruction is TwoRegisterInstruction &&
+                instruction.registerB == register && instruction.registerA != register -> true
             instruction.opcode in VIRTUAL_INVOKES && called != null && called.definingClass == batchClass.type &&
                 named.first() == register && named.count { it == register } == 1 ->
                 batchClass.methods.singleOrNull { it.sameAs(called) }?.let { readOnly(it) } == true

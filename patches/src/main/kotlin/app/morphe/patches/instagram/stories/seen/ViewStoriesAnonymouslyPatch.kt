@@ -5,10 +5,12 @@
 package app.morphe.patches.instagram.stories.seen
 
 import app.morphe.patcher.patch.BytecodePatchContext
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.instagram.misc.extension.enableStatus
 import app.morphe.patches.instagram.direct.ghost.ghostModeEntryPatch
 import app.morphe.patches.instagram.misc.extension.instagramExtensionPatch
+import app.morphe.patches.instagram.misc.extension.patchLog
 import app.morphe.patches.instagram.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
 
@@ -42,11 +44,15 @@ val viewStoriesAnonymouslyPatch = bytecodePatch(
 
     execute {
         // Found first, so a build without it changes nothing.
-        val rings = findStoryRings()
-        val tray = findStoryTray(rings.reelClass)
-        holdBackStoryViews()
-        keepStoriesNew(rings)
-        orderStoryTray(tray)
+        val rings = try { findStoryRings() } catch (e: Exception) { patchLog.warning("${e.message}. Story rings skipped."); null }
+        val tray = try { rings?.let { findStoryTray(it.reelClass) } } catch (e: Exception) { patchLog.warning("${e.message}. Story tray skipped."); null }
+        try {
+            holdBackStoryViews()
+        } catch (unknown: PatchException) {
+            patchLog.warning("${unknown.message}. View stories anonymously hook skipped.")
+        }
+        rings?.let { keepStoriesNew(it) }
+        tray?.let { orderStoryTray(it) }
         enableStatus("storySeen")
     }
 }
