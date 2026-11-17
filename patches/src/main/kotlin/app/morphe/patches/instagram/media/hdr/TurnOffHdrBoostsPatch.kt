@@ -105,7 +105,7 @@ val turnOffHdrBoostsPatch = bytecodePatch(
         "Turn it on in Instagram Plus Settings > Playback.",
     default = true,
 ) {
-    category("Playback")
+    category("Fixes")
     dependsOn(settingsPatch, instagramExtensionPatch, videoSurfacePatch)
     compatibleWith(*AppCompatibilities.instagram())
 

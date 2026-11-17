@@ -7,6 +7,7 @@ package app.hushgram.extension.instagram.reels;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -40,7 +41,7 @@ import app.hushgram.extension.shared.settings.HushgramPause;
 
 /**
  * Scroll break (#297): after the time the choice names on Home's feed, Reels and Explore, a calm
- * screen covers those three for {@link #BREAK_MS}, with a countdown. Messages, profiles, the camera
+ * screen covers those three for the minutes picked ({@link #breakMillis}), with a countdown. Messages, profiles, the camera
  * and every other screen stay as they are, and the tab bar stays out from under it, so a tap on
  * another tab gets away from it.
  *
@@ -48,14 +49,20 @@ import app.hushgram.extension.shared.settings.HushgramPause;
  * and whether the reels viewer fills the window ({@link FullScreenBars#screenOf}). A tick that comes
  * late counts at most {@link #MAX_STEP_MS}, so a phone that slept with Instagram open doesn't run the
  * clock. The break runs on the clock since the phone started, in the background too, and Instagram
- * sitting in the background for {@link #BREAK_MS} starts the count over, since that was a break.
+ * sitting in the background that long starts the count over, since that was a break. The count, a
+ * running break's end and when Instagram went to the background are saved on the wall clock as it
+ * leaves the screen and when a break starts, so closing Instagram or Android ending it in the
+ * background doesn't hand back a fresh count (#297).
  *
  * <p>Off, or HushGram paused, nothing counts and no break screen shows. It's all views over
  * Instagram's own: nothing of Instagram's changes.
  */
 public final class ScrollBreak {
-    /** How long a break lasts, and how long in the background counts as one. */
-    static final long BREAK_MS = 5 * 60_000L;
+    /** The break's length to start, in minutes, until the slider picks another (#297). */
+    public static final int BREAK_MINUTES = 5;
+
+    /** {@link #BREAK_MINUTES} in milliseconds: how long a break lasts, and how long in the background counts as one. */
+    static final long BREAK_MS = BREAK_MINUTES * 60_000L;
 
     /** How often the screen is looked at while Instagram is in front. */
     static final long TICK_MS = 1_000L;
@@ -75,6 +82,21 @@ public final class ScrollBreak {
     /** The clock the counts read. Tests swap in their own. */
     static volatile LongSupplier clock = SystemClock::elapsedRealtime;
 
+    /**
+     * The wall clock the saved counts are kept on, since {@link #clock} starts over when the phone
+     * does. Tests swap in their own.
+     */
+    static volatile LongSupplier wall = System::currentTimeMillis;
+
+    /** Where the counts are kept while Instagram isn't running, so a restart doesn't end a break (#297). */
+    static final String STORE = "hushgram_scroll_break_state";
+    static final String USED = "used";
+    static final String BREAK_ENDS = "break_ends";
+    static final String HIDDEN_AT = "hidden_at";
+
+    /** The longest break the slider offers, so a saved end a wall clock jump moved far out is let go. */
+    static final long LONGEST_BREAK_MS = 120 * 60_000L;
+
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final Runnable TICK = ScrollBreak::tick;
 
@@ -91,6 +113,8 @@ public final class ScrollBreak {
     /** The activity in front. */
     private static WeakReference<Activity> front = new WeakReference<>(null);
     private static volatile boolean registered;
+    /** Whether the counts saved by an earlier run were read back in this one. */
+    private static boolean restored;
 
     private ScrollBreak() {
     }
@@ -125,15 +149,73 @@ public final class ScrollBreak {
 
     /** An Instagram activity started at [now]. Back from a background stay of a break or more, the count starts over. */
     static void started(long now) {
+        if (!restored) restore(now);
         if (started++ == 0 && hiddenAt != 0) {
-            if (now - hiddenAt >= BREAK_MS) used = 0;
+            if (now - hiddenAt >= breakMillis()) used = 0;
             hiddenAt = 0;
         }
     }
 
     /** An Instagram activity stopped at [now]. With none left started, Instagram is in the background. */
     static void stopped(long now) {
-        if (started > 0 && --started == 0) hiddenAt = now;
+        if (started > 0 && --started == 0) {
+            hiddenAt = now;
+            save(now);
+        }
+    }
+
+    /**
+     * Reads back what an earlier run of Instagram saved, at [now] on {@link #clock}: a break still
+     * running goes on for what's left of it, and the time used before it went to the background still
+     * counts unless it was away a whole break (#297). Android ending Instagram in the background, or
+     * swiping it away, used to forget both.
+     */
+    static void restore(long now) {
+        restored = true;
+        try {
+            SharedPreferences store = store();
+            if (store == null) return;
+            long at = wall.getAsLong();
+            long ends = store.getLong(BREAK_ENDS, 0);
+            long left = ends - at;
+            if (ends != 0) {
+                // A break counts used from zero, whether it's still running or ended while Instagram was gone.
+                used = 0;
+                breakUntil = left > 0 && left <= LONGEST_BREAK_MS ? now + left : 0;
+                return;
+            }
+            long hidden = store.getLong(HIDDEN_AT, 0);
+            if (hidden == 0) return;
+            long away = Math.max(0, at - hidden);
+            // Away a whole break was the break: the count stays at zero.
+            if (away >= breakMillis()) return;
+            used = Math.max(0, store.getLong(USED, 0));
+            hiddenAt = now - away;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_SCROLLING, "scroll break restore", failure);
+        }
+    }
+
+    /** Keeps the counts as of [now] on {@link #clock}, on the wall clock, for the next run to read. */
+    static void save(long now) {
+        try {
+            SharedPreferences store = store();
+            if (store == null) return;
+            long at = wall.getAsLong();
+            store.edit()
+                    .putLong(USED, used)
+                    .putLong(BREAK_ENDS, breakUntil == 0 ? 0 : at + Math.max(0, breakUntil - now))
+                    .putLong(HIDDEN_AT, hiddenAt == 0 ? 0 : at - Math.max(0, now - hiddenAt))
+                    .apply();
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_SCROLLING, "scroll break save", failure);
+        }
+    }
+
+    @Nullable
+    private static SharedPreferences store() {
+        Context context = Utils.getContext();
+        return context == null ? null : context.getSharedPreferences(STORE, Context.MODE_PRIVATE);
     }
 
     /** [activity] came to the front: it's the one looked at from now on. */
@@ -184,9 +266,12 @@ public final class ScrollBreak {
                 if (breakUntil == 0) {
                     if (counted && since != 0) used += Math.max(0, Math.min(now - since, MAX_STEP_MS));
                     if (used >= limit.millis()) {
-                        breakUntil = now + BREAK_MS;
+                        long length = breakMillis();
+                        breakUntil = now + length;
+                        save(now);
                         HookStatus.counted(FamilyNames.REEL_SCROLLING, STARTED);
-                        Logger.printDebug(() -> "Scroll break: " + limit.minutes + " minutes up, break screen on");
+                        Logger.printDebug(() -> "Scroll break: " + limit.minutes + " minutes up, break screen on for "
+                                + length / 60_000L + " minutes");
                     }
                 }
                 lastTick = now;
@@ -206,6 +291,11 @@ public final class ScrollBreak {
         if (!Utils.settingsReady() || HushgramPause.isPaused()) return ScrollBreakTime.OFF;
         ScrollBreakTime limit = Settings.SCROLL_BREAK.get();
         return limit == null ? ScrollBreakTime.OFF : limit;
+    }
+
+    /** The break picked on the slider, in milliseconds, or {@link #BREAK_MS} before the settings are read (#297). */
+    static long breakMillis() {
+        return Utils.settingsReady() ? Settings.SCROLL_BREAK_LENGTH.get() * 60_000L : BREAK_MS;
     }
 
     /** Whether [decor] shows Home's feed, Reels or Explore, the screens a break covers. */
@@ -353,15 +443,24 @@ public final class ScrollBreak {
         return shown instanceof Cover ? (Cover) shown : null;
     }
 
-    /** Forgets every count, for tests. */
+    /** Forgets every count, saved ones too, for tests. */
     static void forgetForTests() {
+        restartForTests();
+        SharedPreferences store = store();
+        if (store != null) store.edit().clear().commit();
+        clock = SystemClock::elapsedRealtime;
+        wall = System::currentTimeMillis;
+    }
+
+    /** Forgets what this run held but keeps what it saved, the way Android ending Instagram does. For tests. */
+    static void restartForTests() {
         MAIN.removeCallbacks(TICK);
         used = 0;
         breakUntil = 0;
         lastTick = 0;
         hiddenAt = 0;
         started = 0;
+        restored = false;
         front = new WeakReference<>(null);
-        clock = SystemClock::elapsedRealtime;
     }
 }

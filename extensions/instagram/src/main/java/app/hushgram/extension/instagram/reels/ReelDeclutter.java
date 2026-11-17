@@ -4,6 +4,8 @@
  */
 package app.hushgram.extension.instagram.reels;
 
+import android.view.View;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -60,6 +62,14 @@ import app.hushgram.extension.shared.settings.BooleanSetting;
  *       nothing when the hook says to hide, which Instagram's own "maybe create" methods do
  *       whenever a reel has no such button, so the column closes up with no gap. The Save button
  *       of a feed post is another component and stays.
+ *   <li>{@link #hideLikeButton}, {@link #hideLikeCount}, {@link #hideCommentButton} and
+ *       {@link #hideCommentCount} the same way, first thing in the column's builders of the Like
+ *       button, the like count, the Comment button and the comment count (#668). The column adds
+ *       only what each hands it, so an empty answer leaves no gap.
+ *   <li>{@link #hidePauseIcon} and {@link #hidePauseSoundButton} first thing in the pause-and-mute
+ *       component's builders of the big pause icon and the sound button a paused reel shows (#686).
+ *       Its render adds only what each hands it, so the paused reel shows just its frame, and a tap
+ *       still plays it again.
  * </ul>
  *
  * <p>Every hook fails open: until the settings are ready, while HushGram is paused, with a switch
@@ -107,7 +117,16 @@ public final class ReelDeclutter {
     /** Diagnostics counts, fixed text. */
     static final String COUNT_SAVE_HIDDEN = "reel Save buttons hidden";
     static final String COUNT_SAVE_COUNT_HIDDEN = "reel save counts hidden";
+    static final String COUNT_LIKE_HIDDEN = "reel Like buttons hidden";
+    static final String COUNT_LIKE_COUNT_HIDDEN = "reel like counts hidden";
+    static final String COUNT_COMMENT_HIDDEN = "reel Comment buttons hidden";
+    static final String COUNT_COMMENT_COUNT_HIDDEN = "reel comment counts hidden";
+    static final String COUNT_REPOST_COUNT_HIDDEN = "reel repost counts hidden";
+    static final String COUNT_SHARE_COUNT_HIDDEN = "reel share counts hidden";
+    static final String COUNT_PAUSE_ICON_HIDDEN = "paused reel icons hidden";
+    static final String COUNT_PAUSE_SOUND_HIDDEN = "paused reel sound buttons hidden";
     static final String COUNT_REPLY_BAR_HIDDEN = "chat reel reply bars kept hidden";
+    static final String COUNT_COMMENT_BAR_SPACE_KEPT = "hidden comment bars that kept their space";
 
     /** The line types the debug log has named, each once a run. */
     private static final Set<String> LOGGED = Collections.synchronizedSet(new HashSet<>());
@@ -152,10 +171,69 @@ public final class ReelDeclutter {
         return hide;
     }
 
-    /** True leaves the save count under a reel's Save button out. Never throws. */
+    /** True leaves the save count under a reel's Save button out, with the button or alone (#719). Never throws. */
     public static boolean hideSaveCount() {
-        boolean hide = hide(Settings.HIDE_REEL_SAVE_BUTTON, "save count");
+        boolean hide = hide(Settings.HIDE_REEL_SAVE_BUTTON, "save count") || hide(Settings.HIDE_REEL_SAVE_COUNT, "save count");
         if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_SAVE_COUNT_HIDDEN);
+        return hide;
+    }
+
+    /** True leaves the Like button out of a reel's button column. Never throws. */
+    public static boolean hideLikeButton() {
+        boolean hide = hide(Settings.HIDE_REEL_LIKE_BUTTON, "Like button");
+        if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_LIKE_HIDDEN);
+        return hide;
+    }
+
+    /** True leaves the like count under a reel's Like button out, with the button or alone (#719). Never throws. */
+    public static boolean hideLikeCount() {
+        boolean hide = hide(Settings.HIDE_REEL_LIKE_BUTTON, "like count") || hide(Settings.HIDE_REEL_LIKE_COUNT, "like count");
+        if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_LIKE_COUNT_HIDDEN);
+        return hide;
+    }
+
+    /** True leaves the Comment button out of a reel's button column. Never throws. */
+    public static boolean hideCommentButton() {
+        boolean hide = hide(Settings.HIDE_REEL_COMMENT_BUTTON, "Comment button");
+        if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_COMMENT_HIDDEN);
+        return hide;
+    }
+
+    /** True leaves the comment count under a reel's Comment button out, with the button or alone (#719). Never throws. */
+    public static boolean hideCommentCount() {
+        boolean hide = hide(Settings.HIDE_REEL_COMMENT_BUTTON, "comment count") || hide(Settings.HIDE_REEL_COMMENT_COUNT, "comment count");
+        if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_COMMENT_COUNT_HIDDEN);
+        return hide;
+    }
+
+    /** True leaves the repost count under a reel's Repost button out (#719). Never throws. */
+    public static boolean hideRepostCount() {
+        boolean hide = hide(Settings.HIDE_REEL_REPOST_COUNT, "repost count");
+        if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_REPOST_COUNT_HIDDEN);
+        return hide;
+    }
+
+    /**
+     * The share count under a reel's Share button, as the button column is about to add it: null
+     * when the switch is on, so the column adds nothing, else {@code count} as it came (#719). Never throws.
+     */
+    public static Object shareCount(Object count) {
+        if (count == null || !hide(Settings.HIDE_REEL_SHARE_COUNT, "share count")) return count;
+        HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_SHARE_COUNT_HIDDEN);
+        return null;
+    }
+
+    /** True leaves the big pause icon off a paused reel. Never throws. */
+    public static boolean hidePauseIcon() {
+        boolean hide = hide(Settings.HIDE_REEL_PAUSE_ICON, "pause icon");
+        if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_PAUSE_ICON_HIDDEN);
+        return hide;
+    }
+
+    /** True leaves the sound button beside a paused reel's pause icon off. Never throws. */
+    public static boolean hidePauseSoundButton() {
+        boolean hide = hide(Settings.HIDE_REEL_PAUSE_ICON, "paused reel sound button");
+        if (hide) HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_PAUSE_SOUND_HIDDEN);
         return hide;
     }
 
@@ -178,6 +256,34 @@ public final class ReelDeclutter {
     /** Whether [source], the viewer's ClipsViewerSource, is one of {@link #REPOSTS}. */
     static boolean opensRepost(Object source) {
         return source instanceof Enum && REPOSTS.contains(((Enum<?>) source).name());
+    }
+
+    /**
+     * Called as the comment bar controller's hide returns, with [bar], the bar it hid, and [source],
+     * the viewer's ClipsViewerSource. Instagram's hide takes the bar out of the layout, so the viewer
+     * grows into its room and the reel, its buttons and the seek bar drop down (#523). When Keep the
+     * comment bar's space is on and a switch hid this bar, it goes back to invisible, keeping its room
+     * empty, the way Instagram's own vanish leaves it. A bar Instagram vanished, or one that's still
+     * shown, stays as it is. Never throws.
+     */
+    public static void keepCommentBarSpace(View bar, Object source) {
+        try {
+            if (bar == null || bar.getVisibility() != View.GONE || !Utils.settingsReady()) return;
+            if (!keepsCommentBarSpace(source)) return;
+            bar.setVisibility(View.INVISIBLE);
+            HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_COMMENT_BAR_SPACE_KEPT);
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, "comment bar space", failure);
+        }
+    }
+
+    /**
+     * Whether a reel opened from [source] keeps a hidden comment bar's room: Keep the comment bar's
+     * space is on and one of the switches hides that reel's bar.
+     */
+    static boolean keepsCommentBarSpace(Object source) {
+        return Settings.KEEP_REEL_COMMENT_BAR_SPACE.get() && (Settings.HIDE_REEL_COMMENT_BAR_EVERYWHERE.get()
+                || (Settings.HIDE_REEL_COMMENT_BAR.get() && opensRepost(source)));
     }
 
     /**

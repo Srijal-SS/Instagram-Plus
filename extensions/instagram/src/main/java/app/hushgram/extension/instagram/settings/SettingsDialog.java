@@ -14,9 +14,15 @@ import android.app.FragmentManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -40,6 +46,7 @@ import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
 import app.hushgram.extension.instagram.direct.MessagesLock;
+import app.hushgram.extension.instagram.misc.Fonts;
 import app.hushgram.extension.shared.L10n;
 import app.hushgram.extension.shared.Logger;
 import app.hushgram.extension.shared.Utils;
@@ -73,6 +80,17 @@ public final class SettingsDialog extends DialogFragment {
     private Window lockWindow;
     private ViewTreeObserver.OnPreDrawListener lockDraw;
     private ViewTreeObserver.OnWindowFocusChangeListener lockFocus;
+    /** The picked font's check on this dialog's window while it's started. */
+    private Window fontWindow;
+    private FontDraw fontDraw;
+    /** The audio focus this screen holds while it's started, so the feed behind it goes quiet. */
+    private AudioManager quietAudio;
+    private AudioFocusRequest quietFocus;
+    private long quietSince;
+    private int quietRetakes;
+    static final long QUIET_RETAKE_WINDOW_MS = 6000;
+    static final long QUIET_RETAKE_DELAY_MS = 300;
+    static final int QUIET_RETAKES = 2;
 
     /**
      * The screen, expanding the section whose row has the key [page]. Null or a key no row
@@ -484,6 +502,12 @@ public final class SettingsDialog extends DialogFragment {
     }
 
     @Override
+    public void onDismiss(android.content.DialogInterface dialog) {
+        super.onDismiss(dialog);
+        GhostHeaderButton.settingsClosed();
+    }
+
+    @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (failed && !closing) showFailure(view);
@@ -504,6 +528,8 @@ public final class SettingsDialog extends DialogFragment {
     public void onStart() {
         super.onStart();
         watchLock();
+        watchFont();
+        quietFeed();
         ShortcutCover.offOnceDrawn(getDialog());
         setupBackSupport();
     }
@@ -512,7 +538,135 @@ public final class SettingsDialog extends DialogFragment {
     public void onStop() {
         if (backSupport != null) backSupport.unregister();
         unwatchLock();
+        unwatchFont();
+        unquietFeed();
         super.onStop();
+    }
+
+    /**
+     * A feed video kept playing its sound under this screen (#725): it's a dialog, so the feed
+     * behind it never pauses. Holding the audio focus while the screen shows quiets Instagram's
+     * players the way a call or another app does, and their sound comes back when it closes.
+     */
+    private void quietFeed() {
+        if (quietFocus != null) return;
+        try {
+            Activity activity = getActivity();
+            AudioManager audio = activity == null ? null
+                    : activity.getApplicationContext().getSystemService(AudioManager.class);
+            if (audio == null) return;
+            AudioFocusRequest request = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
+                            .build())
+                    .setOnAudioFocusChangeListener(this::quietFocusChanged, new Handler(Looper.getMainLooper()))
+                    .build();
+            if (audio.requestAudioFocus(request) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return;
+            quietAudio = audio;
+            quietFocus = request;
+            quietSince = SystemClock.uptimeMillis();
+            quietRetakes = 0;
+        } catch (Exception ex) {
+            Logger.printException(() -> "Settings: could not quiet the feed", ex);
+        }
+    }
+
+    /**
+     * When the page opens through an intent (the restart button lands back here), Instagram's
+     * activity pauses and resumes under it, and the feed starts its video again about a second and a
+     * half later, asking for the focus back with sound on. Taking it back once more right after quiets
+     * that video too. Only in the first seconds and only twice, so a music app the user starts while
+     * the page is open keeps playing.
+     */
+    private void quietFocusChanged(int change) {
+        if (change >= 0) return;
+        AudioManager audio = quietAudio;
+        AudioFocusRequest request = quietFocus;
+        if (audio == null || request == null) return;
+        if (!retakesQuiet(SystemClock.uptimeMillis() - quietSince, quietRetakes)) return;
+        quietRetakes++;
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (quietFocus != request) return;
+            try {
+                audio.requestAudioFocus(request);
+            } catch (Exception ex) {
+                Logger.printException(() -> "Settings: could not quiet the feed again", ex);
+            }
+        }, QUIET_RETAKE_DELAY_MS);
+    }
+
+    /** Whether a focus lost {@code sinceOpen} ms after the page took it, {@code retaken} times already, is taken back. */
+    static boolean retakesQuiet(long sinceOpen, int retaken) {
+        return sinceOpen >= 0 && sinceOpen <= QUIET_RETAKE_WINDOW_MS && retaken < QUIET_RETAKES;
+    }
+
+    private void unquietFeed() {
+        AudioManager audio = quietAudio;
+        AudioFocusRequest request = quietFocus;
+        quietAudio = null;
+        quietFocus = null;
+        if (audio == null || request == null) return;
+        try {
+            audio.abandonAudioFocusRequest(request);
+        } catch (Exception ex) {
+            Logger.printException(() -> "Settings: could not give the sound back", ex);
+        }
+    }
+
+    /**
+     * With the font patch in the build, this screen's text follows the font picked for Instagram's
+     * (the #166 thread): each frame first puts any text not in it yet in it, rows scrolled in and
+     * pages opened later included.
+     */
+    private void watchFont() {
+        Dialog dialog = getDialog();
+        Window window = dialog == null ? null : dialog.getWindow();
+        if (window == null || fontDraw != null || !PatchFamily.FONT.inBuild()) return;
+        try {
+            FontDraw draw = new FontDraw(window.getDecorView());
+            window.getDecorView().getViewTreeObserver().addOnPreDrawListener(draw);
+            fontDraw = draw;
+            fontWindow = window;
+        } catch (Exception failure) {
+            Logger.printException(() -> "Settings: could not follow the picked font", failure);
+        }
+    }
+
+    private void unwatchFont() {
+        Window window = fontWindow;
+        FontDraw draw = fontDraw;
+        fontWindow = null;
+        fontDraw = null;
+        if (window == null || draw == null) return;
+        try {
+            ViewTreeObserver observer = window.getDecorView().getViewTreeObserver();
+            if (observer.isAlive()) observer.removeOnPreDrawListener(draw);
+        } catch (Exception failure) {
+            Logger.printException(() -> "Settings: could not stop following the picked font", failure);
+        }
+    }
+
+    /**
+     * Puts the text under [root] in the picked font before a frame draws. A frame that changed some
+     * is held back, so the text measures in its new font before it shows, but never two in a row,
+     * so a view that keeps putting its own font back can't stop the screen drawing.
+     */
+    static final class FontDraw implements ViewTreeObserver.OnPreDrawListener {
+        private final View root;
+        private boolean heldBack;
+
+        FontDraw(View root) {
+            this.root = root;
+        }
+
+        @Override
+        public boolean onPreDraw() {
+            boolean changed = Fonts.under(root) > 0;
+            boolean draw = !changed || heldBack;
+            heldBack = !draw;
+            return draw;
+        }
     }
 
     /**

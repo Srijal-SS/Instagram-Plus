@@ -12,6 +12,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patches.instagram.FixtureDex
 import app.morphe.patches.instagram.misc.extension.PURGE_MARKER
+import app.morphe.patches.instagram.misc.extension.jumpTargets
 import app.morphe.patches.instagram.misc.extension.markers
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -23,10 +24,12 @@ import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
 import com.android.tools.smali.dexlib2.immutable.ImmutableField
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -52,7 +55,9 @@ class CleanUpReelsHookTest {
     fun theHooksAreInTheExtension() {
         for (hook in listOf(
             HIDE_FOLLOW_BUTTON, HIDE_CHIPS, HIDE_SOCIAL_FOOTER, HIDE_SOCIAL_CONTEXT, HIDE_COMMENT_BAR, HIDE_EVERY_COMMENT_BAR,
-            HIDE_SAVE_BUTTON, HIDE_SAVE_COUNT, HIDE_DIRECT_REPLY_BAR,
+            HIDE_SAVE_BUTTON, HIDE_SAVE_COUNT, HIDE_DIRECT_REPLY_BAR, KEEP_COMMENT_BAR_SPACE,
+            HIDE_LIKE_BUTTON, HIDE_LIKE_COUNT, HIDE_COMMENT_BUTTON, HIDE_COMMENT_COUNT, HIDE_PAUSE_ICON, HIDE_PAUSE_SOUND_BUTTON,
+            HIDE_REPOST_COUNT, SHARE_COUNT,
         )) {
             val declared = ExtensionDex.classDef(hook.substringBefore("->")).methods
                 .filter { AccessFlags.PUBLIC.isSet(it.accessFlags) && AccessFlags.STATIC.isSet(it.accessFlags) }
@@ -73,16 +78,31 @@ class CleanUpReelsHookTest {
             assertGuardFirst(part.marker, part, method)
         }
         val ufi = context.mutableClassDefBy(UFI).methods
-        assertEquals(setOf("A0D", "A06"), ufi.map { it.name }.toSet())
+        assertEquals(setOf("A0D", "A06", "A0J", "A02", "A0I", "A0E", "A0C", "A0q"), ufi.map { it.name }.toSet())
         SAVE_PARTS.zip(listOf("A0D", "A06")).forEach { (part, name) -> assertGuardFirst(part.marker, part, ufi.single { it.name == name }) }
+        // The Like and Comment buttons and their counts (#668) and the repost count (#719); the
+        // Comment button's render stays as it was.
+        (LIKE_PARTS + COMMENT_BUTTON + COMMENT_COUNT + REPOST_COUNT).zip(listOf("A0J", "A02", "A0I", "A0E", "A0C")).forEach { (part, name) ->
+            assertGuardFirst(part.hook, part, ufi.single { it.name == name })
+        }
+        // The share count (#719): handed to the hook right before its add, which the branch with no
+        // count reaches through the hook too.
+        assertShareCountHooked("stand-in", ufi.single { it.name == "A0q" }, 1, component, reached = true)
+        assertEquals("the Comment button's render was touched", 3,
+            context.mutableClassDefBy(owner(COMMENT_BUTTON_RENDER)).methods.single().instructions().size)
         assertGuardFirst(PRODUCT_CTA.marker, PRODUCT_CTA, context.mutableClassDefBy(owner(PRODUCT_CTA.marker)).methods.single())
-        val legacy = context.mutableClassDefBy(owner("ClipsFollowButtonComponentLegacy_render")).methods.single()
+        // A paused reel's big pause icon and sound button (#686); the component's render stays as it was.
+        val pause = context.mutableClassDefBy(PAUSE).methods
+        PAUSE_PARTS.zip(listOf("A01", "A0B")).forEach { (part, name) -> assertGuardFirst(part.marker, part, pause.single { it.name == name }) }
+        assertEquals("the pause component's render was touched", 3, pause.single { it.name == "A0q" }.instructions().size)
+        val legacy =context.mutableClassDefBy(owner("ClipsFollowButtonComponentLegacy_render")).methods.single()
         assertEquals("the Legacy Follow button was touched", 3, legacy.instructions().size)
         assertBubblesGuarded("stand-in", context.mutableClassDefBy(BUBBLES).methods.single(), "$NO_BUBBLES->A00:$NO_BUBBLES")
         assertLineGuarded("stand-in", context.mutableClassDefBy(VIEW_UTIL).methods.single(), 4, "$LINE->type:$LINE_TYPE")
         val bar = context.mutableClassDefBy(BAR)
         assertCommentBarGuarded("stand-in", bar.methods.single { it.name == "A0t" }, bar.methods.single { it.name == "onViewCreated" },
             "$BAR->source:$CLIPS_VIEWER_SOURCE", "$BAR->A0r()V", "$BAR->bar:$VIEW", 0)
+        assertSpaceKept("stand-in", bar.methods.single { it.name == "A0r" }, "$BAR->bar:$VIEW", "$BAR->source:$CLIPS_VIEWER_SOURCE", 1)
         val back = context.mutableClassDefBy(UNVANISH).methods.single()
         assertUnVanishGuarded("stand-in", back, 5, 2, "$BAR->source:$CLIPS_VIEWER_SOURCE", "$BAR->A0r()V", 0)
         val show = context.mutableClassDefBy(REPLY_BASE).methods.single { it.name == "A0u" }
@@ -145,6 +165,7 @@ class CleanUpReelsHookTest {
             "unVanish jumping past the hook" to classes(unVanish = "jumped"),
             "unVanish without a trace" to classes(unVanish = "no trace"),
             "unVanish's hide reading what's written after the trace" to classes(unVanish = "rewritten"),
+            "a hide with one local" to classes(barHide = "one local"),
         )) {
             val failure = assertThrows(case, PatchException::class.java) { PatchContexts.of(classes).hideReelParts() }
             assertTrue("$case: ${failure.message}", failure.message!!.contains("comment bar"))
@@ -216,6 +237,44 @@ class CleanUpReelsHookTest {
         val both = classes(saveShape = "both")
         val failure = assertThrows(PatchException::class.java) { PatchContexts.of(both).hideReelParts() }
         assertTrue(failure.message!!, failure.message!!.contains("held by one method"))
+    }
+
+    /**
+     * The Like builders have to be instance builders of the clips UFI, and the Comment button's
+     * builder and the comment count's each found once there (#668).
+     */
+    @Test
+    fun aLikeOrCommentBuilderItCantFindFailsThePatch() {
+        for ((case, classes, expected) in listOf(
+            Triple("static like", classes(ufiShape = "static like"), LIKE_PARTS[0].marker),
+            Triple("no like count", classes(leaveOut = LIKE_PARTS[1].marker), LIKE_PARTS[1].marker),
+            Triple("no comment button", classes(ufiShape = "no comment button"), "Comment button"),
+            Triple("two comment counts", classes(ufiShape = "two counts"), UFI_COUNT),
+            // The repost and share counts (#719).
+            Triple("two repost counts", classes(ufiShape = "two repost counts"), "for the repost count"),
+            Triple("no share count", classes(leaveOut = SHARE_COUNT_MARKER), SHARE_COUNT_MARKER),
+            Triple("share count read later", classes(ufiShape = "share count read later"), "read again after the add"),
+        )) {
+            val failure = assertThrows(case, PatchException::class.java) { PatchContexts.of(classes).hideReelParts() }
+            assertTrue("$case: ${failure.message}", failure.message!!.contains(expected))
+        }
+    }
+
+    /**
+     * The pause icon's and the sound button's builders have to be found once each, as instance
+     * builders of one component taking the same scope first (#686).
+     */
+    @Test
+    fun aPausedReelBuilderItCantFindFailsThePatch() {
+        for ((case, classes, expected) in listOf(
+            Triple("no pause icon", classes(leaveOut = PAUSE_PARTS[0].marker), PAUSE_PARTS[0].marker),
+            Triple("static pause icon", classes(pauseShape = "static icon"), "is not an instance builder"),
+            Triple("sound button elsewhere", classes(pauseShape = "apart"), "not in the same component"),
+            Triple("another scope", classes(pauseShape = "scope"), "same component scope"),
+        )) {
+            val failure = assertThrows(case, PatchException::class.java) { PatchContexts.of(classes).hideReelParts() }
+            assertTrue("$case: ${failure.message}", failure.message!!.contains(expected))
+        }
     }
 
     @Test
@@ -331,11 +390,75 @@ class CleanUpReelsHookTest {
             assertEquals("$label: who asks ${part.hook}", listOf("${before.definingClass}->${before.name}"),
                 askers.map { (type, method) -> "$type->${method.name}" })
         }
+        // The Like button, the like count, the Comment button and the comment count (#668): each hook
+        // is asked by one instance method of the clips UFI, first thing, and by nothing else. The Like
+        // builders are the ones holding their markers, the Comment button's answers the component
+        // holding its render's marker, and the count's takes the same parameters and loads ufi_count.
+        val ufiType = classes.flatMap { it.methods }.single { LIKE_PARTS[0].marker in it.markers() }.definingClass
+        val commentType = classes.flatMap { it.methods }.single { COMMENT_BUTTON_RENDER in it.markers() }.definingClass
+        val hooked = (LIKE_PARTS + COMMENT_BUTTON + COMMENT_COUNT + REPOST_COUNT).associateWith { part ->
+            val askers = classes.flatMap { context.mutableClassDefBy(it.type).methods.toList() }
+                .filter { method -> method.instructions().any { (it as? ReferenceInstruction)?.reference?.toString() == part.hook } }
+            assertEquals("$label: who asks ${part.hook}", listOf(ufiType), askers.map { it.definingClass })
+            val after = askers.single()
+            val before = classes.single { it.type == ufiType }.methods.single {
+                it.name == after.name && it.parameterTypes.map(Any::toString) == after.parameterTypes.map(Any::toString)
+            }
+            assertFalse("$label: ${part.hook}'s builder is static", AccessFlags.STATIC.isSet(before.accessFlags))
+            assertEquals("$label: ${part.hook}'s builder size", before.instructions().size + 5, after.instructions().size)
+            assertGuardFirst("$label: ${part.hook}", part, after)
+            before
+        }
+        LIKE_PARTS.forEach { part -> assertTrue("$label: ${part.hook} guards ${part.marker}", part.marker in hooked.getValue(part).markers()) }
+        assertEquals("$label: the Comment button's builder", commentType, hooked.getValue(COMMENT_BUTTON).returnType)
+        val commentCount = hooked.getValue(COMMENT_COUNT)
+        assertEquals("$label: the comment count's parameters", hooked.getValue(COMMENT_BUTTON).parameterTypes.map(Any::toString),
+            commentCount.parameterTypes.map(Any::toString))
+        assertTrue("$label: the comment count loads $UFI_COUNT", commentCount.instructions().any {
+            ((it as? ReferenceInstruction)?.reference as? StringReference)?.string == UFI_COUNT
+        })
+        // The repost count (#719): its builder holds no marker, takes the Save builders' scope and two
+        // colors and loads ufi_count.
+        val repostCount = hooked.getValue(REPOST_COUNT)
+        assertEquals("$label: the repost count's markers", emptyList<String>(), repostCount.markers())
+        assertEquals("$label: the repost count's parameters", listOf("J", "J"), repostCount.parameterTypes.drop(1).map { it.toString() })
+        assertTrue("$label: the repost count loads $UFI_COUNT", repostCount.instructions().any {
+            ((it as? ReferenceInstruction)?.reference as? StringReference)?.string == UFI_COUNT
+        })
+        // The share count (#719): the UFI's render builds it with the UFI's text builder and hands it to
+        // the hook right before the add, where the branches that went to the add now land.
+        val shareBefore = classes.flatMap { it.methods }.single { SHARE_COUNT_MARKER in it.markers() }
+        assertEquals("$label: the share count's render", ufiType, shareBefore.definingClass)
+        val shareAfter = after(shareBefore)
+        val hook = shareAfter.instructions().indexOfFirst { (it as? ReferenceInstruction)?.reference?.toString() == SHARE_COUNT }
+        assertTrue("$label: the share count's hook is after its build", hook >= 2)
+        val stock = shareBefore.instructions()
+        val built = (stock[hook - 2] as ReferenceInstruction).reference as MethodReference
+        assertEquals("$label: the share count's builder", ufiType to commentCount.returnType, built.definingClass to built.returnType)
+        val count = (stock[hook - 1] as OneRegisterInstruction).registerA
+        val type = ((stock[hook] as ReferenceInstruction).reference as MethodReference).parameterTypes.single().toString()
+        assertShareCountHooked(label, shareAfter, count, type, reached = hook in shareBefore.jumpTargets())
+        assertEquals("$label: the render grows by the hook", stock.count { it.opcode != Opcode.NOP } + 3,
+            shareAfter.instructions().count { it.opcode != Opcode.NOP })
         // The reel CTA's product button: the one builder, guarded first and growing by the guard alone.
         val productBefore = classes.flatMap { it.methods }.single { PRODUCT_CTA.marker in it.markers() }
         val productAfter = after(productBefore)
         assertEquals("$label: ${PRODUCT_CTA.marker} size", productBefore.instructions().size + 5, productAfter.instructions().size)
         assertGuardFirst("$label: ${PRODUCT_CTA.marker}", PRODUCT_CTA, productAfter)
+        // A paused reel's big pause icon and sound button (#686): one instance builder each in one
+        // component, guarded first, growing by the guard alone, and asked by nothing else.
+        val pauseBuilders = PAUSE_PARTS.map { part -> classes.flatMap { it.methods }.single { part.marker in it.markers() } }
+        assertEquals("$label: the paused reel builders' component", 1, pauseBuilders.map { it.definingClass }.toSet().size)
+        PAUSE_PARTS.zip(pauseBuilders).forEach { (part, before) ->
+            assertFalse("$label: ${part.marker} is static", AccessFlags.STATIC.isSet(before.accessFlags))
+            val pauseAfter = after(before)
+            assertEquals("$label: ${part.marker} size", before.instructions().size + 5, pauseAfter.instructions().size)
+            assertGuardFirst("$label: ${part.marker}", part, pauseAfter)
+            val askers = classes.flatMap { context.mutableClassDefBy(it.type).methods.toList() }
+                .filter { method -> method.instructions().any { (it as? ReferenceInstruction)?.reference?.toString() == part.hook } }
+            assertEquals("$label: who asks ${part.hook}", listOf("${before.definingClass}->${before.name}"),
+                askers.map { "${it.definingClass}->${it.name}" })
+        }
         // The in-viewer comment bar's render is guarded by the switch for all reels, nothing else.
         val inViewer = after(classes.flatMap { it.methods }.single { COMMENT_BAR_PARTS.single().marker in it.markers() })
         assertEquals("$label: the in-viewer bar's hook", HIDE_EVERY_COMMENT_BAR, (inViewer.instructions()[0] as ReferenceInstruction).reference.toString())
@@ -362,6 +485,11 @@ class CleanUpReelsHookTest {
         assertCommentBarGuarded("$label: comment bar", after(show), after(created),
             "${source.definingClass}->${source.name}:${source.type}", "${hide.definingClass}->${hide.name}()V",
             "${bar.definingClass}->${bar.name}:${bar.type}", null)
+        // Where the hide returns, the bar and the source go to the space hook (#523).
+        val returns = hide.instructions().count { it.opcode == Opcode.RETURN_VOID }
+        assertEquals("$label: hide size", hide.instructions().size + 3 * returns, after(hide).instructions().size)
+        assertSpaceKept("$label: hide", after(hide), "${bar.definingClass}->${bar.name}:${bar.type}",
+            "${source.definingClass}->${source.name}:${source.type}", returns)
         // And in unVanish, right after the marker's trace, on the register the hide is called on.
         val unVanish = classes.flatMap { it.methods }.single { COMMENT_BAR_UNVANISH in it.markers() }
         val unVanishCode = unVanish.instructions()
@@ -536,6 +664,34 @@ class CleanUpReelsHookTest {
     }
 
     /**
+     * Each of the hide's [returns] returns is right after the bar and the source, both read off the
+     * controller, go to the space hook, and every branch of the hide that went to a return lands on
+     * that hook instead, so no way out of the hide skips it.
+     */
+    private fun assertSpaceKept(what: String, hide: Method, bar: String, source: String, returns: Int) {
+        val code = hide.instructions()
+        val self = hide.implementation!!.registerCount - 1
+        val ends = code.indices.filter { code[it].opcode == Opcode.RETURN_VOID }
+        assertEquals("$what: its returns", returns, ends.size)
+        for (end in ends) {
+            val hook = code.subList(end - 3, end)
+            assertEquals("$what: the hook before v$end", listOf(Opcode.IGET_OBJECT, Opcode.IGET_OBJECT, Opcode.INVOKE_STATIC), hook.map { it.opcode })
+            assertEquals("$what: the bar", bar, (hook[0] as ReferenceInstruction).reference.toString())
+            assertEquals("$what: the source", source, (hook[1] as ReferenceInstruction).reference.toString())
+            assertEquals("$what: both off the controller", listOf(self, self), hook.take(2).map { (it as TwoRegisterInstruction).registerB })
+            val call = hook[2] as FiveRegisterInstruction
+            assertEquals("$what: the hook", KEEP_COMMENT_BAR_SPACE, (call as ReferenceInstruction).reference.toString())
+            assertEquals("$what: handed the bar and the source", hook.take(2).map { (it as TwoRegisterInstruction).registerA },
+                listOf(call.registerC, call.registerD))
+        }
+        val addresses = code.runningFold(0) { address, instruction -> address + instruction.codeUnits }
+        code.indices.filter { code[it] is OffsetInstruction }.forEach { at ->
+            val landed = addresses.indexOf(addresses[at] + (code[at] as OffsetInstruction).codeOffset)
+            assertFalse("$what: the branch at $at skips the hook", landed in ends)
+        }
+    }
+
+    /**
      * unVanish asks the hook with the source read off the controller in [controller] at [at], right
      * after its trace, and goes to its own call of Instagram's hide when it says so, or on to its
      * own next instruction.
@@ -576,6 +732,37 @@ class CleanUpReelsHookTest {
         assertEquals("$what: the branch lands on the method's own code", code.subList(2, 5).sumOf { it.codeUnits }, jump.codeOffset)
     }
 
+    /**
+     * The share count's hook (#719): the one call of it in [method], right before the add, handed the
+     * count in v[count], keeping it there and casting it back to the add's [type]. No branch skips the
+     * hook onto the add, and when [reached] the branches that went to the add land on the hook.
+     */
+    private fun assertShareCountHooked(what: String, method: Method, count: Int, type: String, reached: Boolean) {
+        val code = method.instructions()
+        val calls = code.indices.filter { (code[it] as? ReferenceInstruction)?.reference?.toString() == SHARE_COUNT }
+        assertEquals("$what: the share count's hooks", 1, calls.size)
+        val at = calls.single()
+        assertEquals("$what: the hook's opcodes", listOf(Opcode.INVOKE_STATIC_RANGE, Opcode.MOVE_RESULT_OBJECT, Opcode.CHECK_CAST),
+            code.subList(at, at + 3).map { it.opcode })
+        val call = code[at] as RegisterRangeInstruction
+        assertEquals("$what: the hook is handed the count", count to 1, call.startRegister to call.registerCount)
+        assertEquals("$what: the answer is kept", count, (code[at + 1] as OneRegisterInstruction).registerA)
+        assertEquals("$what: the answer is cast", count, (code[at + 2] as OneRegisterInstruction).registerA)
+        assertEquals("$what: the cast", type, ((code[at + 2] as ReferenceInstruction).reference as TypeReference).type)
+        val add = code[at + 3]
+        assertEquals("$what: the add's parameter", listOf(type),
+            ((add as ReferenceInstruction).reference as MethodReference).parameterTypes.map { it.toString() })
+        val added = when (add) {
+            is FiveRegisterInstruction -> add.registerD
+            is RegisterRangeInstruction -> add.startRegister + 1
+            else -> -1
+        }
+        assertEquals("$what: the add is handed the answer", count, added)
+        val targets = method.jumpTargets()
+        assertFalse("$what: a branch skips the hook onto the add", at + 3 in targets)
+        if (reached) assertTrue("$what: the branches to the add land on the hook", at in targets)
+    }
+
     private fun owner(marker: String) = "Lfixture/${marker.substringBefore('_')};"
 
     /**
@@ -595,16 +782,19 @@ class CleanUpReelsHookTest {
         barSource: Boolean = true,
         barStores: Int = 1,
         barThisReused: Boolean = false,
+        barHide: String = "ok",
         unVanish: String = "ok",
         replyBar: String = "ok",
         productCtaLabel: String = "Ljava/lang/String;",
+        ufiShape: String = "ok",
+        pauseShape: String = "ok",
     ): List<ClassDef> {
-        val renders = (REEL_PARTS.filter { !it.check }.map { it.marker } + "ClipsFollowButtonComponentLegacy_render")
+        val renders = (REEL_PARTS.filter { !it.check }.map { it.marker } + "ClipsFollowButtonComponentLegacy_render" + COMMENT_BUTTON_RENDER)
             .filter { it != leaveOut }
             .map { render(owner(it), it, static = it == staticRender) }
         val builders = SAVE_PARTS.filter { it.marker != leaveOut && (saveShape != "both" || it === SAVE_PARTS[0]) }
-            .map { save(UFI, if (it === SAVE_PARTS[0]) "A0D" else "A06", it.marker, saveShape) }
-        val saves = if (builders.isEmpty()) emptyList() else listOf(classOf(UFI, "Lfixture/KComponent;", *builders.toTypedArray()))
+            .map { save(UFI, if (it === SAVE_PARTS[0]) "A0D" else "A06", it.marker, saveShape) } + ufiBuilders(ufiShape, leaveOut)
+        val saves = listOf(classOf(UFI, "Lfixture/KComponent;", *builders.toTypedArray()))
         val checks = REEL_PARTS.filter { it.check && it.marker != leaveOut }.map { check(owner(it.marker), it.marker, checkReturns) }
         val none = if (noneOfItsOwn) "$NO_BUBBLES->A00:$NO_BUBBLES" else "$BUBBLES->none:$NO_BUBBLES"
         val bubbles = classOf(
@@ -666,8 +856,28 @@ class CleanUpReelsHookTest {
                 static = false,
             ),
         )
-        return renders + saves + checks + productCta + bubbles + lineCheck + lineType + line + commentBar(barSource, barStores, barThisReused) +
-            unVanish(unVanish) + replyBar(replyBar)
+        return renders + saves + checks + productCta + pauseComponent(pauseShape, leaveOut) + bubbles + lineCheck + lineType + line +
+            commentBar(barSource, barStores, barThisReused, barHide) + unVanish(unVanish) + replyBar(replyBar)
+    }
+
+    /**
+     * The pause-and-mute component shaped like Instagram 454's (#686): the pause icon's builder
+     * taking the scope, the sound button's taking the scope and a flag, each a private instance
+     * method loading its marker first, and the render that calls both. [shape] breaks one of them.
+     */
+    private fun pauseComponent(shape: String, leaveOut: String?): List<ClassDef> {
+        val nothing = "const/4 v0, 0x0\nreturn-object v0"
+        fun builder(type: String, part: ReelPart, name: String, parameters: List<String>, static: Boolean = false) =
+            method(type, name, parameters, component, 6, "const-string v0, \"android_purge_26_q3_${part.marker}\"\n$nothing", static = static)
+        val icon = builder(PAUSE, PAUSE_PARTS[0], "A01", listOf(if (shape == "scope") "Lfixture/OtherScope;" else scope), static = shape == "static icon")
+        val sound = builder(if (shape == "apart") "Lfixture/MuteButton;" else PAUSE, PAUSE_PARTS[1], "A0B", listOf(scope, "Z"))
+        val render = method(
+            PAUSE, "A0q", listOf("Lfixture/Composer;"), component, 4,
+            "const-string v0, \"android_purge_26_q3_PauseAndMuteComponent_render\"\n$nothing", static = false,
+        )
+        val own = listOfNotNull(icon.takeIf { PAUSE_PARTS[0].marker != leaveOut }, sound.takeIf { shape != "apart" }, render)
+        val apart = if (shape == "apart") listOf(classOf("Lfixture/MuteButton;", "Ljava/lang/Object;", sound)) else emptyList()
+        return listOf(classOf(PAUSE, "Lfixture/KComponent;", *own.toTypedArray())) + apart
     }
 
     /**
@@ -801,9 +1011,10 @@ class CleanUpReelsHookTest {
     /**
      * A comment bar controller shaped like Instagram 450's: a show and a hide taking nothing, the
      * hide reading the bar, and onViewCreated keeping the bar it inflates, with the viewer's source
-     * in a field of its own.
+     * in a field of its own. The hide is 454's: it skips to its return when there's no bar, and sets
+     * the bar gone otherwise. [hide] "one local" keeps the bar in its only local.
      */
-    private fun commentBar(source: Boolean, stores: Int, thisReused: Boolean): ClassDef {
+    private fun commentBar(source: Boolean, stores: Int, thisReused: Boolean, hide: String = "ok"): ClassDef {
         val fields = listOfNotNull(
             ImmutableField(BAR, "bar", VIEW, AccessFlags.PUBLIC.value, null, null, null),
             if (source) ImmutableField(BAR, "source", CLIPS_VIEWER_SOURCE, AccessFlags.PUBLIC.value or AccessFlags.FINAL.value, null, null, null) else null,
@@ -815,11 +1026,23 @@ class CleanUpReelsHookTest {
                 const-string v0, "android_purge_26_q2_$COMMENT_BAR_SHOW"
                 return-void
             """, static = false),
-            method(BAR, "A0r", emptyList(), "V", 2, """
-                const-string v0, "android_purge_26_q2_$COMMENT_BAR_HIDE"
-                iget-object v0, p0, $BAR->bar:$VIEW
-                return-void
-            """, static = false),
+            if (hide == "one local") {
+                method(BAR, "A0r", emptyList(), "V", 2, """
+                    const-string v0, "android_purge_26_q2_$COMMENT_BAR_HIDE"
+                    iget-object v0, p0, $BAR->bar:$VIEW
+                    return-void
+                """, static = false)
+            } else {
+                method(BAR, "A0r", emptyList(), "V", 3, """
+                    const-string v0, "android_purge_26_q2_$COMMENT_BAR_HIDE"
+                    iget-object v1, p0, $BAR->bar:$VIEW
+                    if-eqz v1, :done
+                    const/16 v0, 0x8
+                    invoke-virtual { v1, v0 }, $VIEW->setVisibility(I)V
+                    :done
+                    return-void
+                """, static = false)
+            },
             method(BAR, "onViewCreated", listOf(VIEW, "Landroid/os/Bundle;"), "V", 5, """
                 const-string v0, "android_purge_26_q2_$COMMENT_BAR_CREATED"
                 $reuse
@@ -893,6 +1116,57 @@ class CleanUpReelsHookTest {
         )
     }
 
+    /**
+     * The clips UFI's other builders, shaped like 454's (#668): the Like button's and the like
+     * count's, holding their markers; the Comment button's, answering its component, and the comment
+     * count's, taking the same parameters and loading ufi_count; the repost count's, loading ufi_count
+     * with the Save builders' parameters and no marker (#719); and the render building the share
+     * count inline after its marker and adding it to the column, where the branch with no count joins
+     * it. [shape] breaks one of them.
+     */
+    private fun ufiBuilders(shape: String, leaveOut: String?): List<Method> {
+        val nothing = "const/4 v0, 0x0\nreturn-object v0"
+        val likes = LIKE_PARTS.filter { it.marker != leaveOut }.map { part ->
+            method(
+                UFI, if (part === LIKE_PARTS[0]) "A0J" else "A02", listOf(scope, "Lkotlin/jvm/functions/Function1;", "J", "J"), component, 8,
+                "const-string v0, \"android_purge_26_q2_${part.marker}\"\n$nothing",
+                static = shape == "static like" && part === LIKE_PARTS[0],
+            )
+        }
+        val commentParameters = listOf(scope, "Lkotlin/jvm/functions/Function0;", "J", "J")
+        fun counter(name: String, parameters: List<String>) =
+            method(UFI, name, parameters, component, 8, "const-string v0, \"$UFI_COUNT\"\n$nothing", static = false)
+        val button = if (shape == "no comment button") emptyList() else listOf(
+            method(UFI, "A0I", commentParameters, owner(COMMENT_BUTTON_RENDER), 8, nothing, static = false),
+        )
+        val counts = listOf(counter("A0E", commentParameters)) + if (shape == "two counts") listOf(counter("A0F", commentParameters)) else emptyList()
+        val reposts = listOf(counter("A0C", listOf(scope, "J", "J"))) +
+            if (shape == "two repost counts") listOf(counter("A0G", listOf(scope, "J", "J"))) else emptyList()
+        val later = if (shape == "share count read later") "invoke-virtual { v2, v1 }, $LIST->A00($component)V" else ""
+        val share = if (leaveOut == SHARE_COUNT_MARKER) emptyList() else listOf(
+            method(
+                UFI, "A0q", listOf(scope), component, 6,
+                """
+                    const-string v0, "android_purge_26_q2_$SHARE_COUNT_MARKER"
+                    const/4 v2, 0x0
+                    if-eqz v0, :none
+                    invoke-direct/range { p0 .. p1 }, $UFI->A0B($scope)$component
+                    move-result-object v1
+                    :add
+                    invoke-virtual { v2, v1 }, $LIST->A00($component)V
+                    $later
+                    const/4 v1, 0x0
+                    return-object v1
+                    :none
+                    const/4 v1, 0x0
+                    goto :add
+                """,
+                static = false,
+            ),
+        )
+        return likes + button + counts + reposts + share
+    }
+
     private fun check(type: String, marker: String, returns: String): ClassDef = ImmutableClassDef(
         type, AccessFlags.PUBLIC.value or AccessFlags.FINAL.value, "Ljava/lang/Object;", null, null, null, null,
         listOf(
@@ -916,6 +1190,8 @@ class CleanUpReelsHookTest {
 
     private companion object {
         const val UFI = "Lfixture/ClipsUfiComponent;"
+        const val LIST = "Lfixture/ComponentList;"
+        const val PAUSE = "Lfixture/PauseAndMuteComponent;"
         const val BUBBLES = "Lfixture/FloatingBubblesUseCase;"
         const val BUBBLES_STATE = "Lfixture/BubblesState;"
         const val NO_BUBBLES = "Lfixture/NoBubbles;"

@@ -20,6 +20,7 @@ import org.robolectric.annotation.Config;
 import java.util.List;
 
 import app.hushgram.extension.instagram.settings.FamilyNames;
+import app.hushgram.extension.instagram.settings.PatchFamily;
 import app.hushgram.extension.instagram.settings.Settings;
 import app.hushgram.extension.shared.SettingsContextRule;
 import app.hushgram.extension.shared.diagnostics.HookStatus;
@@ -111,6 +112,7 @@ public class FeedTapPauseTest {
     @Before
     public void clean() {
         Settings.TAP_FEED_VIDEO_TO_PAUSE.resetToDefault();
+        Settings.FEED_TAPS_STAY_IN_FEED.resetToDefault();
         BaseSettings.PAUSED.save(false);
         PauseForTests.resume();
         HookStatus.clear();
@@ -121,10 +123,13 @@ public class FeedTapPauseTest {
     @After
     public void restore() {
         Settings.TAP_FEED_VIDEO_TO_PAUSE.resetToDefault();
+        Settings.FEED_TAPS_STAY_IN_FEED.resetToDefault();
         BaseSettings.PAUSED.save(false);
         PauseForTests.resume();
         HookStatus.clear();
         FeedTapPause.resetForTests();
+        Settings.HOLD_FEED_VIDEO_FAST.resetToDefault();
+        FeedHoldSpeed.inBuildForTests = null;
     }
 
     private static String report() {
@@ -419,6 +424,31 @@ public class FeedTapPauseTest {
         assertFalse(report, report.contains(FeedTapPause.PRESS_TAKEN));
     }
 
+    /**
+     * With Hold for 2x on feed videos in and on, a held press is left to Instagram, which speeds the video up, and its
+     * lift pauses nothing (#552). Taps still pause, and the switch off takes the press again.
+     */
+    @Test
+    public void aHeldPressIsLeftToHoldFor2x() {
+        Settings.TAP_FEED_VIDEO_TO_PAUSE.save(true);
+        Settings.HOLD_FEED_VIDEO_FAST.save(true);
+        FeedHoldSpeed.inBuildForTests = true;
+        assertFalse("left to Instagram", press());
+        lift();
+        assertEquals("nothing paused", 0, feed.pauses + feed.starts);
+        assertNull(feed.marked);
+        assertTrue("a tap still pauses", tap());
+        assertEquals(1, feed.pauses);
+        FeedHoldSpeed.inBuildForTests = false;
+        assertTrue("without the patch the press is taken", press());
+        FeedHoldSpeed.inBuildForTests = true;
+        lift();
+        Settings.HOLD_FEED_VIDEO_FAST.save(false);
+        assertTrue("with the switch off the press is taken", press());
+        String report = report();
+        assertTrue(report, report.contains(FeedTapPause.PRESS_TAKEN + " 2"));
+    }
+
     /** A press that throws before it's taken stays Instagram's and is reported, and its lift does nothing. */
     @Test
     public void aFailureInAPressLeavesItToInstagram() {
@@ -466,6 +496,74 @@ public class FeedTapPauseTest {
         assertEquals("nothing read for it", 0, feed.launcherAsked);
         String report = report();
         assertTrue(report, report.contains(FeedTapPause.OPENED_FROM + "BACKGROUND_TAP 1"));
+    }
+
+    /**
+     * #706: Taps on feed videos stay in the feed ends the launcher for every tap on a video and the end screen's backdrop,
+     * with the pause switch off, without pausing or reading anything. The end screen's buttons and a preview still open
+     * Reels, and the switch off leaves every opening to Instagram.
+     */
+    @Test
+    public void tapsStayInTheFeedWithThePauseOff() {
+        assertFalse(Settings.FEED_TAPS_STAY_IN_FEED.defaultValue);
+        assertTrue(PatchFamily.FEED_TAP_PAUSE.switches.contains(Settings.FEED_TAPS_STAY_IN_FEED));
+        assertFalse("off, Reels opens", open(EntryPoint.VIDEO_TAP));
+
+        Settings.FEED_TAPS_STAY_IN_FEED.save(true);
+        assertTrue("a tap on the video", open(EntryPoint.VIDEO_TAP));
+        feed.page = "another post";
+        feed.ad = new Object();
+        assertTrue("any video, an ad's too", open(EntryPoint.VIDEO_TAP));
+        assertTrue("the end screen's backdrop", open(EntryPoint.BACKGROUND_TAP));
+        assertFalse("the end screen's button", open(EntryPoint.WATCH_AGAIN));
+        assertFalse("a preview", open(EntryPoint.FEED_PREVIEW));
+        assertFalse(FeedTapPause.opening(launcher, EntryPoint.VIDEO_TAP, null, state));
+        assertEquals("nothing paused or played", 0, feed.pauses + feed.starts);
+        assertEquals("nothing read", 0, feed.launcherAsked);
+        assertNull(feed.marked);
+        String report = report();
+        assertTrue(report, report.contains(FeedTapPause.KEPT_FROM + "VIDEO_TAP 2"));
+        assertTrue(report, report.contains(FeedTapPause.KEPT_FROM + "BACKGROUND_TAP 1"));
+        assertFalse(report, report.contains(FeedTapPause.KEPT_FROM + "WATCH_AGAIN"));
+        assertTrue(report, report.contains(FeedTapPause.OPENED_FROM + "WATCH_AGAIN 1"));
+    }
+
+    /** #706: with both switches on, a tap on the playing video still pauses and plays it, and one it can't pause stays put. */
+    @Test
+    public void tapsStayInTheFeedAndThePlayingVideoStillPauses() {
+        Settings.TAP_FEED_VIDEO_TO_PAUSE.save(true);
+        Settings.FEED_TAPS_STAY_IN_FEED.save(true);
+        assertTrue(open(EntryPoint.VIDEO_TAP));
+        assertEquals("pauses", 1, feed.pauses);
+        assertTrue(open(EntryPoint.VIDEO_TAP));
+        assertEquals("plays", 1, feed.starts);
+        assertFalse("not kept, paused", report().contains(FeedTapPause.KEPT_FROM));
+
+        feed.page = "another post";
+        assertTrue("another post stays in the feed", open(EntryPoint.VIDEO_TAP));
+        feed.page = "post";
+        feed.ad = new Object();
+        assertTrue("an ad too", open(EntryPoint.VIDEO_TAP));
+        assertEquals(1, feed.pauses);
+        assertEquals(1, feed.starts);
+        String report = report();
+        assertTrue(report, report.contains(FeedTapPause.LEFT_ANOTHER_POST + " 1"));
+        assertTrue(report, report.contains(FeedTapPause.LEFT_AN_AD + " 1"));
+        assertTrue(report, report.contains(FeedTapPause.KEPT_FROM + "VIDEO_TAP 2"));
+    }
+
+    /** #706: paused, not ready or failing, the switch leaves Reels to open. */
+    @Test
+    public void tapsStayInTheFeedOnlyWhileItCan() {
+        Settings.FEED_TAPS_STAY_IN_FEED.save(true);
+        BaseSettings.PAUSED.save(true);
+        PauseForTests.pause(HushgramPause.Reason.SWITCH);
+        assertFalse("paused", open(EntryPoint.VIDEO_TAP));
+        BaseSettings.PAUSED.save(false);
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertFalse("not ready", open(EntryPoint.VIDEO_TAP)));
+        assertFalse(report(), report().contains(FeedTapPause.KEPT_FROM));
+        assertTrue("and back", open(EntryPoint.VIDEO_TAP));
     }
 
     /** Any other opening goes on to Reels and is counted under its name; one with no enum is counted as it prints. */

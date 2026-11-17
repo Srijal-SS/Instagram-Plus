@@ -62,15 +62,16 @@ private val FIELD_WRITES = setOf(
 /**
  * Empties the Search tab's Explore grid. In the default selection with its switch off: Explore is
  * one of Instagram's main screens, so taking it away is the user's pick. A second switch, off too,
- * leaves the suggested accounts out of what shows when you tap the search bar (SearchSuggestions.kt).
+ * leaves the suggested accounts out of what shows when you tap the search bar (SearchSuggestions.kt),
+ * and a third the You may also like posts below search results (SearchRecommendations.kt).
  * Everything is found before anything is written.
  */
 @Suppress("unused")
 val hideExploreGridPatch = bytecodePatch(
     name = "Hide the Explore grid",
     description = "Empties the grid of posts and reels on the Search tab. Search, recent searches and results " +
-        "stay. A second switch hides the suggested accounts that show when you tap the search bar. Starts off. " +
-        "Turn it on in Instagram Plus Settings > Explore.",
+        "stay. Two more switches hide the suggested accounts that show when you tap the search bar and the You " +
+        "may also like posts below search results. Starts off. Turn it on in Instagram Plus Settings > Explore.",
 ) {
     category("Interface")
     dependsOn(settingsPatch, instagramExtensionPatch)
@@ -82,9 +83,11 @@ val hideExploreGridPatch = bytecodePatch(
         val row = findLoadMoreRow()
         val adapter = findExploreAdapter(findExploreFragment(), row)
         val search = findSearchSuggestions()
+        val recommendations = findSearchRecommendations()
         emptyExplorePages(parser)
         hideLoadMoreRow(row, adapter)
         hideSearchSuggestions(search)
+        hideSearchRecommendations(recommendations)
         enableStatus("exploreGrid")
     }
 }
@@ -139,13 +142,18 @@ internal fun BytecodePatchContext.findExploreParser(): ExploreParser {
 
     // 453 hands the parsed list to the page at the label its loop branches to, after the other keys'
     // cases, so the first field write after the key is the next case's. Find the list write through
-    // the loop's own exit branch instead; older builds write it straight after the key.
+    // the loop's own exit branch instead; older builds write it straight after the key. 455 makes the
+    // list through a static helper with no arguments (LX/000H;->A0g() on 386113969), not new-instance.
     fun sectionsField(): Pair<FieldReference, Int> {
         val at = code.indices.firstOrNull { stringLoadedAt(code, it) == SECTIONS } ?: refuse("$where doesn't read $SECTIONS")
         val next = code.indices.firstOrNull { it > at && stringLoadedAt(code, it) != null } ?: code.size
         val listAt = (at until next).firstOrNull {
-            code[it].opcode == Opcode.NEW_INSTANCE &&
+            val made = code[it].opcode == Opcode.NEW_INSTANCE &&
                 ((code[it] as ReferenceInstruction).reference as TypeReference).type == "Ljava/util/ArrayList;"
+            val helper = (code.getOrNull(it - 1)?.takeIf { call -> call.opcode == Opcode.INVOKE_STATIC } as? ReferenceInstruction)
+                ?.reference as? MethodReference
+            made || code[it].opcode == Opcode.MOVE_RESULT_OBJECT && helper != null &&
+                helper.parameterTypes.isEmpty() && helper.returnType == "Ljava/util/ArrayList;"
         }
         if (listAt != null) {
             val listRegister = (code[listAt] as OneRegisterInstruction).registerA

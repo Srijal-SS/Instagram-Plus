@@ -98,7 +98,7 @@ public final class ReelTextButton {
                 long under = aboveMore && !ReelSoundButton.shows(column) && !ReelBlockButton.shows(column)
                         && !ReelNotInterestedButton.shows(column) && !ReelDownloadButton.shows(column)
                         ? ReelDownloadButton.underAboveMore(column, context, margin) : margin;
-                icon = ReelDownloadButton.bridge.icon(drawable, L10n.t(context, "Copy text"), new Click(), size, under);
+                icon = ReelColumnFit.icon(drawable, L10n.t(context, "Copy text"), new Click(), size, under);
             }
             if (icon == null) {
                 HookStatus.counted(FamilyNames.REEL_DOWNLOAD, COUNT_REFUSED);
@@ -140,7 +140,7 @@ public final class ReelTextButton {
         Resources resources = context.getResources();
         int known = glyph;
         if (known == 0) {
-            known = ReelNotInterestedButton.glyphId(resources, context.getPackageName(), ICON_NAMES);
+            known = ReelNotInterestedButton.glyphId(resources, Utils.resourcePackage(context), ICON_NAMES);
             glyph = known;
         }
         if (known <= 0) return null;

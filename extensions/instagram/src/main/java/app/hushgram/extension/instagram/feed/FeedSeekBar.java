@@ -8,16 +8,21 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.SeekBar;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -42,7 +47,9 @@ import app.hushgram.extension.shared.diagnostics.HookStatus;
  * hidden while the video plays, so only its frame counts. A paused video keeps its bar. A drag goes
  * the way Instagram's own feed scrubber goes: the video pauses while a finger is on the bar, and
  * letting go moves it to that point and plays it on from there (#472). Seeking alone, as the bar
- * once did, could leave the video stuck on the frame it was moved to.
+ * once did, could leave the video stuck on the frame it was moved to. Most feed posts come without
+ * the picture strip a reel has, so with the preview on, the paused video itself follows the drag
+ * there and shows the moment the finger is on (#567).
  *
  * <p>With the switch off, HushGram paused or the settings not read, the bar hides and a drag does
  * nothing. A bar hidden for {@link #GONE_MS} goes away and stops ticking until the player plays
@@ -55,12 +62,28 @@ public final class FeedSeekBar {
     /** How long a hidden bar waits for its video to come back before it goes away. */
     static final long GONE_MS = 2000;
 
+    /** The least time between two moves of a paused video following a drag. */
+    static final long FOLLOW_MS = 150;
+
     /** The bar's height, along the bottom of the video. */
     static final int HEIGHT_DP = 32;
+
+    /** The least the bar is tall on the bottom edge (#567), where it's only as tall as its round handle. */
+    static final int EDGE_MIN_DP = 12;
+
+    /** How tall the bar is on the bottom edge with a {@linkplain SeekShape#tallHandle() tall handle}, which needs the room. */
+    static final int EDGE_TALL_DP = 22;
 
     static final String HOOK = "feed seek bar";
     static final String COUNT_SEEKS = "feed seeks";
     static final String COUNT_TOGGLES = "feed seek bar toggles";
+    static final String COUNT_TIME_FLIPS = "feed seek time flips";
+
+    /** The gap between the bar and the time over it (#711). */
+    static final int TIME_GAP_DP = 2;
+
+    /** The time's text size, as the reel's time label has it. */
+    static final float TIME_SP = 12f;
 
     /** The toggle button's size, a small circle at the bottom start of the video (#437). */
     static final int BUTTON_DP = 28;
@@ -71,6 +94,8 @@ public final class FeedSeekBar {
         boolean seekTo(Object player, int positionMs);
         boolean pause(Object player);
         boolean play(Object player);
+        /** The picture strip of the post the player has now, for the preview while a drag moves. */
+        @Nullable default SeekSheet sheet(Object player) { return null; }
     }
 
     static final Player PATCHED = new Player() {
@@ -78,6 +103,7 @@ public final class FeedSeekBar {
         @Override public boolean seekTo(Object player, int positionMs) { return FeedSeekReader.seekTo(player, positionMs, true); }
         @Override public boolean pause(Object player) { return FeedSeekReader.pause(player, null) != null; }
         @Override public boolean play(Object player) { return FeedSeekReader.play(player, null, null, null) != null; }
+        @Override public SeekSheet sheet(Object player) { return SeekSheet.ofMedia(FeedSeekReader.media(player)); }
     };
 
     private static Player feed = PATCHED;
@@ -97,6 +123,50 @@ public final class FeedSeekBar {
         return Utils.settingsReady() && Settings.FEED_SEEK_BUTTON.get();
     }
 
+    /** Whether the time shows over a showing bar: its switch on, HushGram not paused, the settings read (#711). */
+    static boolean timeWanted() {
+        return Utils.settingsReady() && Settings.FEED_SEEK_TIME.get();
+    }
+
+    /**
+     * The time over the bar: the time played, past the end counted as the end, and the length, "0:12 / 0:45",
+     * or with [left] the time still to go, "-0:33 / 0:45".
+     */
+    static String timeText(int at, int length, boolean left) {
+        int played = Math.max(0, Math.min(at, length));
+        String total = SeekPreview.time(Math.max(0, length));
+        return (left ? "-" + SeekPreview.time(length - played) : SeekPreview.time(played)) + " / " + total;
+    }
+
+    /** The time's label, white bold text with a shadow over the video, a tap on it flipping what it counts. */
+    static TextView timeLabel(Context context) {
+        float density = context.getResources().getDisplayMetrics().density;
+        int gap = Math.round(4 * density);
+        TextView label = new TextView(context);
+        label.setTextSize(TypedValue.COMPLEX_UNIT_SP, TIME_SP);
+        label.setTypeface(Typeface.DEFAULT_BOLD);
+        label.setTextColor(Color.WHITE);
+        // Over the video, the shadow keeps white text readable on a bright frame.
+        label.setShadowLayer(2f * density, 0f, 0.5f * density, 0x99000000);
+        // Digits all as wide as each other, so the time doesn't wobble as it counts.
+        label.setFontFeatureSettings("tnum");
+        label.setSingleLine(true);
+        label.setIncludeFontPadding(false);
+        label.setGravity(Gravity.CENTER);
+        label.setPadding(gap, gap / 2, gap, gap / 2);
+        label.setClickable(true);
+        label.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        return label;
+    }
+
+    /** The time showing over the bar on a feed video now, or null. A carousel's dots pill goes above it too. */
+    @Nullable
+    static View shownTime() {
+        Overlay overlay = current;
+        TextView label = overlay == null || overlay.removed ? null : overlay.time;
+        return label != null && label.getVisibility() == View.VISIBLE && label.getParent() != null ? label : null;
+    }
+
     /** Whether a video gets an overlay at all: the bar or its toggle button is wanted. */
     static boolean active() {
         return wanted() || buttonWanted();
@@ -112,6 +182,7 @@ public final class FeedSeekBar {
                 Utils.runOnMainThread(() -> progress(player, position, duration));
                 return;
             }
+            FeedDoubleTapSkip.fed(player, position, duration);
             Overlay overlay = current;
             if (overlay == null || overlay.removed || overlay.player.get() != player) {
                 if (player == null || !active()) return;
@@ -137,6 +208,11 @@ public final class FeedSeekBar {
         return seek != null && seek.getVisibility() == View.VISIBLE && seek.getParent() != null ? seek : null;
     }
 
+    /** The feed's player as the stubs reach it, which {@link FeedDoubleTapSkip} moves too. */
+    static Player player() {
+        return feed;
+    }
+
     @VisibleForTesting
     static void playerForTests(Player stand) {
         feed = stand;
@@ -147,6 +223,13 @@ public final class FeedSeekBar {
     static SeekBar barForTests() {
         Overlay overlay = current;
         return overlay == null ? null : overlay.bar;
+    }
+
+    @VisibleForTesting
+    @Nullable
+    static TextView timeForTests() {
+        Overlay overlay = current;
+        return overlay == null ? null : overlay.time;
     }
 
     @VisibleForTesting
@@ -163,6 +246,7 @@ public final class FeedSeekBar {
         final WeakReference<Object> player;
         @Nullable GlassSeekBar bar;
         @Nullable Toggle button;
+        @Nullable TextView time;
         int position;
         int duration;
         long hiddenSince = -1;
@@ -170,6 +254,15 @@ public final class FeedSeekBar {
         /** Whether the drag under way paused the video, which letting go then plays on. */
         boolean held;
         boolean removed;
+        /** Where a drag over a post with no picture strip moves the video next, where it last did, and when. */
+        int follow = -1;
+        int followed = -1;
+        long followedAt = -1;
+        boolean followWaits;
+        /** Whether a finger on the bar holds the feed and the tabs, and where it landed. */
+        boolean claimed;
+        float downX;
+        float downY;
 
         Overlay(Object player) {
             this.player = new WeakReference<>(player);
@@ -212,6 +305,9 @@ public final class FeedSeekBar {
             }
             GlassSeekBar seek = bar != null && bar.getParent() == frame ? bar : attach(frame, view);
             seek.look(Settings.FEED_SEEK_BAR_LOOK.get());
+            SeekShape shape = SeekShapes.feedWanted();
+            seek.shape(shape, Settings.FEED_SEEK_BAR_ON_EDGE.get() || shape == SeekShape.LINE);
+            fit(seek, ViewGroup.LayoutParams.MATCH_PARENT, barHeight(view, seek), 0);
             hiddenSince = -1;
             if (!dragging) {
                 if (seek.getMax() != duration) seek.setMax(duration);
@@ -221,6 +317,64 @@ public final class FeedSeekBar {
             if (seek.getVisibility() != barState) seek.setVisibility(barState);
             if (barState == View.GONE) dragging = false;
             showButton(frame, view);
+            showTime(frame, view, seek);
+        }
+
+        /**
+         * Puts the time over the middle of the bar in [frame], or takes it away while its switch is off
+         * or the bar is hidden (#711). It sits in the middle since Instagram keeps its tags and sound
+         * buttons in the video's bottom corners.
+         */
+        private void showTime(FrameLayout frame, View view, SeekBar seek) {
+            if (!timeWanted() || seek.getVisibility() != View.VISIBLE) {
+                removeTime();
+                return;
+            }
+            TextView shown = time;
+            if (shown == null) {
+                shown = timeLabel(view.getContext());
+                shown.setOnClickListener(tapped -> flipTime());
+                time = shown;
+            }
+            int bottom = barHeight(view, seek) + dp(view, TIME_GAP_DP);
+            if (shown.getParent() != frame) {
+                if (shown.getParent() != null) ((ViewGroup) shown.getParent()).removeView(shown);
+                frame.addView(shown, frame.indexOfChild(seek) + 1, new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                        Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL));
+            }
+            fit(shown, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, bottom);
+            showTimeAt(dragging ? seek.getProgress() : position);
+        }
+
+        /** Writes the time at [at] into the label, when there is one. */
+        private void showTimeAt(int at) {
+            TextView shown = time;
+            if (shown == null) return;
+            String text = timeText(at, duration, Settings.FEED_SEEK_TIME_LEFT.get());
+            if (!text.contentEquals(shown.getText())) shown.setText(text);
+        }
+
+        /** A tap on the time flips it between the time played and the time left, through its own switch. */
+        private void flipTime() {
+            try {
+                if (removed || !timeWanted()) return;
+                Settings.FEED_SEEK_TIME_LEFT.save(!Settings.FEED_SEEK_TIME_LEFT.get());
+                HookStatus.counted(FamilyNames.FEED_SEEK_BAR, COUNT_TIME_FLIPS);
+                Object owner = player.get();
+                if (owner != null) update(owner);
+            } catch (Throwable failure) {
+                HookStatus.threw(FamilyNames.FEED_SEEK_BAR, HOOK, failure);
+            }
+        }
+
+        private void removeTime() {
+            TextView shown = time;
+            time = null;
+            if (shown == null) return;
+            shown.setOnClickListener(null);
+            ViewGroup parent = (ViewGroup) shown.getParent();
+            if (parent != null) parent.removeView(shown);
         }
 
         /** Puts the toggle button in [frame] just after [view], or takes it out when its switch is off. */
@@ -231,6 +385,8 @@ public final class FeedSeekBar {
             }
             Toggle shown = button;
             if (shown != null && shown.getParent() == frame) {
+                int size = dp(view, BUTTON_DP);
+                fit(shown, size, size, barHeight(view, bar) + dp(view, 4));
                 shown.invalidate();
                 return;
             }
@@ -244,7 +400,7 @@ public final class FeedSeekBar {
             int size = dp(view, BUTTON_DP);
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(size, size, Gravity.BOTTOM | Gravity.START);
             params.setMarginStart(dp(view, 8));
-            params.bottomMargin = dp(view, HEIGHT_DP + 4);
+            params.bottomMargin = barHeight(view, bar) + dp(view, 4);
             frame.addView(shown, frame.indexOfChild(view) + 1, params);
         }
 
@@ -274,6 +430,7 @@ public final class FeedSeekBar {
         /** Hides the bar, ending a drag under it, and takes it away once it's been hidden for {@link #GONE_MS}. */
         private void hide() {
             if (!buttonWanted()) removeButton();
+            removeTime();
             if (bar != null && bar.getVisibility() != View.GONE) bar.setVisibility(View.GONE);
             dragging = false;
             long now = SystemClock.uptimeMillis();
@@ -303,7 +460,7 @@ public final class FeedSeekBar {
             }
             dragging = false;
             frame.addView(seek, frame.indexOfChild(view) + 1, new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(view, HEIGHT_DP), Gravity.BOTTOM));
+                    ViewGroup.LayoutParams.MATCH_PARENT, barHeight(view, seek), Gravity.BOTTOM));
             if (!logged) {
                 logged = true;
                 Logger.printDebug(() -> "Seek bar on feed videos: added a seek bar to a feed video");
@@ -315,15 +472,29 @@ public final class FeedSeekBar {
          * A finger landing on the bar keeps the feed and Instagram's main tabs from taking the drag
          * until it lifts. Both claim a sideways or upward move before a SeekBar in a scrolling list
          * starts its own, and the tabs' list takes it even when the bar asks its parents not to, so
-         * the tabs are held through {@link TabSwipe}.
+         * the tabs are held through {@link TabSwipe}. A finger that moves up or down past the touch slop
+         * before the bar starts its own drag is a scroll that began on the bar, so the feed and the
+         * tabs get it back and Home scrolls.
          */
         @Override
         public boolean onTouch(View view, MotionEvent event) {
             int action = event.getActionMasked();
             if (action == MotionEvent.ACTION_DOWN && !removed && wanted()) {
+                claimed = true;
+                downX = event.getX();
+                downY = event.getY();
                 TabSwipe.hold(true);
                 if (view.getParent() != null) view.getParent().requestDisallowInterceptTouchEvent(true);
+            } else if (action == MotionEvent.ACTION_MOVE && claimed && !dragging) {
+                float across = Math.abs(event.getX() - downX);
+                float down = Math.abs(event.getY() - downY);
+                if (down > ViewConfiguration.get(view.getContext()).getScaledTouchSlop() && down > across) {
+                    claimed = false;
+                    TabSwipe.hold(false);
+                    if (view.getParent() != null) view.getParent().requestDisallowInterceptTouchEvent(false);
+                }
             } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                claimed = false;
                 TabSwipe.hold(false);
             }
             return false;
@@ -335,6 +506,7 @@ public final class FeedSeekBar {
             dragging = false;
             held = false;
             removeButton();
+            removeTime();
             SeekBar seek = bar;
             bar = null;
             if (seek != null) {
@@ -351,6 +523,8 @@ public final class FeedSeekBar {
         public void onStartTrackingTouch(SeekBar seek) {
             dragging = !removed && wanted();
             held = false;
+            follow = followed = -1;
+            followedAt = -1;
             Object owner = player.get();
             if (!dragging || owner == null) return;
             try {
@@ -362,6 +536,47 @@ public final class FeedSeekBar {
 
         @Override
         public void onProgressChanged(SeekBar seek, int progress, boolean fromUser) {
+            if (!fromUser || !dragging) return;
+            try {
+                showTimeAt(progress);
+                if (!SeekPreview.on()) return;
+                Object owner = player.get();
+                SeekSheet sheet = owner != null ? feed.sheet(owner) : null;
+                SeekPreview.dragged(seek, progress, sheet, FamilyNames.FEED_SEEK_BAR);
+                if (owner != null && sheet == null) follow(progress);
+            } catch (Throwable failure) {
+                HookStatus.threw(FamilyNames.FEED_SEEK_BAR, HOOK, failure);
+            }
+        }
+
+        /**
+         * Moves the paused video to [to], so a post with no picture strip shows the moment in the video
+         * itself: at once when the last move was {@link #FOLLOW_MS} ago, otherwise once that time is up,
+         * to wherever the drag is by then.
+         */
+        private void follow(int to) {
+            follow = to;
+            long wait = followedAt < 0 ? 0 : followedAt + FOLLOW_MS - SystemClock.uptimeMillis();
+            if (wait <= 0) {
+                followNow();
+            } else if (!followWaits) {
+                followWaits = true;
+                Utils.runOnMainThreadDelayed(() -> {
+                    followWaits = false;
+                    followNow();
+                }, wait);
+            }
+        }
+
+        private void followNow() {
+            Object owner = player.get();
+            if (!dragging || removed || owner == null || follow < 0 || follow == followed) return;
+            try {
+                followedAt = SystemClock.uptimeMillis();
+                if (feed.seekTo(owner, follow)) followed = follow;
+            } catch (Throwable failure) {
+                HookStatus.threw(FamilyNames.FEED_SEEK_BAR, HOOK, failure);
+            }
         }
 
         /**
@@ -443,6 +658,30 @@ public final class FeedSeekBar {
             info.setCheckable(true);
             info.setChecked(barShown());
         }
+    }
+
+    /**
+     * How tall the bar is: room for a finger along the bottom of the video, or with
+     * {@link Settings#FEED_SEEK_BAR_ON_EDGE} on only its round handle's height, so it sits right on the
+     * video's bottom edge and the rest of the video takes taps and scrolls as before (#567).
+     */
+    static int barHeight(View view, @Nullable SeekBar seek) {
+        SeekShape shape = SeekShapes.feedWanted();
+        if (!Settings.FEED_SEEK_BAR_ON_EDGE.get() && shape != SeekShape.LINE) return dp(view, HEIGHT_DP);
+        if (shape.tallHandle()) return dp(view, EDGE_TALL_DP);
+        Drawable handle = seek != null ? seek.getThumb() : null;
+        return Math.max(handle != null ? handle.getIntrinsicHeight() : 0, dp(view, EDGE_MIN_DP));
+    }
+
+    /** Gives [child], already in a frame, the size and bottom margin asked, when it has others. */
+    private static void fit(View child, int width, int height, int bottomMargin) {
+        if (!(child.getLayoutParams() instanceof FrameLayout.LayoutParams)) return;
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) child.getLayoutParams();
+        if (params.width == width && params.height == height && params.bottomMargin == bottomMargin) return;
+        params.width = width;
+        params.height = height;
+        params.bottomMargin = bottomMargin;
+        child.setLayoutParams(params);
     }
 
     private static int dp(View view, int value) {

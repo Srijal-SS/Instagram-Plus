@@ -134,8 +134,8 @@ val downloadReelPatch = bytecodePatch(
         "the quality, and best is the default. A separate Download cover switch also saves the reel's cover " +
         "picture, the largest one the post carries, and Download audio saves just its sound. Download as video on " +
         "a carousel with music saves every page, in order. A separate switch under Downloads puts a download icon under Save beside each reel, " +
-        "and others add a Lens icon for copying a reel's text, a speed icon and a Full screen icon. On by " +
-        "default. Turn it off in Instagram Plus Settings > Reels.",
+        "and others add a Lens icon for copying a reel's text, a speed icon, a Full screen icon and a speaker icon, or put " +
+        "Playback speed in a reel's menu. On by default. Turn it off in Instagram Plus Settings > Reels.",
     default = true,
 ) {
     category("Downloads")
@@ -147,6 +147,7 @@ val downloadReelPatch = bytecodePatch(
         requireStatusMethod("reelDownload")
         offerDownloadOnEveryReel()
         addReelDownloadButtonWhereItFits()
+        addMuteButtonToClearMode()
         enableStatus("reelDownload")
     }
 }
@@ -463,9 +464,9 @@ private fun BytecodePatchContext.handsToRows(builder: Method, adder: Method): Bo
 /**
  * The register holding the Media the call at [at] hands [eligible], the download check, or null. The
  * check takes the Media once, or, as on 451, takes no Media and is handed one wrapper that a static
- * (Media) call answering that parameter's type makes just before (the same check the feed menu reads
- * through `checkedPost`). The wrapper's Media is used only when nothing writes its register from that
- * call to the check's answer and no jump lands in between, so it still holds the post the check got.
+ * (Media) call answering that parameter's type makes just before. The wrapper's Media is used only
+ * when nothing writes its register from that call to the check's answer and no jump lands in
+ * between, so it still holds the post the check got.
  */
 private fun Method.mediaArgument(code: List<Instruction>, at: Int, eligible: Method): Int? {
     val types = eligible.parameterTypes.map(Any::toString)

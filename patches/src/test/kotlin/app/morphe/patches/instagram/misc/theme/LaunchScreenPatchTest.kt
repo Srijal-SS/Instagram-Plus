@@ -40,8 +40,11 @@ class LaunchScreenPatchTest {
         addLaunchTheme(styles)
 
         val themes = styles.elements("style")
-        assertEquals(listOf("Theme.Instagram", INSTAGRAM_LAUNCH_THEME, LAUNCH_THEME), themes.map { it.getAttribute("name") })
-        val added = themes.last()
+        assertEquals(
+            listOf("Theme.Instagram", INSTAGRAM_LAUNCH_THEME, LAUNCH_THEME) + LAUNCH_FILLS.keys.map(::launchTheme),
+            themes.map { it.getAttribute("name") },
+        )
+        val added = themes.single { it.getAttribute("name") == LAUNCH_THEME }
         assertEquals("@style/$INSTAGRAM_LAUNCH_THEME", added.getAttribute("parent"))
         assertEquals(
             listOf(SPLASH_ICON to "@drawable/$LAUNCH_MARK", SPLASH_BRANDING to "@null"),
@@ -51,6 +54,29 @@ class LaunchScreenPatchTest {
             listOf("android:windowBackground" to "@drawable/instagram_splash_screen"),
             themes[1].elements("item").map { it.getAttribute("name") to it.textContent },
         )
+    }
+
+    /**
+     * #528: one filled theme for each hue the extension can name, over HushGram's, holding only the
+     * fill: Instagram's blue, each palette's fill, and the wallpaper's accent from Android itself.
+     */
+    @Test
+    fun eachHueGetsAThemeHoldingOnlyItsFill() {
+        assertEquals(
+            listOf("BLUE", "PURPLE", "PINK", "RED", "ORANGE", "GREEN", "TEAL", "DUSK", "PINE", "SLATE", WALLPAPER),
+            LAUNCH_FILLS.keys.toList(),
+        )
+        val styles = parse("<resources>$launcher</resources>")
+        addLaunchTheme(styles)
+        val themes = styles.elements("style").associateBy { it.getAttribute("name") }
+        for ((hue, fill) in LAUNCH_FILLS) {
+            val theme = themes.getValue(launchTheme(hue))
+            assertEquals(hue, "@style/$LAUNCH_THEME", theme.getAttribute("parent"))
+            assertEquals(hue, listOf(SPLASH_BACKGROUND to fill), theme.elements("item").map { it.getAttribute("name") to it.textContent })
+        }
+        assertEquals("#ff0095f6", LAUNCH_FILLS["BLUE"])
+        assertEquals("#ff2a6f68", LAUNCH_FILLS["PINE"])
+        assertEquals("@android:color/system_accent1_500", LAUNCH_FILLS[WALLPAPER])
     }
 
     @Test
@@ -107,8 +133,8 @@ class LaunchScreenPatchTest {
     }
 
     /**
-     * On every build of Instagram 452, decoded and encoded as Manager does: the launcher wears
-     * Instagram's launch theme, the build's Android 12 styles name its icon, and the patched build
+     * On every build of Instagram, decoded and encoded as Manager does: the launcher wears
+     * Instagram's launch theme or one of its children, the build's Android 12 styles name its icon, and the patched build
      * keeps every resource's number and gains just the theme and the mark, both as written.
      */
     @Test
@@ -126,7 +152,13 @@ class LaunchScreenPatchTest {
                 val patched = File(work, "patched.apk")
                 val before = decoded(apk, File(work, "patch")) { context ->
                     val manifest = parse(context.get("AndroidManifest.xml").readText())
-                    assertEquals("$code: the launchers' theme", setOf("@style/$INSTAGRAM_LAUNCH_THEME"), launcherThemes(manifest))
+                    // 455's 386113958 puts its launchers in Base.Theme.Launcher.Monochrome.ViewFinder, a child
+                    // of Instagram's launch theme, so each launcher theme only has to come from that one.
+                    val declared = parse(File(context.get("res"), "values/styles.xml").readText()).elements("style")
+                        .associate { it.getAttribute("name") to it.getAttribute("parent").removePrefix("@style/") }
+                    for (theme in launcherThemes(manifest)) {
+                        assertTrue("$code: the launchers' theme $theme comes from $INSTAGRAM_LAUNCH_THEME", comesFrom(theme.removePrefix("@style/"), declared))
+                    }
                     val ids = ids(context.get("res"))
                     context.addLaunchScreen()
                     encoded(context).copyTo(patched)
@@ -137,24 +169,33 @@ class LaunchScreenPatchTest {
                     val after = ids(res)
                     assertEquals(
                         "$code: added",
-                        setOf("style/$LAUNCH_THEME", "drawable/$LAUNCH_MARK"),
+                        setOf("style/$LAUNCH_THEME", "drawable/$LAUNCH_MARK") + LAUNCH_FILLS.keys.map { "style/${launchTheme(it)}" },
                         (after.keys - before.keys).map { after.getValue(it) }.toSet(),
                     )
                     val lost = before.keys - after.keys
                     assertTrue("$code: numbers gone, ${lost.take(5)}", lost.isEmpty())
-                    // The patcher writes Instagram's inline drawables ($name__0) back without their
-                    // $, whatever resource patch runs. Every other name stays as it was.
-                    val renamed = before.filter { (id, name) -> after.getValue(id) != name.replace("/\$", "/") }
-                    assertTrue("$code: renamed, ${renamed.entries.take(5)}", renamed.isEmpty())
+                    // Every name stays as it was. Patcher 2.3.0 keeps the $ on Instagram's inline
+                    // drawables ($$name__0), which older patchers dropped whatever resource patch ran.
+                    val renamed = before.filter { (id, name) -> after.getValue(id) != name }
+                    assertTrue("$code: renamed, ${renamed.entries.take(5).map { "${it.value} to ${after[it.key]}" }}", renamed.isEmpty())
 
-                    val theme = parse(File(res, "values/styles.xml").readText()).elements("style")
-                        .single { it.getAttribute("name") == LAUNCH_THEME }
+                    val styles = parse(File(res, "values/styles.xml").readText()).elements("style")
+                    val theme = styles.single { it.getAttribute("name") == LAUNCH_THEME }
                     assertEquals("$code: parent", "@style/$INSTAGRAM_LAUNCH_THEME", theme.getAttribute("parent"))
                     assertEquals(
                         "$code: items",
                         listOf(SPLASH_ICON to "@drawable/$LAUNCH_MARK", SPLASH_BRANDING to "@null"),
                         theme.elements("item").map { it.getAttribute("name") to it.textContent.trim() },
                     )
+                    for ((hue, fill) in LAUNCH_FILLS) {
+                        val filled = styles.single { it.getAttribute("name") == launchTheme(hue) }
+                        assertEquals("$code: $hue's parent", "@style/$LAUNCH_THEME", filled.getAttribute("parent"))
+                        assertEquals(
+                            "$code: $hue's fill",
+                            listOf(SPLASH_BACKGROUND to fill.lowercase()),
+                            filled.elements("item").map { it.getAttribute("name") to it.textContent.trim().lowercase() },
+                        )
+                    }
                     val mark = parse(File(res, "drawable/$LAUNCH_MARK.xml").readText()).documentElement
                     assertEquals("$code: the mark", "layer-list", mark.tagName)
                     assertEquals("$code: the mark's H", 3, mark.elements("path").size)
@@ -224,6 +265,18 @@ class LaunchScreenPatchTest {
                 ?.let { name -> entries.single { it.tagName == "activity" && it.getAttribute("android:name") == name } }
             launcher.getAttribute("android:theme").ifEmpty { target?.getAttribute("android:theme").orEmpty() }
         }
+    }
+
+    /** Whether [style], through the parents [parents] names (a dotted name's prefix when it names none), is [INSTAGRAM_LAUNCH_THEME]. */
+    private fun comesFrom(style: String, parents: Map<String, String>): Boolean {
+        var name: String? = style
+        val seen = HashSet<String>()
+        while (name != null && seen.add(name)) {
+            if (name == INSTAGRAM_LAUNCH_THEME) return true
+            val parent = parents[name] ?: return false
+            name = parent.ifEmpty { name.substringBeforeLast('.', "").ifEmpty { null } }
+        }
+        return false
     }
 
     private fun parse(xml: String): Document =

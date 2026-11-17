@@ -39,12 +39,15 @@ internal const val SAVE_ACTION = "SaveMedia"
  * comment's own media_comment_info, never its parent post, and the PHOTO kind's value. [gifModel]
  * reads the files of the comment's own GIF, when the build's GIF model could be told, and [gifReply]
  * sends a comment's GIF back as a reply, when the comment screen's Reply and GIF send could be.
+ * [gifName] reads a GIF's or sticker's title, when that getter could be told. [gifPick] sends a
+ * saved GIF picked in the comment box's gallery through the GIF reply's send, when that pick could be.
  */
 internal data class CommentPhotoPlan(
     val surface: CommentSurface, val gif: MethodReference, val info: MethodReference, val media: MethodReference,
     val kind: MethodReference, val mediaGif: MethodReference, val videoVersions: MethodReference,
     val videoDuration: MethodReference, val photo: Int, val icon: Int, val label: Int, val images: () -> Unit,
     val author: CommentAuthor? = null, val gifModel: CommentGifPlan? = null, val gifReply: GifReplyPlan? = null,
+    val gifName: MethodReference? = null, val gifPick: GifPickPlan? = null,
 )
 
 /**
@@ -64,19 +67,21 @@ internal fun BytecodePatchContext.findCommentPhoto(): CommentPhotoPlan = discove
     }
     fun clazz(type: String) = classes[type] ?: refuse("missing native class $type")
     val selected = clazz(surface.selectedType)
-    requirePublicField(selected, surface.rawField)
+    requireRawField(surface, selected)
     val raw = clazz(surface.raw)
     requirePublic(raw)
     val pando = clazz(surface.pando)
 
-    // The selected comment keeps the raw comment its conversion was handed.
-    val converter = methodsBesideCall(selected.type, "<init>", classes).filter { method -> method.returnType == selected.type &&
-        method.parameters().count { it == raw.type } == 1 && method.code().any { instruction ->
-            instruction.call()?.let { it.name == "<init>" && it.definingClass == selected.type } == true }
-    }.toList().one("selected-comment conversion from the raw comment")
-    val kept = constructorField(converter, null, selected.type, classes, valueType = raw.type,
-        incoming = parameterRegister(converter, converter.parameters().indexOf(raw.type)), what = "raw comment")
-    if (kept.toString() != surface.rawField.toString()) refuse("selected comment keeps a different raw comment")
+    // The selected comment keeps the raw comment its conversion was handed, or the patch keeps it there.
+    if (surface.keeping == null) {
+        val converter = methodsBesideCall(selected.type, "<init>", classes).filter { method -> method.returnType == selected.type &&
+            method.parameters().count { it == raw.type } == 1 && method.code().any { instruction ->
+                instruction.call()?.let { it.name == "<init>" && it.definingClass == selected.type } == true }
+        }.toList().one("selected-comment conversion from the raw comment")
+        val kept = constructorField(converter, null, selected.type, classes, valueType = raw.type,
+            incoming = parameterRegister(converter, converter.parameters().indexOf(raw.type)), what = "raw comment")
+        if (kept.toString() != surface.rawField.toString()) refuse("selected comment keeps a different raw comment")
+    }
 
     // Its own media, read through the interface both of the raw comment's classes implement.
     val treeInfo = hashGetter(pando, COMMENT_MEDIA_KEY, null, classes)
@@ -150,8 +155,11 @@ internal fun BytecodePatchContext.findCommentPhoto(): CommentPhotoPlan = discove
     PHOTO_READS.forEach { (name, shape) -> stub(PHOTO_NATIVE, name, shape.first, shape.second) }
     validateActionRow(PHOTO_ROW, PHOTO_NATIVE)
     val images = imageBridges(PHOTO_PATCH)
+    val author = commentAuthor(raw, pando, classes)
+    val gifModel = commentGifOrNull(classes)
+    val gifReply = gifReplyOrNull(surface, classes)
     CommentPhotoPlan(surface, gif, info, media, kind, mediaGif, videoVersions, videoDuration, photo, icon, label, images,
-        commentAuthor(raw, pando, classes), commentGifOrNull(classes), gifReplyOrNull(surface, classes))
+        author, gifModel, gifReply, commentGifNameOrNull(classes), gifReply?.let { gifPickOrNull(it, classes) })
 }
 
 /**
@@ -202,6 +210,7 @@ internal fun BytecodePatchContext.applyCommentPhoto(plan: CommentPhotoPlan) = di
     val reads = PHOTO_READS.associate { (name, shape) -> name to stub(PHOTO_NATIVE, name, shape.first, shape.second) }
     val surface = plan.surface
     applyCommentHook(surface)
+    keepRawComment(surface)
     // One native read per bridge. The extension makes them in order and decides between them, so
     // it can count the step that found nothing, a GIF or another kind. Each read is handed only what
     // the read before it answered, so every cast holds.
@@ -234,12 +243,14 @@ internal fun BytecodePatchContext.applyCommentPhoto(plan: CommentPhotoPlan) = di
     }
     // Each GIF read takes what the read before it answered, on the interface that answer is typed as.
     plan.gifModel?.reads?.forEach { (name, getter) -> read(name, "invoke-interface", getter) }
+    plan.gifName?.let { read(GIF_NAME_READ, "invoke-interface", it) }
     replace(reads.getValue("photoKind"), 1, """
         const v0, ${plan.photo}
         return v0
     """)
     applyActionRow(surface, PHOTO_ROW, PHOTO_NATIVE, plan.icon, plan.label)
     plan.gifReply?.let { applyGifReply(surface, it) }
+    plan.gifPick?.let { applyGifPick(it) }
     plan.images()
 }
 
@@ -257,6 +268,7 @@ internal val PHOTO_READS: List<Pair<String, Pair<List<String>, String>>> = listO
     "author" to (listOf(OBJECT) to OBJECT),
     "createdAt" to (listOf(OBJECT) to OBJECT),
     "photoKind" to (emptyList<String>() to "I"),
+    GIF_NAME_READ to (listOf(OBJECT) to OBJECT),
 ) + GIF_READS.map { it to (listOf(OBJECT) to OBJECT) }
 
 private const val DOUBLE = "Ljava/lang/Double;"

@@ -17,10 +17,12 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
@@ -55,16 +57,23 @@ import app.hushgram.extension.shared.settings.PauseForTests;
 @Config(qualifiers = "w1080dp-h1920dp")
 public class PlainTabSlideTest {
     private static final int BAR_ID = 0x7f0b0122;
+    private static final int STRIP_ID = 0x7f0b0123;
+    private static final int HOLDER_ID = 0x7f0b0124;
     /** The room Instagram keeps under its tabs for the navigation bar. */
     private static final int NAV_ROOM = 40;
+    /** How far a reel's seek bar strip runs over the top of Instagram's tab bar, as on an S22. */
+    private static final int OVERHANG = 28;
 
     @Rule public final SettingsContextRule settings = new SettingsContextRule();
 
     private ActivityController<GlassTabSlideTest.Probe> controller;
     private GlassTabSlideTest.Probe activity;
+    /** What sits over the bar, where Reels puts a reel. */
+    private FrameLayout content;
     private LinearLayout bar;
     private final List<Integer> clicked = new ArrayList<>();
     private Integer previousId;
+    private Integer previousStrip;
     private final int[] place = new int[2];
     private long down;
     private long clock;
@@ -79,7 +88,8 @@ public class PlainTabSlideTest {
         // Not a FrameLayout, so the glass would leave this bar alone even with its switch on.
         LinearLayout root = new LinearLayout(activity);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.addView(new View(activity), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        content = new FrameLayout(activity);
+        root.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         bar = new LinearLayout(activity);
         bar.setId(BAR_ID);
         bar.setOrientation(LinearLayout.HORIZONTAL);
@@ -98,7 +108,10 @@ public class PlainTabSlideTest {
         root.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 190));
         activity.setContentView(root);
         Map<String, Integer> ids = ReflectionHelpers.getStaticField(GlassTabBar.class, "IDS");
-        synchronized (ids) { previousId = ids.put(GlassTabBar.TAB_BAR, BAR_ID); }
+        synchronized (ids) {
+            previousId = ids.put(GlassTabBar.TAB_BAR, BAR_ID);
+            previousStrip = ids.put(GlassTabBar.TOUCH_STRIP, STRIP_ID);
+        }
         layout();
         clock = SystemClock.uptimeMillis();
         HookStatus.clear();
@@ -109,6 +122,8 @@ public class PlainTabSlideTest {
         synchronized (ids) {
             if (previousId == null) ids.remove(GlassTabBar.TAB_BAR);
             else ids.put(GlassTabBar.TAB_BAR, previousId);
+            if (previousStrip == null) ids.remove(GlassTabBar.TOUCH_STRIP);
+            else ids.put(GlassTabBar.TOUCH_STRIP, previousStrip);
         }
         controller.close();
         HookStatus.clear();
@@ -208,6 +223,83 @@ public class PlainTabSlideTest {
         assertTrue("no slide opened anything", clicked.isEmpty());
         assertEquals("every touch reached Instagram", Arrays.asList(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP), activity.actions);
+    }
+
+    /** A reel's seek bar strip runs a little past the reel over the top of the bar, and a drag there seeks (#526). */
+    @Test public void aDragOnTheSeekBarsStripOverTheBarIsTheSeekBars() {
+        View strip = new View(activity);
+        strip.setId(STRIP_ID);
+        content.addView(strip, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 112, Gravity.BOTTOM));
+        strip.setTranslationY(OVERHANG);
+        layout();
+        GlassTabBar.apply(activity);
+        PlainTabSlide plain = PlainTabSlide.of(bar);
+        assertNotNull(plain);
+        float onTheStrip = OVERHANG / 2f;
+        assertFalse("the strip's overhang is the seek bar's", plain.onPill(middle(1), onTheStrip));
+        assertTrue("below it, the tabs' row", plain.onPill(middle(1), OVERHANG + 10));
+
+        send(MotionEvent.ACTION_DOWN, middle(0), onTheStrip);
+        send(MotionEvent.ACTION_MOVE, middle(0) + 40, onTheStrip);
+        send(MotionEvent.ACTION_MOVE, middle(3), onTheStrip);
+        assertFalse("no box over the tabs", plain.shown());
+        send(MotionEvent.ACTION_UP, middle(3), onTheStrip);
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(GlassTabSlide.IDLE, plain.slide.state());
+        assertTrue("no tab opened", clicked.isEmpty());
+        assertEquals("every touch reached Instagram", Arrays.asList(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE,
+                MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP), activity.actions);
+
+        // Away from Reels Instagram hides the strip, and the same place is the tabs' row again.
+        strip.setVisibility(View.GONE);
+        assertTrue(plain.onPill(middle(1), onTheStrip));
+    }
+
+    /**
+     * #526: a bottom sheet, like the share sheet, covers the bar, and a sideways drag where the bar is,
+     * like along the sheet's row of apps, is the sheet's. With the sheet gone the bar slides again.
+     */
+    @Test public void underABottomSheetTheBarDoesntSlide() {
+        Map<String, Integer> ids = ReflectionHelpers.getStaticField(GlassTabBar.class, "IDS");
+        Integer previousHolder;
+        synchronized (ids) {
+            previousHolder = ids.put(GlassTabBar.SHEET_HOLDER, HOLDER_ID);
+        }
+        try {
+            FrameLayout holder = new FrameLayout(activity);
+            holder.setId(HOLDER_ID);
+            content.addView(holder, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            View sheet = new View(activity);
+            holder.addView(sheet, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 400, Gravity.BOTTOM));
+            layout();
+            GlassTabBar.apply(activity);
+            PlainTabSlide plain = PlainTabSlide.of(bar);
+            assertNotNull(plain);
+            assertTrue(plain.underASheet());
+
+            send(MotionEvent.ACTION_DOWN, middle(0), row());
+            send(MotionEvent.ACTION_MOVE, middle(0) + 40, row());
+            send(MotionEvent.ACTION_MOVE, middle(3), row());
+            assertFalse("no box over the tabs", plain.shown());
+            send(MotionEvent.ACTION_UP, middle(3), row());
+            shadowOf(Looper.getMainLooper()).idle();
+            assertTrue("no tab opened", clicked.isEmpty());
+            assertEquals("every touch reached Instagram", Arrays.asList(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE,
+                    MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP), activity.actions);
+
+            holder.removeView(sheet);
+            layout();
+            assertFalse(plain.underASheet());
+            send(MotionEvent.ACTION_DOWN, middle(0), row());
+            send(MotionEvent.ACTION_MOVE, middle(0) + 40, row());
+            assertTrue("the sheet went, and the bar slides again", plain.shown());
+            send(MotionEvent.ACTION_UP, middle(0) + 40, row());
+        } finally {
+            synchronized (ids) {
+                if (previousHolder == null) ids.remove(GlassTabBar.SHEET_HOLDER);
+                else ids.put(GlassTabBar.SHEET_HOLDER, previousHolder);
+            }
+        }
     }
 
     @Test public void aLightBarGetsADarkBox() {

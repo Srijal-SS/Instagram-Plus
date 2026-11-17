@@ -83,7 +83,7 @@ val skipCollectionsTrayPatch = bytecodePatch(
         "start a collection. Starts off. Turn it on in Instagram Plus Settings > Feed.",
     default = true,
 ) {
-    category("Interaction")
+    category("Fixes")
     dependsOn(settingsPatch, instagramExtensionPatch)
     compatibleWith(*AppCompatibilities.instagram())
 

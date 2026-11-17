@@ -81,11 +81,27 @@ import app.hushgram.extension.shared.settings.Setting;
  * plainest cover there is, so neither can be used to get around it. A phone with no screen lock has
  * nothing to ask, so the messages stay open and a toast says why.
  *
+ * <p>Lock Saved covers Saved the same way, its collections and its search too, over the whole
+ * screen, since the top bar names the collection. It leaves the messages and their notifications as
+ * the other two switches leave them. Every lock shares one unlock: once the phone's lock says it's
+ * you, everything is open until Instagram leaves the screen.
+ *
+ * <p>Single Saved collections can be locked on their own ({@link CollectionLocks}) the same way:
+ * a collection on the list gets Saved's cover over its page by itself and asks the same lock (#678).
+ *
  * <p>Single chats can be locked on their own ({@link ChatLocks}), with or without the switches
  * above. A chat on the list gets the same cover over just that chat, asks the same lock, opens
  * until Instagram leaves the screen, and its message notifications lose their text the same way.
  * The banner for a new message waits while any chat on the list is locked, since it can't be told
  * which chat it shows.
+ *
+ * <p>A chat that opens under a cover isn't read yet, so its seen receipt waits too, whatever Read
+ * messages without the seen receipt says, and the chat stays unread ({@link ThreadSeen}). The unlock
+ * lets the receipt of the chat it was asked in go as it would have then (#649).
+ *
+ * <p>Ask for each chat makes an unlock good for one chat: another chat coming to the front locks
+ * again, and so does the inbox when it shows after a chat's unlock. The same chat coming back (from
+ * a photo, or the phone's own check on Android 9 and 10) stays open.
  */
 public final class MessagesLock {
     /** The inbox's list of chats, and the frame around it, as Instagram names them. */
@@ -97,8 +113,19 @@ public final class MessagesLock {
     static final String APP = "app";
     /** The HushGram settings' content, in their own window over an activity. */
     static final String SETTINGS = "settings";
-    /** Marks the cover this class puts in a window. */
-    static final String COVER_TAG = "hushgram_messages_lock";
+    /** Every screen's content while Saved shows, for Lock Saved. */
+    static final String SAVED = "saved";
+    /**
+     * Saved's pages as Instagram names them: its grid of posts and collections, a collection, the
+     * posts of one kind, its search box and results, and the collection tiles 454 opens Saved on
+     * (the profile's bookmark goes straight there). Any of them on screen means Saved is.
+     */
+    public static final String[] SAVED_PAGES = {
+            "saved_view_pager", "save_collection_viewpager", "saved_scoped_posts_grid",
+            "saved_search_input", "saved_search_results", "saved_collection_thumbnail",
+    };
+    /** Marks the cover this class puts in a window. Fast scroll in Saved shows no handle while one is up. */
+    public static final String COVER_TAG = "hushgram_messages_lock";
 
     /** Steps a failure is reported under. */
     static final String SWITCH = "switch read";
@@ -142,16 +169,35 @@ public final class MessagesLock {
     static volatile Map<String, Integer> idsForTests;
 
     private static volatile boolean open;
+    /** For Ask for each chat, what the last unlock was for: a chat's id, {@link #INBOX_LIST}, or null while locked. */
+    private static volatile String openFor;
+    /**
+     * The chat the ask on screen is for, and its account: the one in front as it came up, or the one
+     * that opened after. Coming in from a notification asks as the screen resumes, before its chat does.
+     */
+    private static volatile String askedChat;
+    private static volatile String askedAccount;
     /** When Instagram last left the screen while open and Lock again said to wait; 0 when it isn't away. */
     private static volatile long leftAt;
     private static volatile boolean watching;
+    /** When the frame a held ask waits for is due ({@link HiddenChatsTap#holdAsk}), in uptime. */
+    private static long askHeldUntil;
     private static int started;
     private static long askedAt;
     /** The screen the open ask belongs to. Its dialog goes with it without a word when it's destroyed. */
     private static WeakReference<Activity> askedBy = new WeakReference<>(null);
+    /**
+     * What else was asked for while that ask was up, each with the screen that asked: they run once it
+     * says it's you, and go on a cancel (#661). Main thread only, as every ask is.
+     */
+    private static final ArrayList<Runnable> joined = new ArrayList<>();
     private static boolean askedThisTime;
     /** The settings' own cover asked since the lock came back, so a cancel isn't asked again at once. */
     private static boolean settingsAsked;
+    /** Saved is under its cover on the screen in front, so the ask names it. */
+    private static boolean savedCovered;
+    /** A collection on the list is under Saved's cover by itself on the screen in front, so the ask names it. */
+    private static boolean collectionCovered;
     /** What the activity in front was last told about the recent apps picture, and when. */
     private static Boolean keptOutOfRecents;
     private static long toldRecentsAt;
@@ -180,7 +226,7 @@ public final class MessagesLock {
         } catch (Throwable t) {
             HookStatus.threw(FamilyNames.MESSAGES_LOCK, SCREEN, t);
         }
-        if (locked() || chatListLocked()) hideShade();
+        if (messagesLocked() || chatListLocked()) hideShade();
     }
 
     /**
@@ -211,7 +257,7 @@ public final class MessagesLock {
     public static boolean holdBanner() {
         try {
             HookStatus.invoked(FamilyNames.MESSAGES_LOCK);
-            if (!locked() && !chatListLocked()) return false;
+            if (!messagesLocked() && !chatListLocked()) return false;
             HookStatus.counted(FamilyNames.MESSAGES_LOCK, HELD);
             return true;
         } catch (Throwable t) {
@@ -223,6 +269,13 @@ public final class MessagesLock {
     /** True while a lock is on and the phone's lock hasn't been confirmed since Instagram came back. */
     public static boolean locked() {
         if (!switchedOn()) return false;
+        expire();
+        return !open;
+    }
+
+    /** {@link #locked}, for the messages: Lock Saved on its own leaves them and their notifications be. */
+    static boolean messagesLocked() {
+        if (!messagesOn()) return false;
         expire();
         return !open;
     }
@@ -244,9 +297,64 @@ public final class MessagesLock {
         return !open;
     }
 
+    /** Some Saved collection is on the list and the phone's lock hasn't said it's you since Instagram came back. */
+    static boolean collectionListLocked() {
+        if (!CollectionLocks.any()) return false;
+        return closed();
+    }
+
+    /** The phone's lock hasn't said it's you since Instagram came back, whatever is on. */
+    private static boolean closed() {
+        expire();
+        return !open;
+    }
+
+    /**
+     * Some lock a seen receipt waits for is shut: the messages, or a chat on the list. Only with this
+     * patch in. Never throws.
+     */
+    static boolean receiptsWait() {
+        try {
+            return watching && (messagesLocked() || chatListLocked());
+        } catch (Throwable t) {
+            HookStatus.threw(FamilyNames.MESSAGES_LOCK, SWITCH, t);
+            return false;
+        }
+    }
+
+    /**
+     * A seen receipt of [thread] on [account] waits for the lock: the messages are locked, or the
+     * chat is on the list and locked. A null [account] matches any. Only with this patch in. Never
+     * throws.
+     */
+    static boolean holdsReceipt(String account, String thread) {
+        try {
+            if (!watching) return false;
+            if (messagesLocked()) return true;
+            if (thread == null || thread.isEmpty() || !ChatLocks.listed(account, thread)) return false;
+            expire();
+            return !open;
+        } catch (Throwable t) {
+            HookStatus.threw(FamilyNames.MESSAGES_LOCK, SWITCH, t);
+            return false;
+        }
+    }
+
+    /**
+     * Asked when a chat comes to the front, with its id. With Ask for each chat on, a chat other than
+     * the one the last unlock was for locks again, so it asks before it shows.
+     */
+    static void chatOpened(String id) {
+        if (id != null && askedAt != 0) {
+            askedChat = id;
+            askedAccount = ChatLocks.currentAccount();
+        }
+        if (open && id != null && !id.equals(openFor) && eachChat()) relock(askedAt == 0);
+    }
+
     /** [notification] is hidden now: the messages are locked, or its chat is on the list and locked. */
     private static boolean lockedFor(Notification notification) {
-        if (locked()) return true;
+        if (messagesLocked()) return true;
         if (!ChatLocks.listedIn(notification)) return false;
         expire();
         return !open;
@@ -265,14 +373,34 @@ public final class MessagesLock {
     }
 
     /**
+     * Runs [then] at once while nothing is locked, else after the phone's lock confirms it's you.
+     * Taking a collection off the list goes through here, so it can't be used to get around the lock.
+     */
+    public static void confirmCollectionsThen(Activity activity, Runnable then) {
+        if (!locked() && !chatListLocked() && !collectionListLocked()) {
+            then.run();
+            return;
+        }
+        ask(activity, then);
+    }
+
+    /**
      * Runs [then] at once while neither messages lock is on, else after the phone's lock confirms
      * it's you. The list of hidden chats opens through here, since it names them.
      */
     public static void confirmHiddenThen(Activity activity, Runnable then) {
-        if (!switchedOn()) {
+        if (!messagesOn()) {
             then.run();
             return;
         }
+        ask(activity, then);
+    }
+
+    /**
+     * Runs [then] after the phone's lock or the PIN confirms it's you, every time and whether or not
+     * a messages lock is on: the hidden chats come back into the inbox through here (#661).
+     */
+    static void confirmRevealThen(Activity activity, Runnable then) {
         ask(activity, then);
     }
 
@@ -300,6 +428,8 @@ public final class MessagesLock {
      */
     public static void openUntilLeft() {
         if (locked() || chatListLocked()) return;
+        // With Ask for each chat, the inbox stays open as well, and a chat still asks.
+        if (openFor == null) openFor = INBOX_LIST;
         open = true;
         // The switch is saved once its row's listener returns. The screen under settings is checked
         // then, so an inbox behind them stays out of the recent apps picture from now on, not from
@@ -330,8 +460,33 @@ public final class MessagesLock {
 
     /** A lock is on. The switches keep their value while HushGram is paused or in safe mode. */
     private static boolean switchedOn() {
+        return messagesOn() || savedOn();
+    }
+
+    /** Lock your messages or Lock all of Instagram is on, so the messages are guarded. */
+    private static boolean messagesOn() {
         try {
             return Utils.settingsReady() && (Settings.LOCK_MESSAGES.get() || Settings.LOCK_APP.get());
+        } catch (Throwable t) {
+            HookStatus.threw(FamilyNames.MESSAGES_LOCK, SWITCH, t);
+            return false;
+        }
+    }
+
+    /** Ask for each chat is on, with a lock it applies to: the messages lock, or a chat on the list. */
+    private static boolean eachChat() {
+        try {
+            return Utils.settingsReady() && Settings.LOCK_EACH_CHAT.get() && (messagesOn() || ChatLocks.any());
+        } catch (Throwable t) {
+            HookStatus.threw(FamilyNames.MESSAGES_LOCK, SWITCH, t);
+            return false;
+        }
+    }
+
+    /** Lock Saved is on. */
+    private static boolean savedOn() {
+        try {
+            return Utils.settingsReady() && Settings.LOCK_SAVED.get();
         } catch (Throwable t) {
             HookStatus.threw(FamilyNames.MESSAGES_LOCK, SWITCH, t);
             return false;
@@ -442,7 +597,7 @@ public final class MessagesLock {
      * be written over (a channel deleted since) is reported and the rest still are.
      */
     static void hideShade() {
-        hideShade(switchedOn());
+        hideShade(messagesOn());
     }
 
     /**
@@ -541,6 +696,7 @@ public final class MessagesLock {
         }
         leftAt = 0;
         relock(askedAt == 0);
+        HiddenChats.conceal();
     }
 
     /** Away longer than Lock again allows: locked, even before Instagram comes back. */
@@ -549,12 +705,14 @@ public final class MessagesLock {
         if (!open || since == 0 || SystemClock.elapsedRealtime() - since < lockDelay()) return;
         leftAt = 0;
         relock(askedAt == 0);
+        HiddenChats.conceal();
     }
 
     /** The next look at the messages asks again, and what the shade shows of them goes now. */
     static void relock(boolean askAgain) {
         boolean wasOpen = open;
         open = false;
+        openFor = null;
         if (askAgain) {
             askedThisTime = false;
             settingsAsked = false;
@@ -563,7 +721,7 @@ public final class MessagesLock {
             // leave). Answered or not, it's the settings' one ask too, so a cancel isn't asked again.
             settingsAsked = true;
         }
-        if (wasOpen && (switchedOn() || ChatLocks.any())) hideShade();
+        if (wasOpen && (messagesOn() || ChatLocks.any())) hideShade();
     }
 
     /**
@@ -614,7 +772,8 @@ public final class MessagesLock {
 
     /**
      * Puts a cover over the inbox and over a chat wherever either is on screen while the messages
-     * are locked, or over the whole screen with Lock all of Instagram, and takes them away otherwise.
+     * are locked, over the whole screen while Saved shows with Lock Saved, or over every screen with
+     * Lock all of Instagram, and takes them away otherwise.
      * Each window has covers of its own, so a second activity coming up never touches the covers of
      * the one under it. The first time one shows after Instagram comes back, the phone's lock is
      * asked once, as soon as Instagram's window has the focus; a cancel leaves the cover with its
@@ -624,18 +783,27 @@ public final class MessagesLock {
         try {
             View decor = activity.getWindow().getDecorView();
             ViewGroup window = (ViewGroup) decor;
-            if (!switchedOn() && !ChatLocks.any() && !anyCover(window)) {
+            if (!switchedOn() && !ChatLocks.any() && !CollectionLocks.any() && !anyCover(window)) {
                 // Nothing to cover and nothing to take down. Before every frame, all that's left
                 // is learning the open chat's name for Lock a chat, and that walks the whole window,
                 // so it waits IDLE_LOOK_MS between looks instead of running on each draw. With no
-                // chat open, or its name found, there's nothing to learn and nothing is walked.
+                // chat open, or its name found, there's nothing to learn and nothing is walked. A
+                // collection's name is learned the same way once Locked collections was opened.
                 long now = SystemClock.elapsedRealtime();
-                if (!ChatLocks.wantsName() || now - idleLookedAt < IDLE_LOOK_MS) {
+                boolean wantsName = ChatLocks.wantsName() || CollectionLocks.wantsName();
+                if (!wantsName || now - idleLookedAt < IDLE_LOOK_MS) {
                     keepOutOfRecents(activity, false);
                     if (askedAt == 0) askedThisTime = false;
                     return;
                 }
                 idleLookedAt = now;
+            }
+            String unlockedFor = openFor;
+            if (open && unlockedFor != null && !INBOX_LIST.equals(unlockedFor) && ChatLocks.current() == null
+                    && eachChat() && onScreen(activity, window, INBOX_LIST) && !onScreen(activity, window, CHAT_ROOT)) {
+                // Ask for each chat: back in the inbox from a chat that was unlocked by itself, the
+                // inbox asks too, and is covered in this frame.
+                relock(askedAt == 0);
             }
             boolean lock = locked();
             boolean whole = wholeApp();
@@ -643,15 +811,29 @@ public final class MessagesLock {
             boolean chatLock = chatLocked() && !(lock && whole);
             // One cover at a time: two would each keep pulling itself in front of the other.
             boolean app = (whole || cover(window, APP) != null) && place(activity, window, APP, lock && whole);
-            boolean inbox = place(activity, window, INBOX_LIST, lock && !whole);
-            boolean messages = lock && !whole;
+            boolean messagesGuarded = messagesOn() && !whole;
+            boolean messages = lock && messagesGuarded;
+            boolean inbox = place(activity, window, INBOX_LIST, messages);
             boolean chat = place(activity, window, CHAT_ROOT, messages || chatLock, !messages);
-            boolean guarded = whole ? app : inbox || chat;
+            // Saved and the messages never show at once, so their covers never take turns in front.
+            boolean saved = savedOn() && !whole && savedShowing(activity, window);
+            // A collection on the list gets Saved's cover by itself, whether or not Lock Saved is on.
+            String collection = !whole && (CollectionLocks.any() || CollectionLocks.wantsName())
+                    ? CollectionLocks.nameOf(shown(activity, window, CollectionLocks.PAGE)) : null;
+            boolean collectionListed = CollectionLocks.listed(collection);
+            boolean collectionLock = collectionListed && closed();
+            boolean savedLock = lock && saved;
+            if (saved || collectionLock || cover(window, SAVED) != null) {
+                place(activity, window, SAVED, savedLock || collectionLock, !savedLock);
+            }
+            savedCovered = savedLock;
+            collectionCovered = collectionLock && !savedLock;
+            boolean guarded = whole ? app : messagesGuarded && (inbox || chat) || saved;
             if (chat) ChatLocks.learnName(anchor(activity, window, CHAT_ROOT));
-            // A chat on the list stays out of the recent apps picture while it's open, too.
-            boolean listedOpen = chat && !chatLock && ChatLocks.currentListed();
-            keepOutOfRecents(activity, !lock && !chatLock && ((switchedOn() && guarded) || listedOpen));
-            if (!(lock && guarded) && !(chatLock && chat)) {
+            // A chat or a collection on the list stays out of the recent apps picture while it's open, too.
+            boolean listedOpen = chat && !chatLock && ChatLocks.currentListed() || collectionListed && !collectionLock;
+            keepOutOfRecents(activity, !lock && !chatLock && !collectionLock && (guarded || listedOpen));
+            if (!(lock && guarded) && !(chatLock && chat) && !collectionLock) {
                 // Asked again the next time the messages show, unless a prompt is still up.
                 if (askedAt == 0) askedThisTime = false;
                 return;
@@ -660,6 +842,18 @@ public final class MessagesLock {
             // the notification shade or over the home screen a home gesture is heading to (#153).
             // The cover is up either way, and the focus coming back checks again.
             if (!askedThisTime && decor.hasWindowFocus()) {
+                // A tap on Messages that a second one may still follow holds the ask until it can't,
+                // so the double tap for hidden chats reaches Instagram before the prompt does (#661).
+                // The cover is up meanwhile, and a frame drawn once the wait is over asks.
+                long now = SystemClock.uptimeMillis();
+                long hold = HiddenChatsTap.holdAsk(now);
+                if (hold > 0) {
+                    if (now >= askHeldUntil) {
+                        askHeldUntil = now + hold;
+                        decor.postDelayed(decor::invalidate, hold);
+                    }
+                    return;
+                }
                 askedThisTime = true;
                 HookStatus.counted(FamilyNames.MESSAGES_LOCK, COVERED);
                 ask(activity, null);
@@ -752,6 +946,18 @@ public final class MessagesLock {
         return true;
     }
 
+    /** Whether [name]'s screen shows in [window], any part of it. */
+    private static boolean onScreen(Activity activity, ViewGroup window, String name) {
+        return shown(activity, window, name) != null;
+    }
+
+    /** [name]'s screen in [window] while any part of it shows, else null. */
+    private static View shown(Activity activity, ViewGroup window, String name) {
+        View anchor = anchor(activity, window, name);
+        Rect area = new Rect();
+        return anchor != null && anchor.isShown() && anchor.getGlobalVisibleRect(area) && !area.isEmpty() ? anchor : null;
+    }
+
     /** How long a screen with nothing locked and no cover up goes between looks for an open chat. */
     static final long IDLE_LOOK_MS = 500;
     private static long idleLookedAt = Long.MIN_VALUE / 2;
@@ -826,6 +1032,56 @@ public final class MessagesLock {
         for (int i = 0; i < group.getChildCount(); i++) collectShown(group.getChildAt(i), id, shown);
     }
 
+    /**
+     * Whether one of Saved's pages is on screen in [window]. The page found is kept while it's still
+     * shown there, so a screen that stays on Saved isn't walked again on every frame.
+     */
+    private static boolean savedShowing(Activity activity, ViewGroup window) {
+        Map<String, WeakReference<View>> kept = anchors.get(window);
+        WeakReference<View> reference = kept == null ? null : kept.get(SAVED_PAGE);
+        View view = reference == null ? null : reference.get();
+        Rect area = new Rect();
+        if (view != null && view.isAttachedToWindow() && view.getRootView() == window && view.isShown()
+                && view.getGlobalVisibleRect(area) && !area.isEmpty()) return true;
+        int[] ids = new int[SAVED_PAGES.length];
+        for (int i = 0; i < ids.length; i++) {
+            ids[i] = id(activity, SAVED_PAGES[i]);
+            if (ids[i] == 0) HookStatus.missingViewId(FamilyNames.MESSAGES_LOCK, SAVED_PAGES[i]);
+        }
+        view = firstShown(window, ids, area);
+        if (kept == null) {
+            kept = new HashMap<>();
+            anchors.put(window, kept);
+        }
+        if (view == null) kept.remove(SAVED_PAGE);
+        else kept.put(SAVED_PAGE, new WeakReference<>(view));
+        return view != null;
+    }
+
+    /** Where the Saved page found last is kept among a window's screens. */
+    private static final String SAVED_PAGE = "saved page";
+
+    /** The first view under [view] with one of [ids] that's shown with a part of it on screen. */
+    private static View firstShown(View view, int[] ids, Rect area) {
+        if (view.getVisibility() != View.VISIBLE) return null;
+        int id = view.getId();
+        if (id != View.NO_ID) {
+            for (int wanted : ids) {
+                if (wanted == id) {
+                    if (view.isShown() && view.getGlobalVisibleRect(area) && !area.isEmpty()) return view;
+                    break;
+                }
+            }
+        }
+        if (view instanceof Cover || !(view instanceof ViewGroup)) return null;
+        ViewGroup group = (ViewGroup) view;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View found = firstShown(group.getChildAt(i), ids, area);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
     /** The inbox's frame when it holds the list, so its edges are covered too; the list otherwise. */
     private static View frameAround(Activity activity, View list) {
         int frame = id(activity, INBOX_FRAME);
@@ -840,7 +1096,7 @@ public final class MessagesLock {
     private static final Map<String, Integer> IDS = new java.util.concurrent.ConcurrentHashMap<>();
 
     static int id(Context context, String name) {
-        if (APP.equals(name) || SETTINGS.equals(name)) return android.R.id.content;
+        if (APP.equals(name) || SETTINGS.equals(name) || SAVED.equals(name)) return android.R.id.content;
         Map<String, Integer> forTests = idsForTests;
         if (forTests != null) {
             Integer id = forTests.get(name);
@@ -848,7 +1104,7 @@ public final class MessagesLock {
         }
         Integer known = IDS.get(name);
         if (known == null) {
-            known = context.getResources().getIdentifier(name, "id", context.getPackageName());
+            known = context.getResources().getIdentifier(name, "id", Utils.resourcePackage(context));
             IDS.put(name, known);
         }
         return known;
@@ -859,7 +1115,7 @@ public final class MessagesLock {
      * so TalkBack can't read or open a chat through it; once it's down they read it as before.
      */
     static final class Cover extends FrameLayout {
-        /** The screen it covers: [INBOX_LIST], [CHAT_ROOT] or [APP]. */
+        /** The screen it covers: [INBOX_LIST], [CHAT_ROOT], [APP], [SAVED] or [SETTINGS]. */
         final String screen;
         private WeakReference<View> hidden = new WeakReference<>(null);
         private int importance;
@@ -871,10 +1127,14 @@ public final class MessagesLock {
             this.screen = screen;
         }
 
-        /** The cover over a chat says so when that chat is locked on its own. */
+        /** The cover over a chat, or over Saved, says so when one chat or one collection is locked on its own. */
         void titleFor(boolean single) {
             if (title == null || this.single == single || APP.equals(screen) || SETTINGS.equals(screen)) return;
             this.single = single;
+            if (SAVED.equals(screen)) {
+                title.setText(single ? L10n.t("This collection is locked") : L10n.t("Saved is locked"));
+                return;
+            }
             title.setText(single ? L10n.t("This chat is locked") : L10n.t("Your messages are locked"));
         }
 
@@ -928,8 +1188,10 @@ public final class MessagesLock {
 
         TextView title = new TextView(activity);
         title.setText(SETTINGS.equals(screen) ? L10n.t("Instagram Plus Settings are locked")
-                : wholeApp ? L10n.t("Instagram is locked") : L10n.t("Your messages are locked"));
+                : wholeApp ? L10n.t("Instagram is locked")
+                : SAVED.equals(screen) ? L10n.t("Saved is locked") : L10n.t("Your messages are locked"));
         title.setTextColor(colors.title);
+        ShimmerTitle.wear(title);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         title.setGravity(Gravity.CENTER);
@@ -998,19 +1260,48 @@ public final class MessagesLock {
 
     private static void ask(Activity activity, Runnable then) {
         long now = SystemClock.elapsedRealtime();
-        if (askedAt != 0 && now - askedAt < ASK_TIMEOUT_MS) return;
+        if (askedAt != 0 && now - askedAt < ASK_TIMEOUT_MS) {
+            // One ask at a time. What's asked for meanwhile waits on its answer rather than being
+            // dropped: a double tap on Messages lands as the locked inbox's cover asks, and the
+            // hidden chats came back only on a second try (#661).
+            if (then != null) {
+                // Held weakly, as askedBy is: an ask nobody answers mustn't keep a closed screen.
+                WeakReference<Activity> screen = new WeakReference<>(activity);
+                joined.add(() -> {
+                    Activity asker = screen.get();
+                    if (asker != null && !asker.isDestroyed()) then.run();
+                });
+            }
+            return;
+        }
         askedAt = now;
+        joined.clear();
         askedBy = new WeakReference<>(activity);
+        // The chat on screen as the ask comes up, or the one opening under it. The phone's own check
+        // takes the front, and the chat is no longer current by the time it answers.
+        askedChat = ChatLocks.current();
+        askedAccount = ChatLocks.currentAccount();
         try {
             asker.ask(activity, () -> {
+                String chat = ChatLocks.current() != null ? ChatLocks.current() : askedChat;
+                String account = ChatLocks.current() != null ? ChatLocks.currentAccount() : askedAccount;
                 askedAt = 0;
                 open = true;
+                openFor = chat != null ? chat : INBOX_LIST;
+                ThreadSeen.unlocked(account, chat);
+                List<Runnable> waiting = new ArrayList<>(joined);
+                joined.clear();
                 // What follows (a settings change, a new PIN) belongs to the screen that asked. Turned
                 // while the phone's check was up, that screen is gone and its dialog can't show.
                 if (then != null && !activity.isDestroyed()) then.run();
-            }, () -> askedAt = 0);
+                for (Runnable one : waiting) one.run();
+            }, () -> {
+                askedAt = 0;
+                joined.clear();
+            });
         } catch (Throwable t) {
             askedAt = 0;
+            joined.clear();
             HookStatus.threw(FamilyNames.MESSAGES_LOCK, ASK, t);
         }
     }
@@ -1046,6 +1337,7 @@ public final class MessagesLock {
             HookStatus.counted(FamilyNames.MESSAGES_LOCK, NO_PHONE_LOCK);
             Utils.showToastLong(wholeApp()
                     ? L10n.t("Set a phone screen lock so Instagram Plus can lock Instagram.")
+                    : askingForSaved() ? L10n.t("Set a phone screen lock so Instagram Plus can lock Saved.")
                     : L10n.t("Set a phone screen lock so Instagram Plus can lock messages."));
             confirmed.run();
             return;
@@ -1200,9 +1492,16 @@ public final class MessagesLock {
         }
     }
 
-    private static String askTitle() {
+    static String askTitle() {
         if (wholeApp()) return L10n.t("Unlock Instagram");
-        return switchedOn() ? L10n.t("Unlock your messages") : L10n.t("Unlock this chat");
+        if (collectionCovered) return L10n.t("Unlock this collection");
+        if (askingForSaved()) return L10n.t("Unlock Saved");
+        return messagesOn() ? L10n.t("Unlock your messages") : L10n.t("Unlock this chat");
+    }
+
+    /** Saved or a collection on the list on screen, or asked from the settings with Lock Saved the only switch on. */
+    private static boolean askingForSaved() {
+        return savedCovered || collectionCovered || !messagesOn() && savedOn() && !ChatLocks.currentListed();
     }
 
     /** Draws the activity again, so the covers come off at once. */
@@ -1291,13 +1590,20 @@ public final class MessagesLock {
     /** Back to how a fresh start finds it. */
     static void resetForTests() {
         open = false;
+        openFor = null;
+        askedChat = null;
+        askedAccount = null;
         leftAt = 0;
         watching = false;
+        askHeldUntil = 0;
         started = 0;
         askedAt = 0;
         askedBy = new WeakReference<>(null);
+        joined.clear();
         askedThisTime = false;
         settingsAsked = false;
+        savedCovered = false;
+        collectionCovered = false;
         keptOutOfRecents = null;
         toldRecentsAt = 0;
         unfollow();
@@ -1308,5 +1614,6 @@ public final class MessagesLock {
         idsForTests = null;
         idleLookedAt = Long.MIN_VALUE / 2;
         ChatLocks.resetForTests();
+        CollectionLocks.resetForTests();
     }
 }

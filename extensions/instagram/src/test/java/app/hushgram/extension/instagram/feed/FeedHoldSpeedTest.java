@@ -1,0 +1,211 @@
+/*
+ * Copyright 2026 HushGram contributors
+ * https://github.com/SysAdminDoc/HushGram
+ */
+package app.hushgram.extension.instagram.feed;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+
+import app.hushgram.extension.instagram.settings.FamilyNames;
+import app.hushgram.extension.instagram.settings.Settings;
+import app.hushgram.extension.shared.SettingsContextRule;
+import app.hushgram.extension.shared.diagnostics.HookStatus;
+import app.hushgram.extension.shared.settings.BaseSettings;
+import app.hushgram.extension.shared.settings.HushgramPause;
+import app.hushgram.extension.shared.settings.PauseForTests;
+
+/** What Instagram's feed hold for 2x flags answer through the hooks (#552). */
+@RunWith(RobolectricTestRunner.class)
+public class FeedHoldSpeedTest {
+    @Rule public final SettingsContextRule settings = new SettingsContextRule();
+
+    @Before
+    public void enable() {
+        BaseSettings.PAUSED.save(false);
+        PauseForTests.resume();
+        Settings.HOLD_FEED_VIDEO_FAST.save(true);
+        HookStatus.clear();
+    }
+
+    @After
+    public void restore() {
+        Settings.HOLD_FEED_VIDEO_FAST.resetToDefault();
+        Settings.HOLD_FEED_VIDEO_KEEP.resetToDefault();
+        BaseSettings.PAUSED.save(false);
+        PauseForTests.resume();
+        HookStatus.clear();
+        FeedHoldSpeed.inBuildForTests = null;
+    }
+
+    /** It starts off, and needs no restart: Instagram reads the flags again on every held press. */
+    @Test
+    public void theSwitchStartsOffAndNeedsNoRestart() {
+        Settings.HOLD_FEED_VIDEO_FAST.resetToDefault();
+        assertFalse(Settings.HOLD_FEED_VIDEO_FAST.get());
+        assertFalse(Settings.HOLD_FEED_VIDEO_FAST.rebootApp);
+    }
+
+    /** On, every held feed video plays fast, and a hold counts anywhere on it: half the width from each side, no fixed strip. */
+    @Test
+    public void onEveryHoldIsFastAnywhereOnTheVideo() {
+        assertTrue("the server said no", FeedHoldSpeed.fast(0));
+        assertTrue("the server said yes", FeedHoldSpeed.fast(1));
+        assertFalse("a fixed strip the server asked for", FeedHoldSpeed.fixedStrip(1));
+        assertFalse("no fixed strip", FeedHoldSpeed.fixedStrip(0));
+        assertEquals(0.5d, FeedHoldSpeed.strip(0.2d), 0d);
+        assertEquals(0.5d, FeedHoldSpeed.strip(0d), 0d);
+        assertTrue(HookStatus.missing(FamilyNames.FEED_HOLD_FAST).toString(),
+                HookStatus.missing(FamilyNames.FEED_HOLD_FAST).isEmpty());
+    }
+
+    /** Off, paused or before the settings are read, every answer stays Instagram's. */
+    @Test
+    public void offPausedAndUnreadyKeepInstagramsAnswers() {
+        Settings.HOLD_FEED_VIDEO_FAST.save(false);
+        assertInstagrams("off");
+        Settings.HOLD_FEED_VIDEO_FAST.save(true);
+
+        BaseSettings.PAUSED.save(true);
+        PauseForTests.pause(HushgramPause.Reason.SWITCH);
+        assertInstagrams("paused");
+        BaseSettings.PAUSED.save(false);
+        PauseForTests.resume();
+
+        SettingsContextRule.withoutContext(() -> assertInstagrams("no context"));
+        SettingsContextRule.beforeThePauseIsDecided(() -> assertInstagrams("pause undecided"));
+
+        assertTrue("back on", FeedHoldSpeed.fast(0));
+        assertEquals("back on", 0.5d, FeedHoldSpeed.strip(0.2d), 0d);
+    }
+
+    /** A held press is Instagram's to speed up only when the patch is in and the switch is on. */
+    @Test
+    public void holdingNeedsThePatchAndTheSwitch() {
+        FeedHoldSpeed.inBuildForTests = true;
+        assertTrue("in and on", FeedHoldSpeed.holding());
+        Settings.HOLD_FEED_VIDEO_FAST.save(false);
+        assertFalse("in and off", FeedHoldSpeed.holding());
+        Settings.HOLD_FEED_VIDEO_FAST.save(true);
+        FeedHoldSpeed.inBuildForTests = false;
+        assertFalse("out and on", FeedHoldSpeed.holding());
+        FeedHoldSpeed.inBuildForTests = null;
+        assertFalse("the stub says the patch is out", FeedHoldSpeed.holding());
+        FeedHoldSpeed.inBuildForTests = true;
+        SettingsContextRule.withoutContext(() -> assertFalse("no context", FeedHoldSpeed.holding()));
+    }
+
+    /** Keep 2x after you let go starts off, needs no restart and sits under the hold switch (#552). */
+    @Test
+    public void theKeepSwitchStartsOffUnderTheHoldSwitch() {
+        assertFalse(Settings.HOLD_FEED_VIDEO_KEEP.get());
+        assertFalse(Settings.HOLD_FEED_VIDEO_KEEP.rebootApp);
+        assertEquals(Collections.singletonList(Settings.HOLD_FEED_VIDEO_FAST), Settings.HOLD_FEED_VIDEO_KEEP.getParentSettings());
+        AtomicBoolean fast = new AtomicBoolean(true);
+        FeedHoldSpeed.pressed(fast);
+        assertFalse("off, the lift puts the speed back", FeedHoldSpeed.lifted(fast));
+    }
+
+    /**
+     * On, a lift that ends a fast hold keeps the speed. The next hold resets the speed and plays fast
+     * again, the way Instagram does, and its lift lets it go back; the hold after that keeps it again.
+     */
+    @Test
+    public void aKeptLiftStaysFastUntilTheNextHoldsLift() {
+        Settings.HOLD_FEED_VIDEO_KEEP.save(true);
+        AtomicBoolean fast = new AtomicBoolean(false);
+        hold(fast);
+        assertTrue("the first lift keeps 2x", FeedHoldSpeed.lifted(fast));
+        hold(fast);
+        assertFalse("the next lift lets it go", FeedHoldSpeed.lifted(fast));
+        fast.set(false);
+        hold(fast);
+        assertTrue("and the one after keeps it again", FeedHoldSpeed.lifted(fast));
+        String report = report();
+        assertTrue(report, report.contains(FeedHoldSpeed.KEPT + " 2"));
+        assertTrue(report, report.contains(FeedHoldSpeed.LET_GO + " 1"));
+        assertTrue(HookStatus.missing(FamilyNames.FEED_HOLD_FAST).toString(),
+                HookStatus.missing(FamilyNames.FEED_HOLD_FAST).isEmpty());
+    }
+
+    /**
+     * A kept flag Instagram clears on its own, when the video leaves the screen, is forgotten at the
+     * next press, so that hold's lift keeps 2x again instead of letting it go. Each feed has its own.
+     */
+    @Test
+    public void aFlagInstagramClearedIsAFreshHold() {
+        Settings.HOLD_FEED_VIDEO_KEEP.save(true);
+        AtomicBoolean fast = new AtomicBoolean(false);
+        AtomicBoolean otherFeed = new AtomicBoolean(false);
+        hold(fast);
+        assertTrue(FeedHoldSpeed.lifted(fast));
+        hold(otherFeed);
+        assertTrue("another feed's first lift", FeedHoldSpeed.lifted(otherFeed));
+        fast.set(false);
+        hold(fast);
+        assertTrue("kept again, not let go", FeedHoldSpeed.lifted(fast));
+    }
+
+    /** A lift whose hold never sped the video up, a missing flag, and every lift with a switch off or paused are Instagram's. */
+    @Test
+    public void aLiftThatWasntFastOrIsOffIsInstagrams() {
+        Settings.HOLD_FEED_VIDEO_KEEP.save(true);
+        AtomicBoolean slow = new AtomicBoolean(false);
+        FeedHoldSpeed.pressed(slow);
+        assertFalse("not fast", FeedHoldSpeed.lifted(slow));
+        FeedHoldSpeed.pressed(null);
+        assertFalse("no flag", FeedHoldSpeed.lifted(null));
+
+        Settings.HOLD_FEED_VIDEO_FAST.save(false);
+        AtomicBoolean fast = new AtomicBoolean(false);
+        hold(fast);
+        assertFalse("hold for 2x off", FeedHoldSpeed.lifted(fast));
+        Settings.HOLD_FEED_VIDEO_FAST.save(true);
+
+        BaseSettings.PAUSED.save(true);
+        PauseForTests.pause(HushgramPause.Reason.SWITCH);
+        hold(fast);
+        assertFalse("paused", FeedHoldSpeed.lifted(fast));
+        BaseSettings.PAUSED.save(false);
+        PauseForTests.resume();
+
+        SettingsContextRule.withoutContext(() -> {
+            hold(fast);
+            assertFalse("no context", FeedHoldSpeed.lifted(fast));
+        });
+        hold(fast);
+        assertTrue("back on", FeedHoldSpeed.lifted(fast));
+    }
+
+    /** What Instagram's press entry does with the flag: told first, then a reset, then 2x. */
+    private static void hold(AtomicBoolean fast) {
+        FeedHoldSpeed.pressed(fast);
+        fast.set(false);
+        assertTrue(fast.compareAndSet(false, true));
+    }
+
+    private static String report() {
+        StringBuilder all = new StringBuilder();
+        for (String line : HookStatus.report()) all.append(line).append('\n');
+        return all.toString();
+    }
+
+    private static void assertInstagrams(String when) {
+        assertFalse(when, FeedHoldSpeed.fast(0));
+        assertTrue(when + ", Instagram's own yes", FeedHoldSpeed.fast(1));
+        assertTrue(when + ", Instagram's fixed strip", FeedHoldSpeed.fixedStrip(1));
+        assertFalse(when, FeedHoldSpeed.fixedStrip(0));
+        assertEquals(when, 0.2d, FeedHoldSpeed.strip(0.2d), 0d);
+    }
+}

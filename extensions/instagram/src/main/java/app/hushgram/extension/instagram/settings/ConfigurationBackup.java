@@ -15,12 +15,15 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,7 +31,9 @@ import androidx.annotation.Nullable;
 
 import app.hushgram.extension.instagram.download.FileNameTemplate;
 import app.hushgram.extension.instagram.download.SaveFolder;
+import app.hushgram.extension.instagram.download.SavedProfiles;
 import app.hushgram.extension.instagram.direct.MessageBox;
+import app.hushgram.extension.instagram.feed.MenuItems;
 import app.hushgram.extension.instagram.profile.ProfileTabs;
 import app.hushgram.extension.instagram.misc.GlassBlur;
 import app.hushgram.extension.instagram.misc.GlassOpacity;
@@ -37,6 +42,7 @@ import app.hushgram.extension.instagram.misc.NotificationGroups;
 import app.hushgram.extension.instagram.misc.SettingsRows;
 import app.hushgram.extension.instagram.misc.SpoofLocation;
 import app.hushgram.extension.instagram.misc.AppProxy;
+import app.hushgram.extension.instagram.misc.CustomAccent;
 import app.hushgram.extension.instagram.reels.TabOrder;
 import app.hushgram.extension.instagram.share.ShareSheetActions;
 import app.hushgram.extension.instagram.share.SharingDomain;
@@ -47,10 +53,20 @@ import app.hushgram.extension.shared.settings.Setting;
 import app.hushgram.extension.shared.settings.SettingsJson;
 import app.hushgram.extension.shared.settings.preference.AbstractPreferenceFragment;
 
-/** A portable, typed settings file. It never reads the host's preferences or private ledgers. */
+/**
+ * A portable, typed settings file. It never reads the host's preferences or private ledgers. Of
+ * HushGram's own lists it carries only Saved profiles, under {@link #PROFILES} and only when
+ * something is saved, so a file without them still opens in a build from before (#629).
+ */
 public final class ConfigurationBackup {
-    public static final int MAX_BYTES = 256 * 1024;
-    public static final int MAX_ENTRIES = 512;
+    /** Room for a full Saved profiles list beside the settings. */
+    public static final int MAX_BYTES = 1024 * 1024;
+    /**
+     * Bounds a file's entries, well past the settings a build with every patch has, which passed 512 as
+     * the settings grew and made every export from such a build fail.
+     */
+    public static final int MAX_ENTRIES = 1024;
+    static final String PROFILES = "profiles";
     public static final long UNDO_WINDOW_MS = 10_000;
     /** The ordinary text bound. Selection and blocked-word lists have the larger bound below. */
     static final int MAX_TEXT = 256;
@@ -58,9 +74,13 @@ public final class ConfigurationBackup {
      * The bounded reader's longest string, also used by blocked words and native settings-row
      * selections. The current native row ids join to 2,953 characters.
      */
-    static final int MAX_WORDS_TEXT = 4096;
-    private static final SettingsJson.Limits LIMITS =
-            new SettingsJson.Limits(4, 2048, MAX_WORDS_TEXT, MAX_ENTRIES, MAX_BYTES);
+    public static final int MAX_WORDS_TEXT = 4096;
+    /**
+     * Four values for each setting, which takes three (its entry, type and value), and room for
+     * every saved profile's fields, a few more than this build writes. The only array is the profiles.
+     */
+    private static final SettingsJson.Limits LIMITS = new SettingsJson.Limits(4,
+            4 * MAX_ENTRIES + 8 * SavedProfiles.MAX_PROFILES, MAX_WORDS_TEXT, SavedProfiles.MAX_PROFILES, MAX_BYTES);
     /**
      * Guards the Undo state below. It's a lock of its own, never the class's: an import holds the class
      * lock from its validation through its disk commit, and the page reads whether Undo is on offer, and
@@ -70,6 +90,7 @@ public final class ConfigurationBackup {
     private static Map<Setting<?>, Object> undoValues;
     private static Map<Setting<?>, Object> importedValues;
     private static Map<Setting<?>, Long> importedRevisions;
+    private static SavedProfiles.Merged undoProfiles;
     private static long undoUntil;
     private static long undoId;
 
@@ -101,13 +122,16 @@ public final class ConfigurationBackup {
          * now for the ones that wait on a restart, as it does when their own rows are flipped.
          */
         public final Map<Setting<?>, Object> before;
+        /** Saved profiles an import added to the list, or an Undo took back off it. */
+        public final int profiles;
 
-        Result(int applied, int skipped, int held, boolean restart, Map<Setting<?>, Object> before) {
+        Result(int applied, int skipped, int held, boolean restart, Map<Setting<?>, Object> before, int profiles) {
             this.applied = applied;
             this.skipped = skipped;
             this.held = held;
             this.restart = restart;
             this.before = Collections.unmodifiableMap(before);
+            this.profiles = profiles;
         }
     }
 
@@ -120,20 +144,29 @@ public final class ConfigurationBackup {
         if (PatchFamily.STORY_RING.inBuild()) {
             settings.put(Settings.STORY_RING_SCALE.key, Settings.STORY_RING_SCALE);
             settings.put(Settings.STORY_RING_COLOR.key, Settings.STORY_RING_COLOR);
+            settings.put(Settings.STORY_RING_CUSTOM.key, Settings.STORY_RING_CUSTOM);
+            settings.put(Settings.STORY_RING_CUSTOM_END.key, Settings.STORY_RING_CUSTOM_END);
+            settings.put(Settings.STORY_RING_THICKNESS.key, Settings.STORY_RING_THICKNESS);
         }
         if (PatchFamily.STORY_UPLOAD_QUALITY.inBuild()) {
             settings.put(Settings.UPLOAD_QUALITY_APPLIES_TO.key, Settings.UPLOAD_QUALITY_APPLIES_TO);
             settings.put(Settings.UPLOAD_VIDEO_BITRATE.key, Settings.UPLOAD_VIDEO_BITRATE);
+            settings.put(Settings.UPLOAD_VIDEO_RESOLUTION.key, Settings.UPLOAD_VIDEO_RESOLUTION);
+            settings.put(Settings.UPLOAD_FRAME_RATE.key, Settings.UPLOAD_FRAME_RATE);
+            settings.put(Settings.UPLOAD_PHOTO_QUALITY.key, Settings.UPLOAD_PHOTO_QUALITY);
+            settings.put(Settings.UPLOAD_PHOTO_SIZE.key, Settings.UPLOAD_PHOTO_SIZE);
         }
         if (PatchFamily.ROUNDED_POST_CORNERS.inBuild()) settings.put(Settings.ROUNDED_CORNER_SIZE.key, Settings.ROUNDED_CORNER_SIZE);
         if (PatchFamily.AMBIENT_LIGHT.inBuild()) {
             settings.put(Settings.AMBIENT_LIGHT_SPREAD.key, Settings.AMBIENT_LIGHT_SPREAD);
             settings.put(Settings.AMBIENT_LIGHT_SPEED.key, Settings.AMBIENT_LIGHT_SPEED);
+            settings.put(Settings.AMBIENT_LIGHT_BLEND.key, Settings.AMBIENT_LIGHT_BLEND);
         }
         if (PatchFamily.STORY_PROGRESS_BAR.inBuild()) settings.put(Settings.STORY_BAR_THICKNESS.key, Settings.STORY_BAR_THICKNESS);
         if (PatchFamily.STORIES_TRAY.inBuild()) settings.put(Settings.TRAY_BADGE.key, Settings.TRAY_BADGE);
         if (PatchFamily.SPOOF_LOCATION.inBuild()) settings.put(Settings.SPOOF_LOCATION_PLACE.key, Settings.SPOOF_LOCATION_PLACE);
         if (PatchFamily.APP_PROXY.inBuild()) settings.put(Settings.APP_PROXY_SERVER.key, Settings.APP_PROXY_SERVER);
+        if (PatchFamily.MEDIA_CACHE.inBuild()) settings.put(Settings.MEDIA_CACHE_LIMIT_MB.key, Settings.MEDIA_CACHE_LIMIT_MB);
         if (PatchFamily.CAPTION_WORD_REELS.inBuild()) {
             settings.put(Settings.REELS_BLOCKED_WORDS.key, Settings.REELS_BLOCKED_WORDS);
             settings.put(Settings.REELS_KEPT_LANGUAGES.key, Settings.REELS_KEPT_LANGUAGES);
@@ -148,10 +181,19 @@ public final class ConfigurationBackup {
             settings.put(Settings.MIN_REEL_LIKES.key, Settings.MIN_REEL_LIKES);
         }
         if (PatchFamily.STORY_PRIORITY.inBuild()) settings.put(Settings.STORY_PRIORITY_ACCOUNTS.key, Settings.STORY_PRIORITY_ACCOUNTS);
+        if (PatchFamily.CALL_BLOCKER.inBuild()) {
+            settings.put(Settings.CALL_BLOCK_MODE.key, Settings.CALL_BLOCK_MODE);
+            settings.put(Settings.CALL_BLOCK_ACCOUNTS.key, Settings.CALL_BLOCK_ACCOUNTS);
+            settings.put(Settings.CALL_BLOCK_DECLINE.key, Settings.CALL_BLOCK_DECLINE);
+        }
         if (PatchFamily.SANITIZE_SHARING_LINKS.inBuild()) settings.put(Settings.SHARING_DOMAIN.key, Settings.SHARING_DOMAIN);
         if (PatchFamily.LIKE_ANIMATION.inBuild()) settings.put(Settings.LIKE_ANIMATION.key, Settings.LIKE_ANIMATION);
         if (PatchFamily.LIKE_ANIMATION.inBuild()) settings.put(Settings.GROW_LIKE_HEART.key, Settings.GROW_LIKE_HEART);
-        if (PatchFamily.HEADER_TEXT.inBuild()) settings.put(Settings.HEADER_TEXT.key, Settings.HEADER_TEXT);
+        if (PatchFamily.HEADER_TEXT.inBuild()) {
+            settings.put(Settings.HEADER_TEXT.key, Settings.HEADER_TEXT);
+            settings.put(Settings.HEADER_TEXT_FONT.key, Settings.HEADER_TEXT_FONT);
+            settings.put(Settings.HEADER_TEXT_CENTER.key, Settings.HEADER_TEXT_CENTER);
+        }
         if (PatchFamily.NOTIFICATION_GROUPS.inBuild()) {
             settings.put(Settings.GROUP_NOTIFICATIONS_BY_TYPE.key, Settings.GROUP_NOTIFICATIONS_BY_TYPE);
             settings.put(Settings.MUTED_NOTIFICATION_CHANNELS.key, Settings.MUTED_NOTIFICATION_CHANNELS);
@@ -170,10 +212,12 @@ public final class ConfigurationBackup {
         if (PatchFamily.REEL_TAP_AND_VOLUME.inBuild()) settings.put(Settings.REEL_TAP_CHOICE.key, Settings.REEL_TAP_CHOICE);
         if (PatchFamily.REEL_SCROLLING.inBuild()) {
             settings.put(Settings.SCROLL_BREAK.key, Settings.SCROLL_BREAK);
+            settings.put(Settings.SCROLL_BREAK_LENGTH.key, Settings.SCROLL_BREAK_LENGTH);
             settings.put(Settings.REEL_CAP_COUNT.key, Settings.REEL_CAP_COUNT);
             settings.put(Settings.REEL_CAP_BREAK.key, Settings.REEL_CAP_BREAK);
         }
         if (PatchFamily.REEL_DECLUTTER.inBuild()) {
+            settings.put(Settings.FRIENDS_TAB_PICKS.key, Settings.FRIENDS_TAB_PICKS);
             settings.put(Settings.BURN_IN_GUARD.key, Settings.BURN_IN_GUARD);
             settings.put(Settings.BURN_IN_WAIT.key, Settings.BURN_IN_WAIT);
             settings.put(Settings.BURN_IN_STAY_DIM.key, Settings.BURN_IN_STAY_DIM);
@@ -185,7 +229,12 @@ public final class ConfigurationBackup {
             settings.put(Settings.GHOST_MODE_PICKS.key, Settings.GHOST_MODE_PICKS);
             settings.put(Settings.GHOST_TAB_TARGET.key, Settings.GHOST_TAB_TARGET);
         }
+        if (PatchFamily.PROFILE_PICTURE.inBuild()) {
+            settings.put(Settings.SAVED_PROFILES_TAB_TARGET.key, Settings.SAVED_PROFILES_TAB_TARGET);
+        }
+        if (PatchFamily.favoritesFeedInBuild()) settings.put(Settings.FAVORITES_TAB_TARGET.key, Settings.FAVORITES_TAB_TARGET);
         if (PatchFamily.MESSAGE_BOX.inBuild()) settings.put(Settings.HIDDEN_MESSAGE_BOX_BUTTONS.key, Settings.HIDDEN_MESSAGE_BOX_BUTTONS);
+        if (PatchFamily.MENU_ITEMS.inBuild()) settings.put(Settings.HIDDEN_MENU_ITEMS.key, Settings.HIDDEN_MENU_ITEMS);
         if (PatchFamily.PROFILE_TABS.inBuild()) {
             settings.put(Settings.HIDDEN_OWN_PROFILE_TABS.key, Settings.HIDDEN_OWN_PROFILE_TABS);
             settings.put(Settings.HIDDEN_PROFILE_TABS.key, Settings.HIDDEN_PROFILE_TABS);
@@ -193,17 +242,35 @@ public final class ConfigurationBackup {
         if (PatchFamily.STORY_TIME.inBuild()) settings.put(Settings.STORY_TIME_MODE.key, Settings.STORY_TIME_MODE);
         if (PatchFamily.STORY_MENTIONS.inBuild()) settings.put(Settings.STORY_MENTIONS_LOOK.key, Settings.STORY_MENTIONS_LOOK);
         if (PatchFamily.CAROUSEL_ARROWS.inBuild()) settings.put(Settings.CAROUSEL_PILL_LOOK.key, Settings.CAROUSEL_PILL_LOOK);
-        if (PatchFamily.FEED_SEEK_BAR.inBuild()) settings.put(Settings.FEED_SEEK_BAR_LOOK.key, Settings.FEED_SEEK_BAR_LOOK);
-        if (PatchFamily.STORY_SEEK_BAR.inBuild()) settings.put(Settings.STORY_SEEK_BAR_LOOK.key, Settings.STORY_SEEK_BAR_LOOK);
+        if (PatchFamily.FEED_SEEK_BAR.inBuild()) {
+            settings.put(Settings.FEED_SEEK_BAR_LOOK.key, Settings.FEED_SEEK_BAR_LOOK);
+            settings.put(Settings.SEEK_BAR_SHAPE.key, Settings.SEEK_BAR_SHAPE);
+            settings.put(Settings.FEED_SEEK_SHAPE.key, Settings.FEED_SEEK_SHAPE);
+            settings.put(Settings.FEED_DOUBLE_TAP_SKIP_SECONDS.key, Settings.FEED_DOUBLE_TAP_SKIP_SECONDS);
+        }
+        if (PatchFamily.REEL_DOUBLE_TAP_SKIP.inBuild()) {
+            settings.put(Settings.DOUBLE_TAP_SKIP_REELS_SECONDS.key, Settings.DOUBLE_TAP_SKIP_REELS_SECONDS);
+        }
+        if (PatchFamily.FEED_AUTO_SCROLL.inBuild()) {
+            settings.put(Settings.FEED_AUTO_SCROLL_SECONDS.key, Settings.FEED_AUTO_SCROLL_SECONDS);
+        }
+        if (PatchFamily.STORY_SEEK_BAR.inBuild()) {
+            settings.put(Settings.STORY_SEEK_BAR_LOOK.key, Settings.STORY_SEEK_BAR_LOOK);
+            settings.put(Settings.STORY_SEEK_BAR_POSITION.key, Settings.STORY_SEEK_BAR_POSITION);
+        }
         if (PatchFamily.FRIENDSHIP_STATUS.inBuild()) settings.put(Settings.FOLLOW_LABEL_PLACE.key, Settings.FOLLOW_LABEL_PLACE);
         if (PatchFamily.FULL_SCREEN_BARS.inBuild()) settings.put(Settings.FULL_SCREEN_HIDES.key, Settings.FULL_SCREEN_HIDES);
         if (PatchFamily.TAB_BAR_LAYOUT.inBuild()) settings.put(Settings.TAB_BAR_LAYOUT.key, Settings.TAB_BAR_LAYOUT);
+        if (PatchFamily.SWIPE_TO_CREATE.inBuild()) settings.put(Settings.HOME_SWIPE_OPENS.key, Settings.HOME_SWIPE_OPENS);
         if (PatchFamily.REELS_TAB.inBuild()) {
             settings.put(Settings.START_TAB.key, Settings.START_TAB);
             settings.put(Settings.TAB_ORDER.key, Settings.TAB_ORDER);
+            settings.put(Settings.TAB_ICON_SIZE.key, Settings.TAB_ICON_SIZE);
         }
         if (PatchFamily.GLASS_TAB_BAR.inBuild()) {
             settings.put(Settings.GLASS_TAB_BAR_HAPTIC_STYLE.key, Settings.GLASS_TAB_BAR_HAPTIC_STYLE);
+            settings.put(Settings.GLASS_TAB_BAR_HAPTIC_STRENGTH.key, Settings.GLASS_TAB_BAR_HAPTIC_STRENGTH);
+            settings.put(Settings.GLASS_TAB_BAR_TAP_SOUND_VOLUME.key, Settings.GLASS_TAB_BAR_TAP_SOUND_VOLUME);
             settings.put(Settings.GLASS_TAB_BAR_BLUR_RADIUS.key, Settings.GLASS_TAB_BAR_BLUR_RADIUS);
             settings.put(Settings.GLASS_TAB_BAR_OPACITY.key, Settings.GLASS_TAB_BAR_OPACITY);
             settings.put(Settings.GLASS_TAB_BAR_REFRACT_STRENGTH.key, Settings.GLASS_TAB_BAR_REFRACT_STRENGTH);
@@ -212,11 +279,21 @@ public final class ConfigurationBackup {
             settings.put(Settings.GLASS_TAB_BAR_LIFT.key, Settings.GLASS_TAB_BAR_LIFT);
             settings.put(Settings.GLASS_TAB_BAR_REELS_HIDE.key, Settings.GLASS_TAB_BAR_REELS_HIDE);
         }
+        if (PatchFamily.GLASS_CHAT.inBuild()) {
+            settings.put(Settings.GLASS_CHAT_TOP_BAR_OPACITY.key, Settings.GLASS_CHAT_TOP_BAR_OPACITY);
+            settings.put(Settings.GLASS_CHAT_BOX_OPACITY.key, Settings.GLASS_CHAT_BOX_OPACITY);
+        }
         if (PatchFamily.SHARE_SHEET.inBuild()) {
             settings.put(Settings.HIDDEN_SHARE_SHEET_BUTTONS.key, Settings.HIDDEN_SHARE_SHEET_BUTTONS);
         }
-        if (PatchFamily.ACCENT_COLOR.inBuild()) settings.put(Settings.ACCENT_HUE.key, Settings.ACCENT_HUE);
-        if (PatchFamily.FONT.inBuild()) settings.put(Settings.FONT.key, Settings.FONT);
+        if (PatchFamily.ACCENT_COLOR.inBuild()) {
+            settings.put(Settings.ACCENT_HUE.key, Settings.ACCENT_HUE);
+            settings.put(Settings.ACCENT_CUSTOM.key, Settings.ACCENT_CUSTOM);
+        }
+        if (PatchFamily.FONT.inBuild()) {
+            settings.put(Settings.FONT.key, Settings.FONT);
+            settings.put(Settings.TEXT_SIZE.key, Settings.TEXT_SIZE);
+        }
         if (PatchFamily.EMOJI_STYLE.inBuild()) settings.put(Settings.EMOJI_FONT.key, Settings.EMOJI_FONT);
         if (PatchFamily.APP_ICON.inBuild()) settings.put(Settings.APP_ICON.key, Settings.APP_ICON);
         if (PatchFamily.SETTINGS_ROWS.inBuild()) settings.put(Settings.HIDDEN_SETTINGS_ROWS.key, Settings.HIDDEN_SETTINGS_ROWS);
@@ -224,15 +301,21 @@ public final class ConfigurationBackup {
             settings.put(Settings.DOWNLOAD_REEL_COVER.key, Settings.DOWNLOAD_REEL_COVER);
             settings.put(Settings.DOWNLOAD_REEL_AUDIO.key, Settings.DOWNLOAD_REEL_AUDIO);
             settings.put(Settings.REEL_DOWNLOAD_BUTTON.key, Settings.REEL_DOWNLOAD_BUTTON);
+            settings.put(Settings.REEL_DOWNLOAD_BUTTON_ASKS.key, Settings.REEL_DOWNLOAD_BUTTON_ASKS);
             settings.put(Settings.REEL_NOT_INTERESTED_BUTTON.key, Settings.REEL_NOT_INTERESTED_BUTTON);
             settings.put(Settings.REEL_BLOCK_BUTTON.key, Settings.REEL_BLOCK_BUTTON);
             settings.put(Settings.HIDE_SOUND_REELS.key, Settings.HIDE_SOUND_REELS);
             settings.put(Settings.TEXT_BUTTON_ON_REELS.key, Settings.TEXT_BUTTON_ON_REELS);
             if (PatchFamily.KEEP_REEL_SPEED.inBuild()) {
                 settings.put(Settings.SPEED_BUTTON_ON_REELS.key, Settings.SPEED_BUTTON_ON_REELS);
+                settings.put(Settings.SPEED_IN_REEL_MENU.key, Settings.SPEED_IN_REEL_MENU);
             }
             if (PatchFamily.REEL_DECLUTTER.inBuild()) {
                 settings.put(Settings.FULL_SCREEN_BUTTON_ON_REELS.key, Settings.FULL_SCREEN_BUTTON_ON_REELS);
+            }
+            if (PatchFamily.REEL_TAP_AND_VOLUME.inBuild()) {
+                settings.put(Settings.MUTE_BUTTON_ON_REELS.key, Settings.MUTE_BUTTON_ON_REELS);
+                settings.put(Settings.MUTE_BUTTON_IN_CLEAR_MODE.key, Settings.MUTE_BUTTON_IN_CLEAR_MODE);
             }
         }
         if (PatchFamily.REEL_POST_TIME.inBuild()) {
@@ -255,6 +338,9 @@ public final class ConfigurationBackup {
                 || PatchFamily.VIDEO_DOWNLOAD.inBuild()) {
             settings.put(Settings.DOWNLOAD_COMPATIBLE.key, Settings.DOWNLOAD_COMPATIBLE);
             settings.put(Settings.DOWNLOAD_CONVERT.key, Settings.DOWNLOAD_CONVERT);
+            settings.put(Settings.DOWNLOAD_NO_AV1.key, Settings.DOWNLOAD_NO_AV1);
+            settings.put(Settings.DOWNLOAD_NO_HDR.key, Settings.DOWNLOAD_NO_HDR);
+            settings.put(Settings.SAVE_VIDEOS_AS_MKV.key, Settings.SAVE_VIDEOS_AS_MKV);
             // The switch only. What it remembered stays in DownloadHistory's own file, never exported.
             settings.put(Settings.DOWNLOAD_SKIP_SAVED.key, Settings.DOWNLOAD_SKIP_SAVED);
             // The switch only, like the one above. The list itself stays on the phone and is never exported.
@@ -264,6 +350,8 @@ public final class ConfigurationBackup {
             settings.put(Settings.SAVE_FOLDER.key, Settings.SAVE_FOLDER);
             settings.put(Settings.SAVE_FOLDER_PER_ACCOUNT.key, Settings.SAVE_FOLDER_PER_ACCOUNT);
             settings.put(Settings.SAVE_NAME_BY_POST.key, Settings.SAVE_NAME_BY_POST);
+            settings.put(Settings.SAVE_PHOTO_METADATA.key, Settings.SAVE_PHOTO_METADATA);
+            settings.put(Settings.SAVE_PHOTO_SCRUB.key, Settings.SAVE_PHOTO_SCRUB);
             settings.put(Settings.FILENAME_TEMPLATE.key, Settings.FILENAME_TEMPLATE);
         }
         settings.put(BaseSettings.DEBUG.key, BaseSettings.DEBUG);
@@ -274,6 +362,7 @@ public final class ConfigurationBackup {
         settings.put(Settings.SETTINGS_SHORTCUT.key, Settings.SETTINGS_SHORTCUT);
         settings.put(Settings.SETTINGS_LOGO_PRESS.key, Settings.SETTINGS_LOGO_PRESS);
         settings.put(Settings.CATEGORY_PAGES.key, Settings.CATEGORY_PAGES);
+        settings.put(Settings.CATEGORY_OWN_PAGE.key, Settings.CATEGORY_OWN_PAGE);
         settings.put(Settings.CATEGORY_GRID.key, Settings.CATEGORY_GRID);
         settings.put(Settings.DESCRIPTIONS_BEHIND_INFO.key, Settings.DESCRIPTIONS_BEHIND_INFO);
         settings.put(Settings.SETTINGS_BLACK_LOOK.key, Settings.SETTINGS_BLACK_LOOK);
@@ -281,18 +370,29 @@ public final class ConfigurationBackup {
         return settings;
     }
 
-    /** Export saved choices even during Pause, never the neutral answers the hooks see. */
+    /**
+     * Export saved choices even during Pause, never the neutral answers the hooks see, and the
+     * saved profiles while Saved profiles is in the build.
+     */
     public static synchronized byte[] export() throws IOException {
         synchronized (Setting.class) {
             try {
+                Map<String, Setting<?>> allowed = eligible();
                 JSONObject values = new JSONObject();
-                for (Setting<?> setting : eligible().values()) {
+                for (Setting<?> setting : allowed.values()) {
                     Object value = setting.savedValue();
                     values.put(setting.key, new JSONObject().put("type", type(value))
                             .put("value", value instanceof Enum ? ((Enum<?>) value).name() : value));
                 }
-                byte[] bytes = new JSONObject().put("project", "HushGram").put("schema", 1)
-                        .put("settings", values).toString(2).getBytes(StandardCharsets.UTF_8);
+                JSONObject root = new JSONObject().put("project", "HushGram").put("schema", 1).put("settings", values);
+                Context context = allowed.containsKey(Settings.SAVED_PROFILES.key) ? Utils.getContext() : null;
+                JSONArray profiles = context == null ? new JSONArray() : SavedProfiles.backup(context, true);
+                if (profiles.length() > 0) root.put(PROFILES, profiles);
+                byte[] bytes = root.toString(2).getBytes(StandardCharsets.UTF_8);
+                // Picture addresses are most of a long list, and Instagram stops answering them within days anyway.
+                if (bytes.length > MAX_BYTES && profiles.length() > 0) {
+                    bytes = root.put(PROFILES, SavedProfiles.backup(context, false)).toString(2).getBytes(StandardCharsets.UTF_8);
+                }
                 if (bytes.length > MAX_BYTES || values.length() > MAX_ENTRIES) throw invalid();
                 return bytes;
             } catch (JSONException failure) {
@@ -330,13 +430,16 @@ public final class ConfigurationBackup {
     public static synchronized Result restore(byte[] bytes, java.util.function.BooleanSupplier mayCommit) throws IOException {
         final Map<Setting<?>, Object> updates = new LinkedHashMap<>();
         final Map<String, Setting<?>> allowed = eligible();
+        final List<SavedProfiles.Profile> profiles = new ArrayList<>();
         int skipped = 0;
         int held = 0;
         try {
             JSONObject root = SettingsJson.parseObject(bytes, LIMITS);
-            if (root.length() != 3 || !"HushGram".equals(root.get("project"))
+            boolean listed = root.has(PROFILES);
+            if (root.length() != (listed ? 4 : 3) || !"HushGram".equals(root.get("project"))
                     || !(root.get("schema") instanceof Integer) || root.getInt("schema") != 1
-                    || !(root.get("settings") instanceof JSONObject)) throw invalid();
+                    || !(root.get("settings") instanceof JSONObject)
+                    || listed && !(root.get(PROFILES) instanceof JSONArray)) throw invalid();
             JSONObject values = root.getJSONObject("settings");
             if (values.length() > MAX_ENTRIES) throw invalid();
             for (java.util.Iterator<String> keys = values.keys(); keys.hasNext();) {
@@ -370,9 +473,21 @@ public final class ConfigurationBackup {
                 }
                 updates.put(setting, value);
             }
+            if (listed) {
+                // An entry that isn't an account is a file of the wrong shape. One the list couldn't
+                // have saved is left out, and so is the whole list without Saved profiles in the build.
+                JSONArray entries = root.getJSONArray(PROFILES);
+                boolean taken = allowed.containsKey(Settings.SAVED_PROFILES.key);
+                for (int at = 0; at < entries.length(); at++) {
+                    if (!(entries.get(at) instanceof JSONObject)) throw invalid();
+                    SavedProfiles.Profile profile = taken ? SavedProfiles.fromBackup(entries.getJSONObject(at)) : null;
+                    if (profile != null) profiles.add(profile);
+                }
+            }
         } catch (JSONException | IllegalArgumentException failure) {
             throw invalid();
         }
+        Context context = Utils.getContext();
         synchronized (Setting.class) {
             requirePermission(mayCommit);
             // Authentication can change while a file is being validated. Hold lock switches at
@@ -398,13 +513,16 @@ public final class ConfigurationBackup {
                 for (var changed : before.entrySet()) AbstractPreferenceFragment.noteRunningValue(changed.getKey(), changed.getValue());
                 try {
                     Setting.saveAll(updates);
-                    offerUndo(before);
                 } catch (Setting.BatchFailed failure) {
-                    if (!failure.restored) offerUndo(before);
+                    if (!failure.restored) offerUndo(before, new SavedProfiles.Merged());
                     throw failure;
                 }
             }
-            return new Result(updates.size(), skipped, held, restart, before);
+            // The accounts go on the list once the settings are saved, so a save that fails adds none.
+            SavedProfiles.Merged merged = profiles.isEmpty() || context == null
+                    ? new SavedProfiles.Merged() : SavedProfiles.merge(context, profiles);
+            if (!before.isEmpty() || !merged.isEmpty()) offerUndo(before, merged);
+            return new Result(updates.size(), skipped, held, restart, before, merged.added.size());
         }
     }
 
@@ -426,7 +544,8 @@ public final class ConfigurationBackup {
             return given < number.minimum() || given > number.maximum() ? null : value;
         }
         int longest = setting == Settings.REELS_BLOCKED_WORDS || setting == Settings.REELS_KEPT_LANGUAGES
-                || setting == Settings.STORY_PRIORITY_ACCOUNTS || setting == Settings.HIDDEN_SETTINGS_ROWS
+                || setting == Settings.STORY_PRIORITY_ACCOUNTS || setting == Settings.FRIENDS_TAB_PICKS
+                || setting == Settings.CALL_BLOCK_ACCOUNTS || setting == Settings.HIDDEN_SETTINGS_ROWS
                 || setting == Settings.MUTED_NOTIFICATION_CHANNELS ? MAX_WORDS_TEXT : MAX_TEXT;
         if (!(value instanceof String) || ((String) value).length() > longest) return null;
         if (fallback instanceof Enum) {
@@ -484,6 +603,12 @@ public final class ConfigurationBackup {
         if (setting == Settings.SPOOF_LOCATION_PLACE) return text.trim().isEmpty() || SpoofLocation.parse(text) != null;
         // The row saves the server as host:port, so a file holds it that way or blank.
         if (setting == Settings.APP_PROXY_SERVER) return text.equals(AppProxy.normalize(text));
+        // The row saves the custom color as #RRGGBB, so a file holds it that way or blank.
+        if (setting == Settings.ACCENT_CUSTOM) return text.isEmpty() || text.equals(CustomAccent.normalize(text));
+        // The Custom ring color rows save the same way (#696).
+        if (setting == Settings.STORY_RING_CUSTOM || setting == Settings.STORY_RING_CUSTOM_END) {
+            return text.isEmpty() || text.equals(CustomAccent.normalize(text));
+        }
         if (setting == Settings.TAB_ORDER) return text.equals(TabOrder.join(TabOrder.parse(text)));
         // The share sheet buttons to leave out, as Instagram's names for them with commas between.
         if (setting == Settings.HIDDEN_SHARE_SHEET_BUTTONS) {
@@ -491,6 +616,8 @@ public final class ConfigurationBackup {
         }
         // The message box buttons left off, as the names of Instagram's enum with commas between, in the order the dialog lists them.
         if (setting == Settings.HIDDEN_MESSAGE_BOX_BUTTONS) return text.equals(MessageBox.join(MessageBox.parse(text)));
+        // The three-dot menu items left out, as the names the list keeps them by with commas between, in the order it lists them.
+        if (setting == Settings.HIDDEN_MENU_ITEMS) return text.equals(MenuItems.join(MenuItems.parse(text)));
         // The rows of Instagram's settings left off, as the names of Instagram's row ids with commas between, in name order.
         if (setting == Settings.HIDDEN_SETTINGS_ROWS) return text.equals(SettingsRows.join(SettingsRows.parse(text)));
         // The notification channels muted, as Instagram's channel ids with commas between, in id order.
@@ -505,7 +632,10 @@ public final class ConfigurationBackup {
         }
         // The words Hide reels by caption words looks for: any text without control characters but line breaks.
         if (setting == Settings.REELS_BLOCKED_WORDS || setting == Settings.REELS_KEPT_LANGUAGES
-                || setting == Settings.STORY_PRIORITY_ACCOUNTS) return blockedWordsAllowed(text);
+                || setting == Settings.STORY_PRIORITY_ACCOUNTS || setting == Settings.FRIENDS_TAB_PICKS
+                || setting == Settings.CALL_BLOCK_ACCOUNTS) {
+            return blockedWordsAllowed(text);
+        }
         // An enum constant name of Instagram's; a name this Instagram lacks keeps its heart.
         if (setting == Settings.LIKE_ANIMATION) return text.matches("[A-Za-z0-9_$]{0,64}");
         // The ghost switches Ghost mode turns, as their keys with commas between; blank means all of them.
@@ -514,13 +644,14 @@ public final class ConfigurationBackup {
     }
 
     /**
-     * With a HushGram PIN behind the locks, a file (or an Undo) can't switch Lock your messages or
-     * Lock all of Instagram, so a backup can't be a way round the PIN. With the phone's lock behind
-     * them, it can't while they're locked either: settings left open from before the lock came back
-     * ask for a new unlock first, and this holds at the write itself.
+     * With a HushGram PIN behind the locks, a file (or an Undo) can't switch Lock your messages,
+     * Lock all of Instagram, Lock Saved or Ask for each chat, so a backup can't be a way round the
+     * PIN. With the phone's lock behind them, it can't while they're locked either: settings left
+     * open from before the lock came back ask for a new unlock first, and this holds at the write itself.
      */
     private static boolean heldByLock(Setting<?> setting) {
-        return (setting == Settings.LOCK_MESSAGES || setting == Settings.LOCK_APP)
+        return (setting == Settings.LOCK_MESSAGES || setting == Settings.LOCK_APP || setting == Settings.LOCK_SAVED
+                || setting == Settings.LOCK_EACH_CHAT)
                 && (app.hushgram.extension.instagram.direct.PinLock.protects()
                         || app.hushgram.extension.instagram.direct.MessagesLock.locked());
     }
@@ -563,12 +694,14 @@ public final class ConfigurationBackup {
             Map<Setting<?>, Object> values;
             Map<Setting<?>, Object> expected;
             Map<Setting<?>, Long> revisions;
+            SavedProfiles.Merged profiles;
             synchronized (UNDO) {
                 // The deadline can pass while the page's permission is checked.
                 if (undoDeadline(token) == 0) return null;
                 values = undoValues;
                 expected = importedValues;
                 revisions = importedRevisions;
+                profiles = undoProfiles;
                 forgetUndo();
             }
             Map<Setting<?>, Object> before = new LinkedHashMap<>();
@@ -592,11 +725,13 @@ public final class ConfigurationBackup {
             }
             for (var changed : before.entrySet()) AbstractPreferenceFragment.noteRunningValue(changed.getKey(), changed.getValue());
             Setting.saveAll(values);
-            return new Result(values.size(), skipped, held, restart, before);
+            Context context = Utils.getContext();
+            int gone = profiles.isEmpty() || context == null ? 0 : SavedProfiles.takeBack(context, profiles);
+            return new Result(values.size(), skipped, held, restart, before, gone);
         }
     }
 
-    private static void offerUndo(Map<Setting<?>, Object> values) {
+    private static void offerUndo(Map<Setting<?>, Object> values, SavedProfiles.Merged profiles) {
         Map<Setting<?>, Object> imported = new LinkedHashMap<>();
         Map<Setting<?>, Long> revisions = new LinkedHashMap<>();
         for (Setting<?> setting : values.keySet()) {
@@ -614,6 +749,7 @@ public final class ConfigurationBackup {
             undoValues = values;
             importedValues = imported;
             importedRevisions = revisions;
+            undoProfiles = profiles;
             undoId++;
             undoUntil = SystemClock.elapsedRealtime() + timeout;
         }
@@ -625,6 +761,7 @@ public final class ConfigurationBackup {
             undoValues = null;
             importedValues = null;
             importedRevisions = null;
+            undoProfiles = null;
             undoUntil = 0;
         }
     }

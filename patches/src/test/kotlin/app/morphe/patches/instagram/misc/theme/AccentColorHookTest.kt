@@ -12,6 +12,7 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patches.instagram.FixtureDex
+import app.morphe.patches.instagram.misc.extension.parameterRegisterNumber
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -50,6 +51,8 @@ class AccentColorHookTest {
         assertTrue("$SWAP_COLOR is not in the extension: $declared", SWAP_COLOR in declared)
         assertTrue("$SWAP_LIST is not in the extension: $declared", SWAP_LIST in declared)
         assertTrue("$SWAP_VALUE is not in the extension: $declared", SWAP_VALUE in declared)
+        assertTrue("$SWAP_TEXT is not in the extension: $declared", SWAP_TEXT in declared)
+        assertTrue("$SWAP_IMAGE is not in the extension: $declared", SWAP_IMAGE in declared)
     }
 
     @Test
@@ -355,6 +358,260 @@ class AccentColorHookTest {
         assertEquals("$what: the answer replaces the value", register, (code[at - 1] as OneRegisterInstruction).registerA)
     }
 
+    /**
+     * A view built from a layout reads its color in the framework's own constructor, where no theme
+     * hook sees it, so each text view constructor that does the building hands its view to the
+     * extension at every return, and a branch to a return lands on the hook (#187). One that only
+     * calls another of its class's constructors stays as it was, since that other one does it.
+     */
+    @Test
+    fun theTextViewConstructorsThatBuildHandTheirViewOn() {
+        val context = PatchContexts.of(TEXT_VIEWS.map { textView(it) })
+
+        context.swapTextViewColors()
+
+        for (type in TEXT_VIEWS) {
+            assertEquals("$type: it only passes on", 0, context.method(type, "<init>", listOf(CONTEXT)).hooks(SWAP_TEXT).size)
+            val built = context.method(type, "<init>", listOf(CONTEXT, ATTRIBUTE_SET))
+            val code = built.code()
+            val hooks = code.indices.filter { (code[it] as? ReferenceInstruction)?.reference?.toString() == SWAP_TEXT }
+            assertEquals("$type: one for each return", 2, hooks.size)
+            for (at in hooks) {
+                assertEquals("$type: the hook", Opcode.INVOKE_STATIC_RANGE, code[at].opcode)
+                assertEquals("$type: the view it hands on", 0, (code[at] as RegisterRangeInstruction).startRegister)
+                assertEquals("$type: the view alone", 1, (code[at] as RegisterRangeInstruction).registerCount)
+                assertEquals("$type: right before the return", Opcode.RETURN_VOID, code[at + 1].opcode)
+            }
+            assertTrue("$type: the branch lands on the hook", hooks.last() in built.jumpTargets())
+        }
+    }
+
+    /** A text view that isn't there, or a constructor that writes over its view, stops the patch before anything changes. */
+    @Test
+    fun aMissingTextViewOrALostViewStopsThePatch() {
+        val missing = assertThrows(PatchException::class.java) {
+            PatchContexts.of(listOf(textView(TEXT_VIEWS.first()))).swapTextViewColors()
+        }
+        assertTrue(missing.message, missing.message!!.contains(TEXT_VIEWS.last()))
+
+        val overwrites = classOf(
+            TEXT_VIEWS.last(),
+            virtual(
+                TEXT_VIEWS.last(), "<init>", "V", 3, listOf(CONTEXT, ATTRIBUTE_SET),
+                """
+                    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+                    const/4 p0, 0x0
+                    return-void
+                """,
+            ),
+        )
+        val context = PatchContexts.of(listOf(textView(TEXT_VIEWS.first()), overwrites))
+        val lost = assertThrows(PatchException::class.java) { context.swapTextViewColors() }
+        assertTrue(lost.message, lost.message!!.contains(TEXT_VIEWS.last()))
+        val untouched = context.method(TEXT_VIEWS.first(), "<init>", listOf(CONTEXT, ATTRIBUTE_SET))
+        assertEquals("nothing changed in the class that was fine", 0, untouched.hooks(SWAP_TEXT).size)
+    }
+
+    /**
+     * An image view tinted in its layout reads its colors through TypedArray, where no theme hook sees
+     * them, so the static it builds its tint with hands the normal and active colors to the extension
+     * at its start and takes the answers back (#187). No view, two builders or a jump onto the start
+     * leave it as it was.
+     */
+    @Test
+    fun theImageTintBuilderHandsItsColorsOn() {
+        val stock = tintBuilder().methods.single().code().map { it.opcode }
+        val context = PatchContexts.of(listOf(simpleImageView(), tintBuilder()))
+
+        context.swapImageTints()
+
+        val builder = context.mutableClassDefBy(TINT_BUILDER).methods.single()
+        // Two locals, then the normal color in v2 and the active one in v3.
+        assertTintsSwapped("the stand-in", builder, stock, normal = 2, active = 3)
+
+        for ((case, classes) in listOf(
+            "no image view" to listOf(tintBuilder()),
+            "two builders" to listOf(simpleImageView(builders = 2), tintBuilder()),
+            "a jump onto the start" to listOf(simpleImageView(), tintBuilder(jumpOnto = true)),
+        )) {
+            val untouched = PatchContexts.of(classes)
+            untouched.swapImageTints()
+            assertEquals("$case: no hook", 0, untouched.mutableClassDefBy(TINT_BUILDER).methods.sumOf { it.hooks(SWAP_COLOR).size })
+        }
+    }
+
+    /**
+     * Every build of Instagram: the image view's maybeSetColors calls one static building its tint, and
+     * that static hands both colors to the extension at its start, with Instagram's code after (#187).
+     */
+    @Test
+    fun everyBuildHandsItsImageTintColorsOn() {
+        val versions = AppCompatibilities.instagram().single().targets.mapNotNull { it.version }.toSet()
+        val declared = versions.flatMap { version -> Fixtures.files { it.extension == "apks" && it.name.contains("-$version-") } }
+        assertTrue("no fixture of a declared build", declared.isNotEmpty())
+        val others = Fixtures.otherBuilds()
+        assertEquals("the other builds", Fixtures.OTHER_BUILDS, others.size)
+        for (bundle in declared + others) {
+            val label = if (bundle.extension == "apks") bundle.name else bundle.parentFile.name
+            val view = FixtureDex.classes(bundle, setOf(SIMPLE_IMAGE_VIEW)).getValue(SIMPLE_IMAGE_VIEW)
+            val called = view.methods.single { it.name == "maybeSetColors" }.code()
+                .mapNotNull { (it as? ReferenceInstruction)?.reference as? MethodReference }
+                .filter { it.returnType == LIST && it.parameterTypes.map(Any::toString) == List(6) { "I" } }
+                .distinctBy { it.name }
+            assertEquals("$label: one tint builder, $called", 1, called.size)
+            val type = called.single().definingClass
+            val owner = FixtureDex.classes(bundle, setOf(type)).getValue(type)
+            val isBuilder = { method: Method -> method.name == called.single().name && method.parameterTypes.map(Any::toString) == List(6) { "I" } }
+            val stock = owner.methods.single(isBuilder).code().map { it.opcode }
+            val context = PatchContexts.of(listOf(view, owner))
+
+            context.swapImageTints()
+
+            val builder = context.mutableClassDefBy(type).methods.single(isBuilder)
+            assertTintsSwapped("$label $type->${builder.name}", builder, stock, builder.parameterRegisterNumber(0), builder.parameterRegisterNumber(1))
+        }
+    }
+
+    /**
+     * Every build of Instagram: each image view constructor that builds the view, the ones reading a
+     * layout among them, hands its view to the extension right before each return, so an android:tint
+     * from the layout is swapped too (#187). One only calling another of its own stays as it was.
+     */
+    @Test
+    fun everyBuildsImageViewConstructorsHandTheirViewOn() {
+        val versions = AppCompatibilities.instagram().single().targets.mapNotNull { it.version }.toSet()
+        val declared = versions.flatMap { version -> Fixtures.files { it.extension == "apks" && it.name.contains("-$version-") } }
+        assertTrue("no fixture of a declared build", declared.isNotEmpty())
+        for (bundle in declared + Fixtures.otherBuilds()) {
+            val label = if (bundle.extension == "apks") bundle.name else bundle.parentFile.name
+            val view = FixtureDex.classes(bundle, setOf(SIMPLE_IMAGE_VIEW)).getValue(SIMPLE_IMAGE_VIEW)
+            val context = PatchContexts.of(listOf(view))
+
+            context.swapImageViewTints()
+
+            val constructors = context.mutableClassDefBy(SIMPLE_IMAGE_VIEW).methods.filter { it.name == "<init>" }
+            val fromLayout = constructors.filter { it.parameterTypes.map(Any::toString).take(2) == listOf(CONTEXT, ATTRIBUTE_SET) }
+            assertTrue("$label: the layout constructors, ${constructors.map { it.parameterTypes }}", fromLayout.isNotEmpty())
+            for (constructor in constructors) {
+                val code = constructor.code()
+                val what = "$label ${constructor.parameterTypes}"
+                val passesOn = code.any {
+                    val called = (it as? ReferenceInstruction)?.reference as? MethodReference
+                    called != null && called.definingClass == SIMPLE_IMAGE_VIEW && called.name == "<init>"
+                }
+                val hooks = code.indices.filter { (code[it] as? ReferenceInstruction)?.reference?.toString() == SWAP_IMAGE }
+                if (passesOn) {
+                    assertEquals("$what: it only passes on", 0, hooks.size)
+                    continue
+                }
+                assertEquals("$what: one for each return", code.count { it.opcode == Opcode.RETURN_VOID }, hooks.size)
+                for (at in hooks) {
+                    assertEquals("$what: the hook", Opcode.INVOKE_STATIC_RANGE, code[at].opcode)
+                    assertEquals("$what: the view it hands on", constructor.implementation!!.registerCount - constructor.parameterTypes.size - 1, (code[at] as RegisterRangeInstruction).startRegister)
+                    assertEquals("$what: the view alone", 1, (code[at] as RegisterRangeInstruction).registerCount)
+                    assertEquals("$what: right before the return", Opcode.RETURN_VOID, code[at + 1].opcode)
+                }
+            }
+            assertTrue("$label: a layout constructor hands its view on", fromLayout.any { it.hooks(SWAP_IMAGE).isNotEmpty() })
+        }
+    }
+
+    private fun assertTintsSwapped(what: String, builder: Method, stock: List<Opcode>, normal: Int, active: Int) {
+        val code = builder.code()
+        assertEquals("$what: the hooks", listOf(SWAP_COLOR, SWAP_COLOR), code.take(4).mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() })
+        assertEquals(
+            "$what: the shape",
+            listOf(Opcode.INVOKE_STATIC_RANGE, Opcode.MOVE_RESULT, Opcode.INVOKE_STATIC_RANGE, Opcode.MOVE_RESULT),
+            code.take(4).map { it.opcode },
+        )
+        assertEquals(
+            "$what: each color handed over and written back",
+            listOf(normal, normal, active, active),
+            listOf(
+                (code[0] as RegisterRangeInstruction).startRegister, (code[1] as OneRegisterInstruction).registerA,
+                (code[2] as RegisterRangeInstruction).startRegister, (code[3] as OneRegisterInstruction).registerA,
+            ),
+        )
+        assertEquals("$what: one register each", listOf(1, 1), listOf((code[0] as RegisterRangeInstruction).registerCount, (code[2] as RegisterRangeInstruction).registerCount))
+        assertEquals("$what: Instagram's own code after", stock.filter { it != Opcode.NOP }, code.drop(4).map { it.opcode }.filter { it != Opcode.NOP })
+    }
+
+    /** IgSimpleImageView's maybeSetColors as 386014758 has it: both colors, three alphas, the tint built and set. */
+    private fun simpleImageView(builders: Int = 1): ClassDef = classOf(
+        SIMPLE_IMAGE_VIEW,
+        virtual(
+            SIMPLE_IMAGE_VIEW, "maybeSetColors", "V", 8, emptyList(),
+            """
+                const/4 v1, 0x0
+                const/4 v2, 0x0
+                const/4 v3, 0x0
+                const/4 v4, 0x0
+                const/4 v5, 0x0
+                const/16 v6, 0x4d
+            """ + (1..builders).joinToString("") { index ->
+                """
+                invoke-static/range {v1 .. v6}, $TINT_BUILDER->A0$index(IIIIII)$LIST
+                move-result-object v0
+                """
+            } + """
+                invoke-virtual {p0, v0}, Landroid/widget/ImageView;->setImageTintList($LIST)V
+                return-void
+            """,
+        ),
+    )
+
+    /** The static building the tint, two locals and the six ints, or one that branches back onto its start when [jumpOnto]. */
+    private fun tintBuilder(jumpOnto: Boolean = false): ClassDef = classOf(
+        TINT_BUILDER,
+        static(
+            TINT_BUILDER, "A01", LIST, 8,
+            if (jumpOnto) {
+                """
+                    :top
+                    const/4 v1, 0x0
+                    if-nez p0, :out
+                    const/4 p0, 0x1
+                    goto :top
+                    :out
+                    new-instance v0, $LIST
+                    invoke-direct {v0, v1, v1}, $LIST-><init>([[I[I)V
+                    return-object v0
+                """
+            } else {
+                """
+                    const/4 v1, 0x0
+                    new-instance v0, $LIST
+                    invoke-direct {v0, v1, v1}, $LIST-><init>([[I[I)V
+                    return-object v0
+                """
+            },
+            parameters = List(6) { "I" },
+        ),
+    )
+
+    private fun textView(type: String): ClassDef = classOf(
+        type,
+        virtual(
+            type, "<init>", "V", 3, listOf(CONTEXT),
+            """
+                const/4 v0, 0x0
+                invoke-direct {p0, p1, v0}, $type-><init>($CONTEXT$ATTRIBUTE_SET)V
+                return-void
+            """,
+        ),
+        virtual(
+            type, "<init>", "V", 3, listOf(CONTEXT, ATTRIBUTE_SET),
+            """
+                invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+                if-eqz p2, :end
+                nop
+                return-void
+                :end
+                return-void
+            """,
+        ),
+    )
+
     private fun BytecodePatchContext.loaderMethod(): MutableMethod = method(LOADER, "A01")
 
     private fun BytecodePatchContext.method(type: String, name: String, shape: List<String> = listOf(CONTEXT, "I")): MutableMethod =
@@ -378,6 +635,8 @@ class AccentColorHookTest {
 
     private companion object {
         const val LOADER = "Lfixture/ResourcesCompat;"
+        const val TINT_BUILDER = "Lfixture/Tint;"
+        const val ATTRIBUTE_SET = "Landroid/util/AttributeSet;"
         const val THEMES = "Lfixture/Themes;"
         const val COLORS = "Lfixture/Colors;"
         const val FALLBACK = "Lfixture/Fallback;"

@@ -11,9 +11,11 @@ import android.content.ContextWrapper;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -54,6 +56,9 @@ import app.hushgram.extension.shared.ui.Dim;
  * servers only, into the saves' work folder, read into memory and deleted at once, so nothing is
  * left behind. Closing the screen stops a fetch that's still running. The diagnostic report counts
  * how wide the picture shown was, in pixels, never anything about the account.
+ *
+ * <p>The profile history's page opens an old picture in it too, from the copy kept on the phone
+ * ({@link #openKept}), with a Save of that copy.
  */
 final class ProfilePictureViewer {
     private ProfilePictureViewer() {
@@ -102,19 +107,55 @@ final class ProfilePictureViewer {
      * Never throws.
      */
     static boolean open(Context context, List<MediaSave.Rendition> sizes, String owner, ProfilePicture.Save save) {
+        MediaSave.Rendition chosen = largest(sizes);
+        if (chosen == null) return false;
+        String url = chosen.url;
+        return open(context, activity -> new Screen(activity, sizes, owner, save),
+                (application, watch) -> load(application, url, watch));
+    }
+
+    /** Finds a picture already on the phone, off the main thread. Null when there's none. */
+    interface Source {
+        @Nullable File file();
+    }
+
+    /** What the screen's Save does. False says Download failed. */
+    interface Saver {
+        boolean save(Activity activity);
+    }
+
+    /**
+     * Opens the viewer on a picture kept on the phone, the file [source] finds, read off the main
+     * thread, over the screen [context] belongs to. [saver] is what Save does. Answers whether the
+     * viewer opened. Never throws.
+     */
+    static boolean openKept(Context context, Source source, Saver saver) {
+        return open(context, activity -> new Screen(activity, saver), (application, watch) -> {
+            try {
+                File file = source.file();
+                return file == null ? null : read(file);
+            } catch (Throwable failure) {
+                HookStatus.threw(FamilyNames.PROFILE_PICTURE, "load kept profile picture", failure);
+                return null;
+            }
+        });
+    }
+
+    private interface Loader {
+        @Nullable Picture load(Context application, Watch watch);
+    }
+
+    private static boolean open(Context context, java.util.function.Function<Activity, Screen> make, Loader loader) {
         try {
             Activity activity = activityOf(context);
             if (activity == null) activity = Utils.getActivity();
             if (activity == null || activity.isFinishing() || activity.isDestroyed()) return false;
-            MediaSave.Rendition chosen = largest(sizes);
-            if (chosen == null) return false;
             Context application = activity.getApplicationContext();
-            Screen screen = new Screen(activity, sizes, owner, save);
+            Screen screen = make.apply(activity);
             screen.dialog.show();
             Watch watch = screen.watch;
-            String url = chosen.url;
             boolean queued = Utils.runOnBackgroundThread(() -> {
-                Picture picture = load(application, url, watch);
+                Picture picture = loader.load(application, watch);
                 Utils.runOnMainThread(() -> screen.shown(picture));
             });
             if (!queued) {
@@ -159,20 +200,26 @@ final class ProfilePictureViewer {
             Downloader.Result fetched = DashSave.fetchWork(url, Downloader.Kind.IMAGE, file,
                     MediaSave.policyFor(application), MAX_BYTES, progress);
             if (!fetched.ok()) return null;
-            BitmapFactory.Options bounds = new BitmapFactory.Options();
-            bounds.inJustDecodeBounds = true;
-            PictureFetch.decodeFile(file, bounds);
-            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, MAX_SIDE);
-            Bitmap bitmap = PictureFetch.decodeFile(file, options);
-            return bitmap == null ? null : new Picture(bitmap, bounds.outWidth);
+            return read(file);
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.PROFILE_PICTURE, "load profile picture", failure);
             return null;
         } finally {
             DashSave.discard(file);
         }
+    }
+
+    /** [file] read as a picture, at a power of two below its size past {@link #MAX_SIDE}. Null when it isn't one. */
+    @Nullable
+    static Picture read(File file) throws java.io.IOException {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        PictureFetch.decodeFile(file, bounds);
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, MAX_SIDE);
+        Bitmap bitmap = PictureFetch.decodeFile(file, options);
+        return bitmap == null ? null : new Picture(bitmap, bounds.outWidth);
     }
 
     /** The smallest power of two that brings a [width] by [height] picture's longer side to [most] or under. */
@@ -253,7 +300,12 @@ final class ProfilePictureViewer {
         private final Activity activity;
         private final LinearLayout loading;
 
-        Screen(Activity activity, List<MediaSave.Rendition> sizes, String owner, ProfilePicture.Save saver) {
+        Screen(Activity activity, List<MediaSave.Rendition> sizes, String owner, ProfilePicture.Save save) {
+            // With View profile picture switched off since it opened, Save does nothing.
+            this(activity, at -> !ProfilePicture.viewing() || save.photo(at, sizes, PostDetails.profilePicture(owner)));
+        }
+
+        Screen(Activity activity, Saver saver) {
             this.activity = activity;
             dialog = new Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
             LinearLayout root = new LinearLayout(activity);
@@ -305,8 +357,8 @@ final class ProfilePictureViewer {
             save.setEnabled(false);
             save.setOnClickListener(view -> {
                 try {
-                    if (!save.isEnabled() || !ProfilePicture.viewing()) return;
-                    if (!saver.photo(activity, sizes, PostDetails.profilePicture(owner))) ProfilePicture.failed(activity);
+                    if (!save.isEnabled()) return;
+                    if (!saver.save(activity)) ProfilePicture.failed(activity);
                 } catch (Throwable failure) {
                     HookStatus.threw(FamilyNames.PROFILE_PICTURE, "save from viewer", failure);
                     ProfilePicture.failed(activity);
@@ -333,23 +385,26 @@ final class ProfilePictureViewer {
             root.requestFocus();
 
             dialog.setContentView(root);
-            Window window = dialog.getWindow();
-            if (window != null) {
-                window.setBackgroundDrawable(new ColorDrawable(ScreenColors.DEFAULT.background));
-                window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                window.setNavigationBarColor(ScreenColors.DEFAULT.background);
-                window.setStatusBarColor(ScreenColors.DEFAULT.background);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.setNavigationBarContrastEnforced(false);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) window.setDecorFitsSystemWindows(false);
-                // A light Instagram theme must not leave dark navigation icons on the black viewer.
-                window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-                window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
-                        | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
-            }
+            fill(dialog.getWindow(), ScreenColors.DEFAULT.background);
             dialog.setOnDismissListener(shut -> watch.cancel());
             dialog.setOnShowListener(shown -> root.requestApplyInsets());
+        }
+
+        /** Makes [window] a full screen one of [color], drawn under the system bars. Null does nothing. */
+        static void fill(@Nullable Window window, int color) {
+            if (window == null) return;
+            window.setBackgroundDrawable(new ColorDrawable(color));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setNavigationBarColor(color);
+            window.setStatusBarColor(color);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.setNavigationBarContrastEnforced(false);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) window.setDecorFitsSystemWindows(false);
+            // A light Instagram theme must not leave dark navigation icons on the black viewer.
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+                    | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         }
 
         /** Shows [loaded], or closes and says the picture couldn't open when it's null. */
@@ -455,6 +510,14 @@ final class ProfilePictureViewer {
         @Override protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
             super.onSizeChanged(width, height, oldWidth, oldHeight);
             fitToView();
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            // A picture lent by a feed post goes away when Instagram lets go of it, and drawing it then would crash.
+            Drawable drawable = getDrawable();
+            Bitmap bitmap = drawable instanceof BitmapDrawable ? ((BitmapDrawable) drawable).getBitmap() : null;
+            if (bitmap != null && bitmap.isRecycled()) return;
+            super.onDraw(canvas);
         }
 
         @Override public boolean onTouchEvent(MotionEvent event) {

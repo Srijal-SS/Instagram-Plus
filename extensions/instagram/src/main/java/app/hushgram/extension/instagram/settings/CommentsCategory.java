@@ -17,6 +17,7 @@ import android.preference.PreferenceScreen;
 import java.util.Set;
 
 import app.hushgram.extension.instagram.feed.CommentEmojiRow;
+import app.hushgram.extension.instagram.feed.CommentGifs;
 import app.hushgram.extension.shared.L10n;
 
 /** Builds the Comments category of HushGram settings. */
@@ -26,7 +27,8 @@ final class CommentsCategory {
     static void add(HushgramPreferenceFragment page, PreferenceScreen screen, Context context, Set<PatchFamily> build) {
         if (build.contains(PatchFamily.COMMENT_COPY) || build.contains(PatchFamily.COMMENT_PHOTO)
                 || build.contains(PatchFamily.HIDE_COMMENTS) || build.contains(PatchFamily.COMMENT_EMOJI_ROW)
-                || build.contains(PatchFamily.COMMENT_KEYBOARD)) {
+                || build.contains(PatchFamily.COMMENT_KEYBOARD) || build.contains(PatchFamily.COMMENT_GIFS)
+                || build.contains(PatchFamily.COMMENT_SEARCH)) {
             PreferenceCategory comments = category(screen, L10n.t("Comments"), SettingsIcons.COMMENTS,
                     L10n.t("Copy, save or hide comments."));
             if (build.contains(PatchFamily.COMMENT_COPY)) {
@@ -43,15 +45,27 @@ final class CommentsCategory {
             }
             if (build.contains(PatchFamily.COMMENT_PHOTO)) {
                 comments.addPreference(toggle(context, Settings.SAVE_COMMENT_PHOTOS, L10n.t("Save comment photo"),
-                        L10n.t("Adds Save to a selected comment's menu when the comment has its own photo or GIF. Saves the largest size Instagram sent.")));
+                        L10n.t("Press and hold a comment that has its own photo, GIF or sticker, and its menu gets Save. Saves the largest size Instagram sent.")));
                 if (PatchFamily.commentGifReplyInBuild()) {
                     comments.addPreference(toggle(context, Settings.REPLY_WITH_COMMENT_GIFS, L10n.t("Reply with a comment's GIF"),
                             L10n.t("When a comment has a GIF, its menu gets a GIF reply that sends that same GIF back as your reply, animated.")));
+                }
+                if (PatchFamily.commentGifNameInBuild()) {
+                    comments.addPreference(toggle(context, Settings.SHOW_COMMENT_GIF_NAMES, L10n.t("Show a comment GIF's name"),
+                            L10n.t("When a comment has a GIF or sticker, its menu shows its name. Tap the name to copy it.")));
+                }
+                if (PatchFamily.commentGifPickInBuild()) {
+                    comments.addPreference(toggle(context, Settings.SEND_SAVED_GIFS, L10n.t("Send saved GIFs as GIFs"),
+                            L10n.t("A comment GIF you saved with Save comment photo, picked from your gallery in the comment box, goes up right away as the same GIF, animated. Other pictures go up as before.")));
                 }
             }
             if (build.contains(PatchFamily.HIDE_COMMENTS)) {
                 comments.addPreference(toggle(context, Settings.HIDE_COMMENTS, L10n.t("Hide comments"),
                         L10n.t("Takes the Comment button and the comment count off the posts in your feed.")));
+                if (PatchFamily.commentReplyInBuild()) {
+                    comments.addPreference(toggle(context, Settings.HIDE_COMMENT_REPLY, L10n.t("Hide Reply on comments"),
+                            L10n.t("Takes Reply off each comment in a post's or reel's comments. View more replies stays, so you can still open them.")));
+                }
             }
             if (build.contains(PatchFamily.COMMENT_EMOJI_ROW)) {
                 comments.addPreference(onFlip(toggle(context, Settings.HIDE_COMMENT_EMOJI_ROW, L10n.t("Hide the emoji row"),
@@ -61,6 +75,15 @@ final class CommentsCategory {
             if (build.contains(PatchFamily.COMMENT_KEYBOARD)) {
                 comments.addPreference(toggle(context, Settings.COMMENT_KEYBOARD_DOWN, L10n.t("Open comments without the keyboard"),
                         L10n.t("Comments open with the keyboard down. A tap in the comment box, or on Reply, still brings it up.")));
+            }
+            if (build.contains(PatchFamily.COMMENT_GIFS)) {
+                comments.addPreference(onFlip(toggle(context, Settings.HIDE_COMMENT_GIFS, L10n.t("Hide GIFs in comments"),
+                        L10n.t("Takes GIFs and stickers out of comments, and the GIF button off the comment box. A comment with words keeps them. One that's only a GIF goes, along with its replies.")),
+                        CommentGifs::switchChanged));
+            }
+            if (build.contains(PatchFamily.COMMENT_SEARCH)) {
+                comments.addPreference(toggle(context, Settings.COMMENT_SEARCH, L10n.t("Search comments"),
+                        L10n.t("Adds a search box above a post's comments. Type a word or a name and the comments scroll to the next one that has it. Replies you haven't opened aren't searched.")));
             }
         }
     }

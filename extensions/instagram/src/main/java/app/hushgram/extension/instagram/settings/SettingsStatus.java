@@ -32,6 +32,11 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Rewritten by the Hide Instagram Plus prompts patch. */
+    public static boolean hidePlusUpsell() {
+        return false;
+    }
+
     public static boolean sanitizeSharingLinks() {
         return false;
     }
@@ -53,6 +58,10 @@ public final class SettingsStatus {
     }
 
     public static boolean reelWatchHistory() {
+        return false;
+    }
+
+    public static boolean feedViewHistory() {
         return false;
     }
 
@@ -100,6 +109,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean storyButtonsRoom() {
+        return false;
+    }
+
     public static boolean storyFonts() {
         return false;
     }
@@ -134,6 +147,11 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Rewritten by the Keep photo locations from Instagram patch. */
+    public static boolean photoLocations() {
+        return false;
+    }
+
     public static boolean threadSeen() {
         return false;
     }
@@ -163,6 +181,16 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Rewritten by Hide suggested posts when the parameters of Home's requests were found too. */
+    public static boolean favoritesSource() {
+        return false;
+    }
+
+    /** Rewritten by Hide suggested posts when an account's type was found too. */
+    public static boolean feedProfessional() {
+        return false;
+    }
+
     public static boolean metaAi() {
         return false;
     }
@@ -187,6 +215,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean splitNotesRow() {
+        return false;
+    }
+
     public static boolean inboxSearch() {
         return false;
     }
@@ -201,6 +233,11 @@ public final class SettingsStatus {
 
     /** Rewritten by the Show when someone was last active patch. */
     public static boolean lastActive() {
+        return false;
+    }
+
+    /** Rewritten by the Shorter Active now patch. */
+    public static boolean shortActiveNow() {
         return false;
     }
 
@@ -332,7 +369,25 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean profileBanners() {
+        return false;
+    }
+
+    /** Hide links, the profile banners patch's switch for the row of links, which a build can lack. */
+    public static boolean profileLinks() {
+        return false;
+    }
+
     public static boolean profilePostsList() {
+        return false;
+    }
+
+    public static boolean profileGridJump() {
+        return false;
+    }
+
+    /** Rewritten by the Sort reels on profiles patch. */
+    public static boolean profileReelSort() {
         return false;
     }
 
@@ -353,6 +408,11 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Swipe left for Messages, Stop swipe to create's second switch, which a build can lack. */
+    public static boolean homeLeftSwipe() {
+        return false;
+    }
+
     public static boolean fullResolution() {
         return false;
     }
@@ -362,6 +422,10 @@ public final class SettingsStatus {
     }
 
     public static boolean paidPartnershipReels() {
+        return false;
+    }
+
+    public static boolean liveReels() {
         return false;
     }
 
@@ -395,6 +459,16 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Show a comment GIF's name, Save comment photo's third switch, which a build can lack. */
+    public static boolean commentGifName() {
+        return false;
+    }
+
+    /** Send saved GIFs as GIFs, Save comment photo's fourth switch, which needs the GIF reply's send. */
+    public static boolean commentGifPick() {
+        return false;
+    }
+
     /** Rewritten by the Save profile picture patch. */
     public static boolean profilePicture() {
         return false;
@@ -409,7 +483,21 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Rewritten by Hide comments when the Reply on a comment's line was found too. */
+    public static boolean commentReply() {
+        return false;
+    }
+
     public static boolean commentEmojiRow() {
+        return false;
+    }
+
+    public static boolean commentGifs() {
+        return false;
+    }
+
+    /** Rewritten by the Search comments patch. */
+    public static boolean commentSearch() {
         return false;
     }
 
@@ -418,6 +506,22 @@ public final class SettingsStatus {
     }
 
     public static boolean feedFollow() {
+        return false;
+    }
+
+    public static boolean editsLabel() {
+        return false;
+    }
+
+    public static boolean feedSave() {
+        return false;
+    }
+
+    public static boolean menuItems() {
+        return false;
+    }
+
+    public static boolean watchAgain() {
         return false;
     }
 
@@ -431,6 +535,10 @@ public final class SettingsStatus {
     }
 
     public static boolean feedAudioIcon() {
+        return false;
+    }
+
+    public static boolean feedAutoScroll() {
         return false;
     }
 
@@ -450,6 +558,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean favoritesFeed() {
+        return false;
+    }
+
     public static boolean storiesTray() {
         return false;
     }
@@ -459,6 +571,21 @@ public final class SettingsStatus {
     }
 
     public static boolean reelDownload() {
+        return false;
+    }
+
+    /** Rewritten by the Ask for VP9 instead of AV1 patch. */
+    public static boolean vp9Video() {
+        return false;
+    }
+
+    /** Rewritten by the Keep online history patch. */
+    public static boolean onlineHistory() {
+        return false;
+    }
+
+    /** Rewritten by the Keep story viewers patch. */
+    public static boolean storyViewers() {
         return false;
     }
 
@@ -499,6 +626,16 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Rewritten by the Control the reel above comments patch. */
+    public static boolean reelAboveComments() {
+        return false;
+    }
+
+    /** Rewritten by the Open reel links on that reel patch. */
+    public static boolean reelLinks() {
+        return false;
+    }
+
     public static boolean reelSeekBar() {
         return false;
     }
@@ -528,6 +665,16 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Rewritten by the Double tap to skip on Reels patch. */
+    public static boolean reelDoubleTapSkip() {
+        return false;
+    }
+
+    /** Rewritten by the Hide the 2x popup on Reels patch. */
+    public static boolean reelFastLabel() {
+        return false;
+    }
+
     public static boolean reelAutoScroll() {
         return false;
     }
@@ -537,6 +684,10 @@ public final class SettingsStatus {
     }
 
     public static boolean swipeToProfile() {
+        return false;
+    }
+
+    public static boolean reelProfileTabBar() {
         return false;
     }
 
@@ -600,6 +751,16 @@ public final class SettingsStatus {
         return false;
     }
 
+    /** Rewritten by the Hide the Community Standards reminder patch. */
+    public static boolean kindnessReminder() {
+        return false;
+    }
+
+    /** Rewritten by the Call blocker patch. */
+    public static boolean callBlocker() {
+        return false;
+    }
+
     /** Rewritten by the Chat plus menu patch. */
     public static boolean plusMenu() {
         return false;
@@ -615,6 +776,15 @@ public final class SettingsStatus {
     }
 
     public static boolean askBeforeRefresh() {
+        return false;
+    }
+
+    public static boolean askBeforeFollow() {
+        return false;
+    }
+
+    /** Rewritten by the Sent follow requests patch. */
+    public static boolean sentRequests() {
         return false;
     }
 
@@ -650,6 +820,11 @@ public final class SettingsStatus {
 
     /** Rewritten by the Tap a feed video to pause it patch. */
     public static boolean feedTapPause() {
+        return false;
+    }
+
+    /** Rewritten by the Hold for 2x on feed videos patch. */
+    public static boolean feedHoldFast() {
         return false;
     }
 
@@ -690,6 +865,11 @@ public final class SettingsStatus {
 
     /** Rewritten by the Swipe through a chat's reels patch. */
     public static boolean chatReels() {
+        return false;
+    }
+
+    /** Rewritten by the Swipe through a chat's photos and posts patch. */
+    public static boolean chatMediaWalk() {
         return false;
     }
 

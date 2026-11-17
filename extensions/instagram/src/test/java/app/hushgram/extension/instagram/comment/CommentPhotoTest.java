@@ -44,7 +44,7 @@ public class CommentPhotoTest {
     private final List<List<MediaSave.Rendition>> queued = new ArrayList<>();
     private final List<CommentPhotoDownload.Snapshot.Format> formats = new ArrayList<>();
     private final List<PostDetails> named = new ArrayList<>();
-    private final CommentPhoto.Save save = (context, snapshot, details) -> {
+    private final CommentPhoto.Save save = (context, snapshot, details, published) -> {
         queued.add(snapshot.sizes);
         formats.add(snapshot.format);
         named.add(details);
@@ -180,7 +180,7 @@ public class CommentPhotoTest {
         nativeRows.nullRow = false;
 
         List<?> rows = CommentPhoto.rows(stock, photo("selected"), context, nativeRows,
-                (ctx, snapshot, details) -> { throw new IllegalStateException("queue failed"); });
+                (ctx, snapshot, details, published) -> { throw new IllegalStateException("queue failed"); });
         assertNull(((Row) rows.get(1)).callback.invoke());
         Shadows.shadowOf(Looper.getMainLooper()).idle();
         assertEquals("Download failed", String.valueOf(ShadowToast.getTextOfLatestToast()));
@@ -257,13 +257,13 @@ public class CommentPhotoTest {
         final String name;
         final List<String> reads;
         final String counts;
-        final boolean found;
+        final boolean sticker;
         final Consumer<FakeReads> makes;
-        GifCase(String name, List<String> reads, String counts, boolean found, Consumer<FakeReads> makes) {
+        GifCase(String name, List<String> reads, String counts, boolean sticker, Consumer<FakeReads> makes) {
             this.name = name;
             this.reads = reads;
             this.counts = counts;
-            this.found = found;
+            this.sticker = sticker;
             this.makes = makes;
         }
     }
@@ -271,33 +271,33 @@ public class CommentPhotoTest {
     /**
      * A GIF the comment carries itself, or one its media carries, typed as a photo or untyped, is
      * counted where it was found and read as a GIF, never as a photo or a video. A GIF sticker, or
-     * an is_sticker that isn't plainly false, gets nothing.
+     * an is_sticker that isn't plainly false, is read the same way and counted as a sticker too (#623).
      */
-    @Test public void aGifTheCommentOrItsMediaCarriesIsReadAsAGifUnlessItsASticker() {
+    @Test public void aGifOrStickerTheCommentOrItsMediaCarriesIsReadAsAGif() {
         List<String> own = Arrays.asList("selected", "raw", "gif", "gifSticker");
         List<String> typed = Arrays.asList("selected", "raw", "gif", "info", "media", "kind", "photoKind", "mediaGif", "gifSticker");
         List<String> untyped = Arrays.asList("selected", "raw", "gif", "info", "media", "kind", "mediaGif", "gifSticker");
         List<GifCase> cases = Arrays.asList(
-                new GifCase("the comment's own GIF", own, "comment GIF 1", true, reads -> reads.gifAnswer = reads.gif),
-                new GifCase("an is_sticker of false", own, "comment GIF 1", true, reads -> {
+                new GifCase("the comment's own GIF", own, "comment GIF 1", false, reads -> reads.gifAnswer = reads.gif),
+                new GifCase("an is_sticker of false", own, "comment GIF 1", false, reads -> {
                     reads.gifAnswer = reads.gif;
                     reads.stickerAnswer = false;
                 }),
-                new GifCase("a typed media's GIF", typed, "media GIF 1", true, reads -> reads.mediaGifAnswer = reads.gif),
-                new GifCase("an untyped media's GIF, before its video", untyped, "media GIF 1", true, reads -> {
+                new GifCase("a typed media's GIF", typed, "media GIF 1", false, reads -> reads.mediaGifAnswer = reads.gif),
+                new GifCase("an untyped media's GIF, before its video", untyped, "media GIF 1", false, reads -> {
                     reads.kindAnswer = null;
                     reads.videoVersionsAnswer = Collections.singletonList(new Object());
                     reads.mediaGifAnswer = reads.gif;
                 }),
-                new GifCase("a GIF sticker", own, "comment GIF 1, GIF sticker 1", false, reads -> {
+                new GifCase("a GIF sticker", own, "comment GIF 1, GIF sticker 1", true, reads -> {
                     reads.gifAnswer = reads.gif;
                     reads.stickerAnswer = true;
                 }),
-                new GifCase("a media's GIF sticker", typed, "media GIF 1, GIF sticker 1", false, reads -> {
+                new GifCase("a media's GIF sticker", typed, "media GIF 1, GIF sticker 1", true, reads -> {
                     reads.mediaGifAnswer = reads.gif;
                     reads.stickerAnswer = true;
                 }),
-                new GifCase("an is_sticker of another type", own, "comment GIF 1, GIF sticker 1", false, reads -> {
+                new GifCase("an is_sticker of another type", own, "comment GIF 1, GIF sticker 1", true, reads -> {
                     reads.gifAnswer = reads.gif;
                     reads.stickerAnswer = "false";
                 }));
@@ -306,16 +306,81 @@ public class CommentPhotoTest {
             FakeReads reads = new FakeReads();
             gif.makes.accept(reads);
             CommentPhoto.Carried carried = CommentPhoto.carried(reads.comment, reads);
-            if (gif.found) {
-                assertNotNull(gif.name, carried);
-                assertSame(gif.name, reads.gif, carried.gif);
-                assertNull(gif.name, carried.photo);
-            } else {
-                assertNull(gif.name, carried);
-            }
+            assertNotNull(gif.name, carried);
+            assertSame(gif.name, reads.gif, carried.gif);
+            assertNull(gif.name, carried.photo);
+            assertEquals(gif.name, gif.sticker, carried.sticker);
             assertEquals(gif.name, gif.reads, reads.made);
             assertEquals(gif.name, counted(gif.counts), HookStatus.report());
         }
+    }
+
+    /**
+     * #623: a sticker comment's Save reads the sticker's files as a GIF's, Instagram's own copy on
+     * Meta's servers, and saves it as a .gif. A sticker listed only on Giphy's servers gets no Save.
+     */
+    @Test public void aStickerCommentSavesTheStickerFromInstagramsOwnCopy() {
+        HookStatus.clear();
+        FakeReads reads = new FakeReads();
+        reads.gifAnswer = reads.gif;
+        reads.stickerAnswer = true;
+        CommentPhotoDownload.Snapshot sticker = CommentPhoto.media(reads.comment, reads);
+        assertNotNull(sticker);
+        assertEquals(CommentPhotoDownload.Snapshot.Format.GIF, sticker.format);
+        assertEquals(1, sticker.sizes.size());
+        assertEquals("https://scontent.cdninstagram.com/proxied.gif", sticker.sizes.get(0).url);
+        assertEquals(200, sticker.sizes.get(0).width);
+        assertEquals(150, sticker.sizes.get(0).height);
+        assertEquals(counted("comment GIF 1, GIF sticker 1, GIF found 1"), HookStatus.report());
+
+        List<?> rows = CommentPhoto.rows(stock, sticker, context, nativeRows, save);
+        assertEquals("the sticker's menu gets Save", 2, rows.size());
+        assertNull(((Row) rows.get(1)).callback.invoke());
+        assertEquals(Collections.singletonList(CommentPhotoDownload.Snapshot.Format.GIF), formats);
+        assertEquals("https://scontent.cdninstagram.com/proxied.gif", queued.get(0).get(0).url);
+
+        HookStatus.clear();
+        FakeReads giphyOnly = new FakeReads();
+        giphyOnly.mediaGifAnswer = giphyOnly.gif;
+        giphyOnly.stickerAnswer = true;
+        giphyOnly.proxiedAnswer = null;
+        assertNull("nothing is fetched from Giphy", CommentPhoto.media(giphyOnly.comment, giphyOnly));
+        assertEquals(counted("media GIF 1, GIF sticker 1, GIF refused (its host is not one of Meta's media servers) 1"),
+                HookStatus.report());
+    }
+
+    /** A GIF reply sends a GIF back, never a sticker, and its read counts nothing: Save's read did. */
+    @Test public void theGifReplyReadLeavesAStickerOut() {
+        HookStatus.clear();
+        FakeReads gif = new FakeReads();
+        gif.gifAnswer = gif.gif;
+        assertSame(gif.gif, CommentPhoto.gif(gif.comment, gif));
+        FakeReads sticker = new FakeReads();
+        sticker.gifAnswer = sticker.gif;
+        sticker.stickerAnswer = true;
+        assertNull(CommentPhoto.gif(sticker.comment, sticker));
+        assertTrue(sticker.made.contains("gifSticker"));
+        FakeReads mediaSticker = new FakeReads();
+        mediaSticker.mediaGifAnswer = mediaSticker.gif;
+        mediaSticker.stickerAnswer = "yes";
+        assertNull(CommentPhoto.gif(mediaSticker.comment, mediaSticker));
+        assertTrue("nothing counted: " + HookStatus.report(), HookStatus.report().isEmpty());
+    }
+
+    /** #502: a sticker has a name too, so this read answers one, never testing is_sticker, and counts nothing. */
+    @Test public void theNameReadAnswersAnyGifOrStickerTheCommentCarries() {
+        HookStatus.clear();
+        FakeReads sticker = new FakeReads();
+        sticker.gifAnswer = sticker.gif;
+        sticker.stickerAnswer = true;
+        assertSame("the comment's own sticker", sticker.gif, CommentPhoto.gifOrSticker(sticker.comment, sticker));
+        assertFalse("the sticker test isn't Save's to run here", sticker.made.contains("gifSticker"));
+        FakeReads onMedia = new FakeReads();
+        onMedia.mediaGifAnswer = onMedia.gif;
+        assertSame("a media's GIF", onMedia.gif, CommentPhoto.gifOrSticker(onMedia.comment, onMedia));
+        FakeReads none = new FakeReads();
+        assertNull("a comment with neither", CommentPhoto.gifOrSticker(none.comment, none));
+        assertTrue("nothing counted: " + HookStatus.report(), HookStatus.report().isEmpty());
     }
 
     /**
@@ -379,6 +444,34 @@ public class CommentPhotoTest {
         assertEquals("https://scontent.cdninstagram.com/first.gif", queued.get(0).get(0).url);
         assertEquals("https://scontent.cdninstagram.com/second.gif", queued.get(1).get(0).url);
         assertEquals(3, nativeRows.created);
+    }
+
+    private static CommentPhoto.PhotoAction action(List<?> rows) {
+        return (CommentPhoto.PhotoAction) ((Row) rows.get(rows.size() - 1)).callback;
+    }
+
+    /**
+     * A save kept as a GIF or WebP carries the comment's own GIF for Send saved GIFs as GIFs. A photo
+     * or an MP4 carries none, and a GIF that can't be read is still saved.
+     */
+    @Test public void aGifOrWebpSaveCarriesTheCommentsOwnGifAndAFailedReadStillSaves() {
+        Object model = new Object();
+        nativeRows.gifModel = model;
+        assertSame(model, action(CommentPhoto.rows(stock, gif("kept"), context, nativeRows, save)).gif);
+        CommentPhotoDownload.Snapshot webp = CommentPhotoDownload.gif(Collections.singletonList(new CommentPhotoDownload.GifFile(
+                null, "https://scontent.cdninstagram.com/kept.webp", null, 200, 150)));
+        assertEquals(CommentPhotoDownload.Snapshot.Format.WEBP, webp.format);
+        assertSame(model, action(CommentPhoto.rows(stock, webp, context, nativeRows, save)).gif);
+        CommentPhotoDownload.Snapshot mp4 = CommentPhotoDownload.gif(Collections.singletonList(new CommentPhotoDownload.GifFile(
+                null, null, "https://scontent.cdninstagram.com/kept.mp4", 200, 150)));
+        assertEquals(CommentPhotoDownload.Snapshot.Format.MP4, mp4.format);
+        assertNull(action(CommentPhoto.rows(stock, mp4, context, nativeRows, save)).gif);
+        assertNull(action(CommentPhoto.rows(stock, photo("still"), context, nativeRows, save)).gif);
+        nativeRows.failGif = true;
+        CommentPhoto.PhotoAction failed = action(CommentPhoto.rows(stock, gif("failed"), context, nativeRows, save));
+        assertNull(failed.gif);
+        assertNull(failed.invoke());
+        assertEquals("https://scontent.cdninstagram.com/failed.gif", queued.get(0).get(0).url);
     }
 
     /** Without media_type the reads go on to the GIF and the video, never to the photo kind. */
@@ -556,8 +649,13 @@ public class CommentPhotoTest {
     static final class FakeNative implements CommentPhoto.NativeRows {
         int created;
         int inspected;
-        boolean fail, failRow, nullRow, failDetails;
+        boolean fail, failRow, nullRow, failDetails, failGif;
         PostDetails details = PostDetails.NONE;
+        Object gifModel;
+        public Object gif(Object comment) {
+            if (failGif) throw new IllegalStateException("native gif getter failed");
+            return gifModel;
+        }
         @SuppressWarnings("unchecked") public CommentPhotoDownload.Snapshot media(Object comment) {
             inspected++;
             if (fail) throw new IllegalStateException("native photo getter failed");

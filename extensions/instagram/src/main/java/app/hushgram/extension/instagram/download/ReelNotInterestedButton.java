@@ -204,7 +204,7 @@ public final class ReelNotInterestedButton {
                 // The last icon over More is the one that makes up the margin More takes back.
                 long under = aboveMore && !ReelDownloadButton.shows(column)
                         ? ReelDownloadButton.underAboveMore(column, context, margin) : margin;
-                icon = ReelDownloadButton.bridge.icon(drawable, L10n.t(context, "Not interested"), new Click(column), size, under);
+                icon = ReelColumnFit.icon(drawable, L10n.t(context, "Not interested"), new Click(column), size, under);
             }
             if (icon == null) {
                 HookStatus.counted(FamilyNames.REEL_DOWNLOAD, COUNT_REFUSED);
@@ -251,7 +251,7 @@ public final class ReelNotInterestedButton {
         Resources resources = context.getResources();
         int known = glyph;
         if (known == 0) {
-            known = glyphId(resources, context.getPackageName());
+            known = glyphId(resources, Utils.resourcePackage(context));
             glyph = known;
         }
         if (known <= 0) return null;

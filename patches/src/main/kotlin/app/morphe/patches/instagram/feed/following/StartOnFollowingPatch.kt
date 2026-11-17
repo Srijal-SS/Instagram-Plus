@@ -63,15 +63,15 @@ private const val FREEZE_REACH = 6
 /** The preference Instagram keeps the feed you last picked from Home's feed picker in. */
 internal const val SAVED_FEED_KEY = "last_selected_feed_type"
 
-/** The server flag that has Instagram remember the feed you pick. 451 had it as 810e5f00064f24, 453 as 810e3300064e36. */
-internal const val REMEMBERED_FEED_FLAG = 0x810dfb00064e49L
+/** The server flag that has Instagram remember the feed you pick. 451 had it as 810e5f00064f24, 453 as 810e3300064e36, 454 as 810dfb00064e49. */
+internal const val REMEMBERED_FEED_FLAG = 0x810de400064e1bL
 
 /**
  * The server flag that puts For you first in Home's feed picker and the picked feed's name at the
- * top of Home. 451 had it as 810e5f00004f1e, 453 as 810e3300004e30. Without it the picker has no
+ * top of Home. 451 had it as 810e5f00004f1e, 453 as 810e3300004e30, 454 as 810dfb00004e43. Without it the picker has no
  * For you, since Home stands for it, and Home's top shows only the picker's arrow.
  */
-internal const val FOR_YOU_PICKER_FLAG = 0x810dfb00004e43L
+internal const val FOR_YOU_PICKER_FLAG = 0x810de400004e15L
 
 /** The flags the patch answers on: together they're Instagram's own For you and Following picker. */
 internal val FEED_PICKER_FLAGS = listOf(REMEMBERED_FEED_FLAG, FOR_YOU_PICKER_FLAG)
@@ -87,8 +87,9 @@ val startOnFollowingPatch = bytecodePatch(
         "you from Home, and a third keeps Instagram's logo at the top of Home in place of the feed's name. A " +
         "fourth, Fall back to Following, opens Home on Following for an account whose For you brings only " +
         "suggested posts, unless you picked a feed. A fifth, Mix in Following, shows a page of posts from " +
-        "accounts you follow after each page of For you. Restart Instagram to see the change. Starts off. Turn " +
-        "it on in Instagram Plus Settings > Feed.",
+        "accounts you follow after each page of For you. Restart Instagram to see the change. Keep the tab bar on " +
+        "Favorites leaves Search and Messages a tap away there, and a tab you choose can open Favorites with a long " +
+        "press. Starts off. Turn it on in Instagram Plus Settings > Feed.",
 ) {
     category("Feed")
     dependsOn(settingsPatch, instagramExtensionPatch)
@@ -97,6 +98,7 @@ val startOnFollowingPatch = bytecodePatch(
     execute {
         requireStatusMethod("followingFeed")
         requireStatusMethod("followingMix")
+        requireStatusMethod("favoritesFeed")
         val reads = findFlagReads(PATCH, FEED_PICKER_FLAGS)
         val saved = findSavedFeedReturn()
         val title = findTitleLabel()
@@ -111,6 +113,8 @@ val startOnFollowingPatch = bytecodePatch(
         // Hooked at their starts once the reads in them are answered, so the reads' indexes held.
         keepFeedLinksInPlace(switches)
         enableStatus("followingFeed")
+        // Hooks the feed switch's constructor and the tab hosts, which nothing above touches.
+        if (favoritesOrWarn(switches)) enableStatus("favoritesFeed")
         // Last, so nothing above moves the indexes it finds; a build without Home's paging as it
         // knows it keeps every other switch.
         if (mixInFollowingOrWarn()) enableStatus("followingMix")

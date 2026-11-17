@@ -51,6 +51,8 @@ public class CategoryPagesSettingsTest {
     @Before public void prepare() {
         RuntimeEnvironment.getApplication().getApplicationInfo().targetSdkVersion = 37;
         Settings.CATEGORY_PAGES.resetToDefault();
+        // On to start (#650); most of these open categories in place, and the tests of own pages turn it on.
+        Settings.CATEGORY_OWN_PAGE.save(false);
         // The classic page's order and category lines; BlackSettingsPageTest covers the black one.
         Settings.SETTINGS_BLACK_LOOK.save(false);
         Settings.START_ON_FOLLOWING.resetToDefault();
@@ -69,6 +71,7 @@ public class CategoryPagesSettingsTest {
         Utils.awaitBackgroundTasksForTests();
         PatchFamily.inBuildForTests = null;
         Settings.CATEGORY_PAGES.resetToDefault();
+        Settings.CATEGORY_OWN_PAGE.resetToDefault();
         Settings.SETTINGS_BLACK_LOOK.resetToDefault();
         Settings.START_ON_FOLLOWING.resetToDefault();
         Settings.ONLY_FOLLOWING.resetToDefault();
@@ -450,7 +453,7 @@ public class CategoryPagesSettingsTest {
         openDialog();
         touchMode(page.getView(), false);
         List<String> categories = shown(Preference.class);
-        assertEquals(23, categories.size());
+        assertEquals(24, categories.size());
         HushgramPreferenceFragment.Heading header = categoryRow(categories.get(categories.size() / 2));
         ListView list = page.getView().findViewById(android.R.id.list);
         list.setSelectionFromTop(positionOf(header), -8);
@@ -690,6 +693,294 @@ public class CategoryPagesSettingsTest {
         assertFalse(categoryRow("Ads and privacy").expanded);
         assertNotNull(page.getPreferenceScreen().findPreference(Settings.START_ON_FOLLOWING.key));
         assertFalse(page.closeCategory());
+    }
+
+    /** #525: a tapped category fills the screen on its own, and Back puts the list back as it was. */
+    @Test public void onTheirOwnPagesACategoryFillsTheScreenAndBackReturnsToTheList() throws Exception {
+        Settings.CATEGORY_OWN_PAGE.save(true);
+        openDialog();
+        List<String> headers = shown(Preference.class);
+        Preference toggle = page.getPreferenceScreen().findPreference("hushgram_view_toggle");
+        assertNotNull(toggle);
+        HushgramPreferenceFragment.Heading feed = categoryRow("Feed");
+        tap(feed);
+        layoutPage();
+        assertEquals("no other category shares the page", List.of(), shown(Preference.class));
+        assertEquals(List.of("Feed"), shown(PreferenceCategory.class));
+        assertNotNull(page.getPreferenceScreen().findPreference(Settings.START_ON_FOLLOWING.key));
+        assertNull("the home page's rows stay on the list", page.getPreferenceScreen().findPreference("hushgram_view_toggle"));
+        assertEquals("hushgram_settings_search", page.getPreferenceScreen().getPreference(0).getKey());
+        assertEquals("the bar names the page", "Feed", toolbarTitle());
+        assertEquals("a restart comes back to it", feed.getKey(), page.currentPage());
+
+        // A search from the page looks through everything, and ending it lands on the page again.
+        page.searchSettings("Hide ads");
+        layoutPage();
+        assertNotNull(page.getPreferenceScreen().findPreference(Settings.HIDE_ADS.key));
+        assertNull(page.getPreferenceScreen().findPreference("hushgram_view_toggle"));
+        assertTrue("Back ends the search first", page.closeCategory());
+        layoutPage();
+        assertEquals(List.of("Feed"), shown(PreferenceCategory.class));
+        assertEquals("Feed", toolbarTitle());
+
+        assertTrue("Back leaves the page", page.closeCategory());
+        layoutPage();
+        assertEquals(headers, shown(Preference.class));
+        assertEquals("every category folded again", List.of(), shown(PreferenceCategory.class));
+        assertSame(toggle, page.getPreferenceScreen().findPreference("hushgram_view_toggle"));
+        assertEquals("HushGram", toolbarTitle());
+        assertEquals("", page.currentPage());
+        assertFalse("and the next Back closes settings", page.closeCategory());
+    }
+
+    /**
+     * Pause and diagnostics opens on its own page while nothing holds it open. Its page never folds
+     * it, so the lock's refold has nothing to change there, and Back folds it on the list again.
+     */
+    @Test public void pauseAndDiagnosticsOpensOnItsOwnPage() throws Exception {
+        Settings.CATEGORY_OWN_PAGE.save(true);
+        openDialog();
+        tap(categoryRow("Pause and diagnostics"));
+        layoutPage();
+        assertEquals(List.of("Pause and diagnostics"), shown(PreferenceCategory.class));
+        assertNotNull(page.getPreferenceScreen().findPreference(BaseSettings.PAUSED.key));
+        assertNotNull(page.getPreferenceScreen().findPreference(HushgramPreferenceFragment.LOCK_ROW_KEY));
+        assertEquals("Pause and diagnostics", toolbarTitle());
+
+        // The lock's minute tick while the page shows.
+        page.showLock();
+        layoutPage();
+        assertEquals(List.of("Pause and diagnostics"), shown(PreferenceCategory.class));
+
+        assertTrue("Back leaves the page", page.closeCategory());
+        layoutPage();
+        assertTrue("folded on the list again", categoryRow("Pause and diagnostics").collapsible);
+        assertEquals(List.of(), shown(PreferenceCategory.class));
+    }
+
+    /** #642: a category's page has a chip for every category under Search, and a tap moves to that one. */
+    @Test public void theChipsUnderSearchMoveBetweenCategoryPages() throws Exception {
+        Settings.CATEGORY_OWN_PAGE.save(true);
+        openDialog();
+        List<String> headers = shown(Preference.class);
+        assertTrue("the list's chips are its groups", chip("All").isSelected());
+        tap(categoryRow("Feed"));
+        layoutPage();
+        CategoryStrip strip = (CategoryStrip) page.getPreferenceScreen().findPreference(CategoryStrip.KEY);
+        assertNotNull(strip);
+        assertEquals("right under Search", CategoryStrip.KEY, page.getPreferenceScreen().getPreference(1).getKey());
+        List<String> names = new ArrayList<>();
+        for (HushgramPreferenceFragment.Heading each : strip.chips()) names.add(String.valueOf(each.getTitle()));
+        assertTrue(names.toString(), names.containsAll(List.of("Settings entry", "Ads and privacy", "Feed", "Notifications")));
+        List<String> listed = new ArrayList<>(headers);
+        listed.retainAll(names);
+        List<String> chipped = new ArrayList<>(names);
+        chipped.retainAll(headers);
+        assertEquals("in the list's order", listed, chipped);
+        assertTrue(chip("Feed").isSelected());
+        assertFalse(chip("Notifications").isSelected());
+
+        assertTrue(chip("Notifications").performClick());
+        layoutPage();
+        assertEquals(List.of("Notifications"), shown(PreferenceCategory.class));
+        assertEquals("Notifications", toolbarTitle());
+        assertEquals(categoryRow("Notifications").getKey(), page.currentPage());
+        assertTrue(chip("Notifications").isSelected());
+        assertFalse(chip("Feed").isSelected());
+
+        page.searchSettings("Hide ads");
+        layoutPage();
+        assertNull("a search shows no chips", page.getPreferenceScreen().findPreference(CategoryStrip.KEY));
+        assertTrue(page.closeCategory());
+        layoutPage();
+        assertNotNull(page.getPreferenceScreen().findPreference(CategoryStrip.KEY));
+
+        assertTrue("one Back leaves the pages, however many chips were tapped", page.closeCategory());
+        layoutPage();
+        assertEquals(headers, shown(Preference.class));
+        assertTrue("the groups again", chip("All").isSelected());
+        assertTrue(((CategoryStrip) page.getPreferenceScreen().findPreference(CategoryStrip.KEY)).chips().isEmpty());
+        assertEquals("HushGram", toolbarTitle());
+        assertFalse(page.closeCategory());
+    }
+
+    /** #650: a category opens on its own page to start. */
+    @Test public void categoriesOpenOnTheirOwnPageToStart() {
+        Settings.CATEGORY_OWN_PAGE.resetToDefault();
+        assertTrue(Settings.CATEGORY_OWN_PAGE.savedValue());
+    }
+
+    /**
+     * #642: the list's chips are All and the groups. A group's chip shows its categories alone, and
+     * their pages' chips stay in that group, until All shows every one again with each group's name.
+     */
+    @Test public void aGroupsChipShowsItsCategoriesAlone() throws Exception {
+        Settings.CATEGORY_OWN_PAGE.save(true);
+        openDialog();
+        List<String> every = shown(Preference.class);
+        PreferenceScreen screen = page.getPreferenceScreen();
+        Preference strip = screen.findPreference(CategoryStrip.KEY);
+        int at = 0;
+        while (screen.getPreference(at) != strip) at++;
+        assertEquals("right over the first group's name", "hushgram_category_group_0", screen.getPreference(at + 1).getKey());
+        assertNotNull(chip("Privacy"));
+        assertNotNull(chip("Content"));
+        assertNotNull("HushGram's own settings, not named HushGram twice", chip("App"));
+        assertTrue(chip("All").isSelected());
+        assertNotNull("each group's name over its categories", page.getPreferenceScreen().findPreference("hushgram_category_group_1"));
+
+        assertTrue(chip("Content").performClick());
+        layoutPage();
+        List<String> content = shown(Preference.class);
+        assertTrue(content.toString(), content.containsAll(List.of("Feed", "Notifications")));
+        assertFalse(content.toString(), content.contains("Ads and privacy") || content.contains("About"));
+        for (String title : content) {
+            assertEquals(title, CategoryGroups.CONTENT, CategoryGroups.of(categoryRow(title)));
+        }
+        assertTrue(chip("Content").isSelected());
+        assertFalse(chip("All").isSelected());
+        assertNull("no names over one group", page.getPreferenceScreen().findPreference("hushgram_category_group_1"));
+
+        tap(categoryRow("Feed"));
+        layoutPage();
+        CategoryStrip onPage = (CategoryStrip) page.getPreferenceScreen().findPreference(CategoryStrip.KEY);
+        List<String> chipped = new ArrayList<>();
+        for (HushgramPreferenceFragment.Heading each : onPage.chips()) chipped.add(String.valueOf(each.getTitle()));
+        assertEquals("the page's chips stay in the group", content, chipped);
+        assertTrue(page.closeCategory());
+        layoutPage();
+        assertEquals("Back keeps the group", content, shown(Preference.class));
+
+        page.searchSettings("Hide ads");
+        layoutPage();
+        assertTrue("a search looks through every group", shown(PreferenceCategory.class).contains("Ads and privacy"));
+        page.searchSettings("");
+        layoutPage();
+
+        assertTrue(chip("All").performClick());
+        layoutPage();
+        assertEquals(every, shown(Preference.class));
+        assertNotNull(page.getPreferenceScreen().findPreference("hushgram_category_group_1"));
+    }
+
+    /** #650: down a long page the chips stay over the top, and a tap there still moves between categories. */
+    @Test public void theChipsStayOverTheTopDownALongPage() throws Exception {
+        Settings.CATEGORY_OWN_PAGE.save(true);
+        // Every patch, for a page longer than the screen.
+        PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
+        openDialog();
+        tap(categoryRow("Ads and privacy"));
+        layoutPage();
+        ListView list = page.getView().findViewById(android.R.id.list);
+        View pinned = ((View) list.getParent()).findViewWithTag(CategoryStrip.PINNED_TAG);
+        assertNotNull("a copy of the chips over the list", pinned);
+        assertNotEquals("hidden while the chips show", View.VISIBLE, pinned.getVisibility());
+
+        list.setSelectionFromTop(list.getCount() - 1, 0);
+        layoutPage();
+        assertTrue("the strip has scrolled off", list.getFirstVisiblePosition() > positionOf(
+                page.getPreferenceScreen().findPreference(CategoryStrip.KEY)));
+        assertEquals("the copy shows", View.VISIBLE, pinned.getVisibility());
+        assertTrue("over the list's top", pinned.getTop() <= list.getTop());
+        View feed = null;
+        LinearLayout chips = (LinearLayout) ((android.widget.HorizontalScrollView) pinned).getChildAt(0);
+        for (int i = 0; i < chips.getChildCount(); i++) {
+            TextView name = chips.getChildAt(i).findViewById(CategoryStrip.NAME_ID);
+            // Android hid the first one, which has Android's title id on a page with no title (#650).
+            assertEquals(name.getText() + " shows", View.VISIBLE, name.getVisibility());
+            assertTrue(name.getText() + " has room", name.getWidth() > 0);
+            if ("Feed".contentEquals(name.getText())) feed = chips.getChildAt(i);
+        }
+        assertNotNull("the copy has the chips", feed);
+        assertTrue(feed.performClick());
+        layoutPage();
+        assertEquals("Feed", toolbarTitle());
+        assertEquals(categoryRow("Feed").getKey(), page.currentPage());
+
+        list.setSelectionFromTop(0, 0);
+        layoutPage();
+        assertNotEquals("hidden again at the top", View.VISIBLE, pinned.getVisibility());
+    }
+
+    /** The bound chip for [title] on the strip under Search. */
+    private View chip(String title) {
+        ListView list = page.getView().findViewById(android.R.id.list);
+        Preference strip = page.getPreferenceScreen().findPreference(CategoryStrip.KEY);
+        View row = list.getChildAt(positionOf(strip) - list.getFirstVisiblePosition());
+        assertNotNull("the strip must be on the screen", row);
+        LinearLayout chips = (LinearLayout) ((android.widget.HorizontalScrollView) row).getChildAt(0);
+        for (int i = 0; i < chips.getChildCount(); i++) {
+            View chip = chips.getChildAt(i);
+            TextView name = chip.findViewById(CategoryStrip.NAME_ID);
+            if (CategoryStrip.CHIP_TAG.equals(chip.getTag()) && title.contentEquals(name.getText())) return chip;
+        }
+        throw new AssertionError("no chip for " + title);
+    }
+
+    @Test public void theDialogsBackLeavesACategorysOwnPageBeforeClosing() throws Exception {
+        Settings.CATEGORY_OWN_PAGE.save(true);
+        openDialog();
+        tap(categoryRow("Notifications"));
+        Dialog window = dialog.getDialog();
+        window.onBackPressed();
+        ShadowLooper.idleMainLooper();
+        assertTrue("Back from a page stays in settings", window.isShowing());
+        assertTrue(shown(Preference.class).contains("Notifications"));
+        window.onBackPressed();
+        ShadowLooper.idleMainLooper();
+        assertFalse(window.isShowing());
+        dialog = null;
+    }
+
+    @Test public void recreationReopensTheCategorysOwnPage() throws Exception {
+        Settings.CATEGORY_OWN_PAGE.save(true);
+        openDialog();
+        tap(categoryRow("Feed"));
+        layoutPage();
+        controller.recreate();
+        ShadowLooper.idleMainLooper();
+        dialog = (SettingsDialog) controller.get().getFragmentManager().findFragmentByTag("category_pages");
+        page = (HushgramPreferenceFragment) dialog.getChildFragmentManager()
+                .findFragmentById(SettingsDialog.CONTAINER_ID);
+        layoutPage();
+        assertEquals(List.of("Feed"), shown(PreferenceCategory.class));
+        assertEquals(List.of(), shown(Preference.class));
+        assertEquals("Feed", toolbarTitle());
+        assertTrue(page.closeCategory());
+        layoutPage();
+        assertTrue(shown(Preference.class).contains("Feed"));
+    }
+
+    @Test public void theOwnPageSwitchKeepsYouOnSettingsEntryBothWays() throws Exception {
+        openDialog();
+        tap(categoryRow("Feed"));
+        tap(categoryRow("Settings entry"));
+        SwitchPreference own = (SwitchPreference) page.findPreference(Settings.CATEGORY_OWN_PAGE.key);
+        assertNotNull(own);
+        assertEquals("Categories on their own page", own.getTitle().toString());
+        assertFalse(own.isChecked());
+        assertTrue(ConfigurationBackup.eligible().containsKey(Settings.CATEGORY_OWN_PAGE.key));
+
+        flip(own, true);
+        assertTrue(Settings.CATEGORY_OWN_PAGE.savedValue());
+        assertEquals("the section with the switch becomes the page", List.of("Settings entry"),
+                shown(PreferenceCategory.class));
+        assertEquals("Settings entry", toolbarTitle());
+        assertSame(own, page.getPreferenceScreen().findPreference(Settings.CATEGORY_OWN_PAGE.key));
+
+        flip(own, false);
+        assertEquals("HushGram", toolbarTitle());
+        assertTrue(categoryRow("Settings entry").expanded);
+        assertTrue("what was open before comes back", categoryRow("Feed").expanded);
+        assertFalse(page.closeCategory());
+    }
+
+    /** What a tap on a switch does: asks its change listener, then saves the new value. */
+    private void flip(SwitchPreference row, boolean value) {
+        assertTrue(row.getOnPreferenceChangeListener().onPreferenceChange(row, value));
+        row.setChecked(value);
+        ShadowLooper.idleMainLooper();
+        layoutPage();
     }
 
     @Test public void pauseLeavesTheListAsChosen() throws Exception {

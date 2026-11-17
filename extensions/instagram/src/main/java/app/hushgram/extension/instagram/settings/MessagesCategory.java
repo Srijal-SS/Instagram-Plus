@@ -6,8 +6,11 @@
  */
 package app.hushgram.extension.instagram.settings;
 
+import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.callBlockAccountsRow;
+import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.callBlockModeRow;
 import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.category;
 import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.changePinRow;
+import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.chatGlassTintRow;
 import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.lockDelayRow;
 import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.lockToggle;
 import static app.hushgram.extension.instagram.settings.HushgramPreferenceFragment.toggle;
@@ -26,12 +29,14 @@ final class MessagesCategory {
     private MessagesCategory() { }
 
     static void add(HushgramPreferenceFragment page, PreferenceScreen screen, Context context, Set<PatchFamily> build) {
-        if (build.contains(PatchFamily.NOTES_ROW) || build.contains(PatchFamily.INBOX_SEARCH)
+        if (build.contains(PatchFamily.NOTES_ROW) || build.contains(PatchFamily.SPLIT_NOTES_ROW)
+                || build.contains(PatchFamily.INBOX_SEARCH)
                 || build.contains(PatchFamily.INBOX_SUGGESTIONS) || build.contains(PatchFamily.INSTANTS)
                 || build.contains(PatchFamily.THREAD_SEEN) || build.contains(PatchFamily.TYPING)
                 || build.contains(PatchFamily.DM_MEDIA_SEEN)
                 || build.contains(PatchFamily.ACTIVE_STATUS)
                 || build.contains(PatchFamily.LAST_ACTIVE)
+                || build.contains(PatchFamily.SHORT_ACTIVE_NOW)
                 || build.contains(PatchFamily.MESSAGES_LOCK)
                 || build.contains(PatchFamily.SCREENSHOT_REPORTS)
                 || build.contains(PatchFamily.BLEND_VISITS)
@@ -39,9 +44,12 @@ final class MessagesCategory {
                 || build.contains(PatchFamily.KEEP_IN_CHAT)
                 || build.contains(PatchFamily.VIEW_ONCE_MARK)
                 || build.contains(PatchFamily.CHAT_REELS)
+                || build.contains(PatchFamily.CHAT_MEDIA_WALK)
                 || build.contains(PatchFamily.CHAT_HISTORY)
                 || build.contains(PatchFamily.PREVIEW_CHATS)
                 || build.contains(PatchFamily.ASK_BEFORE_CALL)
+                || build.contains(PatchFamily.CALL_BLOCKER)
+                || build.contains(PatchFamily.KINDNESS_REMINDER)
                 || build.contains(PatchFamily.MESSAGE_BOX)
                 || build.contains(PatchFamily.PLUS_MENU)
                 || build.contains(PatchFamily.GLASS_CHAT)
@@ -54,6 +62,11 @@ final class MessagesCategory {
                                 + "Your chats, search and requests stay.")));
                 messages.addPreference(toggle(context, Settings.HIDE_NOTES_MAP, L10n.t("Hide the Map bubble"),
                         L10n.t("Takes only the Map bubble out of the row of notes. Your notes stay.")));
+            }
+            if (build.contains(PatchFamily.SPLIT_NOTES_ROW)) {
+                messages.addPreference(toggle(context, Settings.SPLIT_NOTES_ROW, L10n.t("Split the notes row"),
+                        L10n.t("Splits the row of notes into three stacks, Instants, Notes and Stories, the layout "
+                                + "Instagram is trying out. Restart Instagram to see the change.")));
             }
             if (build.contains(PatchFamily.INBOX_SEARCH)) {
                 messages.addPreference(toggle(context, Settings.HIDE_INBOX_SEARCH,
@@ -129,6 +142,11 @@ final class MessagesCategory {
                         L10n.t("Under a name in your messages and in a chat, the exact time they were last on, like "
                                 + "Active at 3:42 PM, replaces Active 3h ago. Active now stays as it is.")));
             }
+            if (build.contains(PatchFamily.SHORT_ACTIVE_NOW)) {
+                messages.addPreference(toggle(context, Settings.SHORT_ACTIVE_NOW, L10n.t("Shorter Active now"),
+                        L10n.t("Someone shows as Active now for one minute after they leave, like on the website, "
+                                + "instead of six and a half. Restart Instagram to see the change.")));
+            }
             if (build.contains(PatchFamily.SCREENSHOT_REPORTS)) {
                 messages.addPreference(toggle(context, Settings.HIDE_SCREENSHOTS, L10n.t("Don't report screenshots"),
                         L10n.t("Instagram doesn't notice when you take a screenshot, so whoever sent you a disappearing photo or video isn't told. Your screenshots save as usual.")));
@@ -167,6 +185,11 @@ final class MessagesCategory {
                                 + "after the reel on screen. Tap it to go back to the chat at that message. Works with Swipe "
                                 + "through a chat's reels on.")));
             }
+            if (build.contains(PatchFamily.CHAT_MEDIA_WALK)) {
+                messages.addPreference(toggle(context, Settings.SWIPE_CHAT_MEDIA, L10n.t("Swipe through a chat's photos and posts"),
+                        L10n.t("Open a photo or video from a chat and swipe up for the next photo, video or shared post in "
+                                + "that chat, in chat order. Swipe down to go back one. Back takes you to the chat.")));
+            }
             if (build.contains(PatchFamily.CHAT_HISTORY)) {
                 messages.addPreference(toggle(context, Settings.JUMP_IN_CHAT, L10n.t("Jump to the first message or a date"),
                         L10n.t("Open a chat, tap the clock button next to the call buttons at the top, or long press "
@@ -184,6 +207,24 @@ final class MessagesCategory {
                 messages.addPreference(toggle(context, Settings.HIDE_CALL_BUTTONS, L10n.t("Hide the call buttons in chats"),
                         L10n.t("Takes the voice and video call buttons off the top of a chat. The name keeps its room. "
                                 + "Turn it off and they're back the next time a chat opens.")));
+                messages.addPreference(toggle(context, Settings.HIDE_CHAT_BLEND, L10n.t("Hide Blend in chats"),
+                        L10n.t("Takes the Blend button off the top of a chat. Turn it off and it's back the next time "
+                                + "a chat opens.")));
+                messages.addPreference(toggle(context, Settings.HIDE_CHAT_BACK_BUTTON, L10n.t("Hide the back button in chats"),
+                        L10n.t("Leaves the back arrow off the top left of a chat, and the picture and the name move "
+                                + "over. Swipe back or use the phone's back button to leave the chat. Shows the next "
+                                + "time a chat opens.")));
+            }
+            if (build.contains(PatchFamily.CALL_BLOCKER)) {
+                messages.addPreference(callBlockModeRow(context));
+                messages.addPreference(callBlockAccountsRow(context));
+                messages.addPreference(toggle(context, Settings.CALL_BLOCK_DECLINE, L10n.t("Decline calls that don't ring"),
+                        L10n.t("Calls kept quiet by Who can call you are also declined, the same as tapping Decline, "
+                                + "instead of being left unanswered.")));
+            }
+            if (build.contains(PatchFamily.KINDNESS_REMINDER)) {
+                messages.addPreference(toggle(context, Settings.HIDE_KINDNESS_REMINDER, L10n.t("Hide the Community Standards reminder"),
+                        L10n.t("Takes the banner reminding you to be respectful off the bottom of a chat.")));
             }
             if (build.contains(PatchFamily.MESSAGE_BOX)) {
                 messages.addPreference(page.messageBoxRow(context));
@@ -201,8 +242,15 @@ final class MessagesCategory {
             }
             if (build.contains(PatchFamily.GLASS_CHAT)) {
                 messages.addPreference(toggle(context, Settings.GLASS_CHAT, L10n.t("Glass in chats"),
-                        L10n.t("Gives a chat's top bar frosted glass and puts the back, call and video buttons on round "
-                                + "glass circles. It shows the next time you open a chat. Needs Android 12 or newer for the blur.")));
+                        L10n.t("Gives a chat's top bar and message bar frosted glass and puts the back, call and video buttons "
+                                + "on round glass circles. It shows the next time you open a chat. Needs Android 12 or newer for the blur.")));
+                messages.addPreference(toggle(context, Settings.GLASS_CHAT_TOP_BAR, L10n.t("Glass top bar in chats"),
+                        L10n.t("Turn it off to leave a chat's top bar as Instagram draws it, with no frosted band behind it. "
+                                + "The round glass buttons and the glass message bar stay.")));
+                messages.addPreference(chatGlassTintRow(context, Settings.GLASS_CHAT_TOP_BAR_OPACITY,
+                        L10n.t("Top bar tint in chats")));
+                messages.addPreference(chatGlassTintRow(context, Settings.GLASS_CHAT_BOX_OPACITY,
+                        L10n.t("Message bar tint")));
             }
             if (build.contains(PatchFamily.FULL_SCREEN_BARS)) {
                 messages.addPreference(toggle(context, Settings.FULL_SCREEN_MESSAGES, L10n.t("Full screen Messages"),
@@ -216,16 +264,23 @@ final class MessagesCategory {
                 messages.addPreference(lockToggle(context, Settings.LOCK_APP, L10n.t("Lock all of Instagram"),
                         L10n.t("All of Instagram stays covered until your fingerprint, face or screen lock says it's "
                                 + "you, your messages too.")));
+                messages.addPreference(lockToggle(context, Settings.LOCK_SAVED, L10n.t("Lock Saved"),
+                        L10n.t("Saved and everything in it stay covered until your fingerprint, face or screen lock "
+                                + "says it's you.")));
+                messages.addPreference(lockToggle(context, Settings.LOCK_EACH_CHAT, L10n.t("Ask for each chat"),
+                        L10n.t("Every chat you open asks again, and so does your inbox when you go back to it. Off, "
+                                + "one unlock opens everything until you leave Instagram.")));
                 messages.addPreference(lockDelayRow(context));
                 messages.addPreference(unlockWithRow(context));
                 messages.addPreference(changePinRow(context));
                 messages.addPreference(page.lockedChatsRow(context));
+                messages.addPreference(page.lockedCollectionsRow(context));
                 messages.addPreference(page.hiddenChatsRow(context));
                 messages.addPreference(toggle(context, Settings.DOUBLE_TAP_HIDDEN_CHATS,
                         L10n.t("Double-tap Messages for hidden chats"),
-                        L10n.t("Two quick taps on the Messages button, on the tab bar or at the top of Home, open "
-                                + "your hidden chats. While a lock is on, it asks for it first. One tap opens Messages "
-                                + "as usual.")));
+                        L10n.t("Two quick taps on the Messages button, on the tab bar or at the top of Home, show "
+                                + "your hidden chats in your inbox after your screen lock or PIN. Two more taps hide them "
+                                + "again. Long press a chat to hide or unhide it. One tap opens Messages as usual.")));
                 messages.addPreference(page.pinnedChatsRow(context));
             }
         }

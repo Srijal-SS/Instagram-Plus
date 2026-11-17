@@ -107,7 +107,8 @@ public class CarouselArrowsSettingsTest {
         assertNotNull(row);
         assertEquals("Page dots on a pill", row.getTitle().toString());
         assertEquals("Moves a carousel post's page dots onto a round pill at the bottom of its photo or video, with "
-                + "the page you're on in blue.", row.getSummary().toString());
+                + "the page you're on in blue. Hold the pill and slide left or right to move through the pages.",
+                row.getSummary().toString());
         PreferenceGroup feed = arrows.getParent();
         assertSame(feed, row.getParent());
         int at = -1;
@@ -116,6 +117,28 @@ public class CarouselArrowsSettingsTest {
         assertFalse(Settings.CAROUSEL_DOTS_PILL.get());
         assertTrue(PatchFamily.CAROUSEL_ARROWS.switches.contains(Settings.CAROUSEL_DOTS_PILL));
         assertTrue(ConfigurationBackup.eligible().containsKey(Settings.CAROUSEL_DOTS_PILL.key));
+    }
+    /** Hide page number (#581) sits with the carousel switches, starts off and is part of a backup. */
+    @Test public void theNumberSwitchIsThereAndStartsOff() throws Exception {
+        open(EnumSet.of(PatchFamily.CAROUSEL_ARROWS));
+        Preference arrows = page.getPreferenceScreen().findPreference(Settings.CAROUSEL_ARROWS.key);
+        Preference row = page.getPreferenceScreen().findPreference(Settings.CAROUSEL_HIDE_NUMBER.key);
+        assertNotNull(row);
+        assertEquals("Hide page number", row.getTitle().toString());
+        assertSame(arrows.getParent(), row.getParent());
+        assertFalse(Settings.CAROUSEL_HIDE_NUMBER.get());
+        assertTrue(PatchFamily.CAROUSEL_ARROWS.switches.contains(Settings.CAROUSEL_HIDE_NUMBER));
+        assertTrue(ConfigurationBackup.eligible().containsKey(Settings.CAROUSEL_HIDE_NUMBER.key));
+    }
+    @Test public void flippingTheNumberOnReachesTheScreenUnderSettings() throws Exception {
+        open(EnumSet.of(PatchFamily.CAROUSEL_ARROWS));
+        Preference row = page.getPreferenceScreen().findPreference(Settings.CAROUSEL_HIDE_NUMBER.key);
+        assertFalse(CarouselArrows.listeningForTests(controller.get()));
+        assertTrue(row.getOnPreferenceChangeListener().onPreferenceChange(row, true));
+        Settings.CAROUSEL_HIDE_NUMBER.save(true);
+        org.robolectric.shadows.ShadowLooper.idleMainLooper();
+        assertTrue(CarouselArrows.listeningForTests(controller.get()));
+        Settings.CAROUSEL_HIDE_NUMBER.resetToDefault();
     }
     @Test public void flippingThePillOnReachesTheScreenUnderSettings() throws Exception {
         open(EnumSet.of(PatchFamily.CAROUSEL_ARROWS));

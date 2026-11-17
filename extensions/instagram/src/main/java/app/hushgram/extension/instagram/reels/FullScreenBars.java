@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
+import app.hushgram.extension.instagram.misc.BottomSpace;
 import app.hushgram.extension.instagram.misc.GlassTabBar;
 import app.hushgram.extension.instagram.settings.FamilyNames;
 import app.hushgram.extension.instagram.settings.Settings;
@@ -62,6 +63,9 @@ import app.hushgram.extension.shared.settings.HushgramPause;
  * HushGram asked for is undone: the immersive flags it added (anything else Instagram set meanwhile
  * stays), or on Android 11 and newer every bar it hid, with the window's own swipe behaviour back.
  *
+ * <p>With the status bar hidden, a reels viewer's top bar would sit under a punch hole camera at the
+ * top edge, so {@link ReelsBarCutout} lowers it below the cutout until the status bar is back (#525).
+ *
  * <p>The check runs from a draw listener at most every {@link #CHECK_MS}, and acts only when the
  * answer changes, so a swipe that brought the bars back for a moment isn't fought. With both switches
  * off and nothing hidden, a frame looks at nothing and leaves no check behind it, and a paused
@@ -76,6 +80,11 @@ public final class FullScreenBars {
     /** Your messages' list of chats, and a chat's whole screen, as Instagram names them (#288). */
     static final String INBOX = "inbox_refreshable_thread_list_recyclerview";
     static final String CHAT = "thread_view_root";
+    /**
+     * Your messages' own top bar (#187). 454 draws the list of chats in Compose, so [INBOX] is never on
+     * screen there; the bar's parent is the whole messages screen.
+     */
+    static final String INBOX_BAR = "direct_inbox_action_bar";
 
     /** The viewer counts as showing when this share of the window is its own. */
     static final float FILL_SHARE = 0.8f;
@@ -108,6 +117,9 @@ public final class FullScreenBars {
     /** How many of an activity's bar heights listeners are kept to be told a new pair (#200). */
     static final int ASKERS_KEPT = 16;
     static final String COUNT_TOLD = "screens told the bars' new heights";
+    static final String COUNT_TAB_BAR_KEPT = "kept the tab bar hidden through a tell";
+    /** Whether the kept listeners are being told a pair right now. Main thread only. */
+    private static boolean telling;
     /**
      * Each activity's kept bar heights listeners, newest last. Held strongly, since Instagram lets a
      * listener go once it has called it, and each listener holds its screen, which holds the activity:
@@ -119,6 +131,14 @@ public final class FullScreenBars {
     private static Teller teller = FullScreenBars::tellHeights;
     static final String COUNT_KEYBOARD = "kept the navigation bar's space for the keyboard";
     private static Keyboard keyboard = FullScreenBars::keyboardInFront;
+    /** The camera cutout's height a test gave the window, or -1 for the window's own. */
+    private static int cutoutTop = -1;
+    private static final int WINDOWS_OWN = -2;
+    /** The navigation bar's height a test gave the front window, or {@link #WINDOWS_OWN} to read the window's. */
+    private static int testNavBar = WINDOWS_OWN;
+    /** The one window a test gave {@link #testNavBar}, the others having no bar, or null for every window. */
+    @Nullable
+    private static WeakReference<Activity> testNavBarWindow;
 
     private FullScreenBars() {
     }
@@ -141,7 +161,7 @@ public final class FullScreenBars {
         synchronized (IDS) {
             Integer found = IDS.get(name);
             if (found == null) {
-                found = context.getResources().getIdentifier(name, "id", context.getPackageName());
+                found = context.getResources().getIdentifier(name, "id", Utils.resourcePackage(context));
                 IDS.put(name, found);
             }
             return found;
@@ -172,7 +192,28 @@ public final class FullScreenBars {
      * swiped to from Home, or a chat in its own activity, the keyboard up or not.
      */
     static boolean messagesShowing(View decor) {
-        return anyCovers(decor, CHAT) || anyCovers(decor, INBOX);
+        return anyCovers(decor, CHAT) || anyCovers(decor, INBOX) || inboxBarCovers(decor);
+    }
+
+    /** Whether a showing [INBOX_BAR]'s parent, the screen it heads, covers [MESSAGES_SHARE] of [decor]. */
+    private static boolean inboxBarCovers(View decor) {
+        int id = id(decor.getContext(), INBOX_BAR);
+        if (id == 0 || decor.findViewById(id) == null) return false;
+        return barParentCovers(decor, id, decor);
+    }
+
+    private static boolean barParentCovers(View view, int id, View decor) {
+        if (view.getVisibility() != View.VISIBLE) return false;
+        if (view.getId() == id) {
+            Object parent = view.getParent();
+            return parent instanceof View && covers((View) parent, decor, MESSAGES_SHARE);
+        }
+        if (!(view instanceof ViewGroup)) return false;
+        ViewGroup group = (ViewGroup) view;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            if (barParentCovers(group.getChildAt(i), id, decor)) return true;
+        }
+        return false;
     }
 
     /** Whether a view named [name] covers [MESSAGES_SHARE] of [decor]; a hidden one left behind doesn't hide another. */
@@ -371,15 +412,27 @@ public final class FullScreenBars {
      * ({@link GlassTabBar#navBarHeight}). If anything throws, the height goes through as it came.
      */
     public static int navBarHeight(int height) {
+        // A 0 for a window left with no bar at its foot, like the top half of a split screen, is a real
+        // 0: no height Instagram offered before stands in for it, and nothing makes room for a bar.
+        boolean noBar = height == 0 && navOffered > 0 && navBarInFront() == 0;
         // While the bar is hidden Instagram offers back the 0 it kept, so the keyboard coming up in a
         // chat that opened with the bars hidden had no height to let through (#288): the height
         // Instagram last offered stands in for it.
-        int offered = height == 0 && navOffered > 0 ? navOffered : height;
+        int offered = height == 0 && navOffered > 0 && !noBar ? navOffered : height;
         boolean keys = offered > 0 && keyboardUp();
         if (!keys) offered = height;
         int kept = keys ? offered : hiddenBarHeight(height, false);
         try {
-            kept = keys ? GlassTabBar.navBarHeightOverTheKeyboard(kept) : GlassTabBar.navBarHeight(kept, hiddenNavHeight(height));
+            int hidden = keys || noBar ? 0 : hiddenNavHeight(height);
+            if (keys) {
+                kept = GlassTabBar.navBarHeightOverTheKeyboard(kept);
+            } else if (height == 0 && hidden == 0 && navTaken && navOffered > 0 && !noBar) {
+                // The 0 offered back is the one HushGram answered for the pill, not a missing bar, so
+                // Instagram keeps it and the pill keeps the bar's room under itself.
+                GlassTabBar.navBarHeightTaken(navOffered, false);
+            } else {
+                kept = GlassTabBar.navBarHeight(kept, hidden);
+            }
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.GLASS_TAB_BAR, "navigation bar height", failure);
         }
@@ -403,6 +456,30 @@ public final class FullScreenBars {
             HookStatus.threw(FamilyNames.FULL_SCREEN_BARS, "hidden navigation bar height", failure);
             return 0;
         }
+    }
+
+    /**
+     * How tall the navigation bar is taken to be where the phone reports none at the window's foot, as a
+     * Samsung does with its gesture hint hidden, though a swipe up from there still leaves the app (#633):
+     * the system's standard height Instagram looked up in its place ({@link BottomSpace#guessedHeight}),
+     * or the one it last offered while HushGram hides the bar. 0 on a phone with no navigation bar. Only a
+     * window that reports no bar asks, and the front window's insets can't tell that Samsung from the top
+     * half of a split screen, so they don't decide here: the hidden bar's height is the lift when "Remove
+     * the empty space at the bottom" is left out and Instagram's guess is 0.
+     */
+    public static int unreportedNavHeight() {
+        return Math.max(BottomSpace.guessedHeight(), hiddenNavHeight(0));
+    }
+
+    /**
+     * Where the strip at the foot of [view]'s window starts, on the screen: a drag from below there is the
+     * system's (#633). The strip is as {@link ReelSeekRoom} measures it, and none makes this the window's foot.
+     */
+    public static int systemStripTop(View view) {
+        View root = view.getRootView();
+        int[] at = new int[2];
+        root.getLocationOnScreen(at);
+        return at[1] + root.getHeight() - ReelSeekRoom.strip(view);
     }
 
     /**
@@ -430,6 +507,45 @@ public final class FullScreenBars {
         Window window = activity == null ? null : activity.getWindow();
         WindowInsets insets = window == null ? null : window.getDecorView().getRootWindowInsets();
         return insets != null && insets.isVisible(WindowInsets.Type.ime());
+    }
+
+    /**
+     * The navigation bar's height at the front window's foot, showing or not, or -1 where the window
+     * can't say. 0 where no bar sits under the window: the top half of a split screen, a pop-up window,
+     * a bar on the side, or a Samsung with its gesture hint hidden. GlassTabBar hears an activity resume
+     * ahead of this class, so its activity in front comes first: as the pill's activity comes back
+     * ({@link #takeNavBarHeight}), {@link #resumed} still names the window just left. A window just
+     * made isn't attached yet as it first resumes, so the one it opened over, in the same half of a
+     * split screen, answers for it.
+     */
+    private static int navBarInFront() {
+        try {
+            Activity front = GlassTabBar.activityInFront();
+            Activity last = resumed.get();
+            if (testNavBar != WINDOWS_OWN) {
+                Activity activity = front != null ? front : last;
+                Activity only = testNavBarWindow == null ? null : testNavBarWindow.get();
+                return testNavBarWindow == null || activity == only ? testNavBar : 0;
+            }
+            int bar = navBarAt(front);
+            if (bar < 0 && last != front) bar = navBarAt(last);
+            return bar;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.GLASS_TAB_BAR, "navigation bar in front", failure);
+            return -1;
+        }
+    }
+
+    /** The navigation bar's height at the foot of [activity]'s window, or -1 while it isn't attached. */
+    @SuppressWarnings("deprecation")
+    private static int navBarAt(@Nullable Activity activity) {
+        Window window = activity == null ? null : activity.getWindow();
+        WindowInsets insets = window == null ? null : window.getDecorView().getRootWindowInsets();
+        if (insets == null) return -1;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return insets.getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars()).bottom;
+        }
+        return insets.getStableInsetBottom();
     }
 
     /** How the keyboard is looked for: the front window's insets outside tests. */
@@ -522,15 +638,35 @@ public final class FullScreenBars {
      * in one layout ({@link GlassTabBar#heightsTold}, #222).
      */
     private static void tellAll(List<Object> listeners) {
-        for (Object listener : listeners) {
-            try {
-                teller.tell(listener, keptStatus, keptNav);
-            } catch (Throwable failure) {
-                HookStatus.threw(FamilyNames.FULL_SCREEN_BARS, "heights told", failure);
+        telling = true;
+        try {
+            for (Object listener : listeners) {
+                try {
+                    teller.tell(listener, keptStatus, keptNav);
+                } catch (Throwable failure) {
+                    HookStatus.threw(FamilyNames.FULL_SCREEN_BARS, "heights told", failure);
+                }
             }
+        } finally {
+            telling = false;
         }
         GlassTabBar.heightsTold();
         HookStatus.counted(FamilyNames.FULL_SCREEN_BARS, COUNT_TOLD);
+    }
+
+    /**
+     * Whether Instagram's main activity should leave its tab bar as it is rather than show it, called
+     * first in the activity's method that shows or hides the bar with [visibility]. The activity's own
+     * heights listener is one of the kept ones, and being told a pair lays the bar out again and shows
+     * it, over a chat that had just hidden it: with a floating glass pill the chat's opening and its
+     * keyboard change the navigation bar's height, so the pill came back over the message box. Only a
+     * show asked for while HushGram tells the kept listeners is skipped. Instagram never makes that
+     * call itself, since it lets a listener go once it has called it.
+     */
+    public static boolean keepsTabBarThroughATell(int visibility) {
+        if (!telling || visibility != View.VISIBLE) return false;
+        HookStatus.counted(FamilyNames.FULL_SCREEN_BARS, COUNT_TAB_BAR_KEPT);
+        return true;
     }
 
     /** How a kept listener is told a pair of heights: the patch-filled stub outside tests. */
@@ -614,7 +750,8 @@ public final class FullScreenBars {
                 statusAnswer = statusOffered;
                 gave = true;
             }
-            if (navTaken && navOffered > 0 && !anyHidden(false)) {
+            // A window left with no bar at its foot keeps the 0: there's no bar to give room for.
+            if (navTaken && navOffered > 0 && !anyHidden(false) && navBarInFront() != 0) {
                 int answer = GlassTabBar.navBarHeight(navOffered, 0);
                 if (answer > 0) {
                     keepNavBarHeight(answer);
@@ -643,7 +780,7 @@ public final class FullScreenBars {
                 takeHiddenHeights(bars);
                 return;
             }
-            if (!navTaken || navOffered <= 0) return;
+            if (!navTaken || navOffered <= 0 || navBarInFront() == 0) return;
             int answer = GlassTabBar.navBarHeightOverTheKeyboard(navOffered);
             if (answer <= 0) return;
             keepNavBarHeight(answer);
@@ -670,12 +807,19 @@ public final class FullScreenBars {
             keepNavBarHeight(0);
             navTaken = true;
             keptNav = 0;
+            // The window it came back from may have had the height given through, which left the pill no room.
+            if (navBarInFront() != 0) GlassTabBar.navBarHeightTaken(navOffered, hiddenNavHeight(0) > 0);
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.GLASS_TAB_BAR, "navigation bar height again", failure);
         }
     }
 
-    /** The status bar's and the navigation bar's heights owed back, 0 for one not answered 0. Owed once. */
+    /**
+     * The status bar's and the navigation bar's heights owed back, 0 for one not answered 0. Owed once.
+     * Owed even where the window reports no bar: a Samsung with its gesture hint hidden reports none
+     * while Instagram keeps its guessed height, and a chat built on 0 there sat lower than Instagram
+     * puts it (#196). What comes back is only what Instagram itself offered.
+     */
     static int[] heightsToGiveBack() {
         int[] heights = {statusTaken ? statusOffered : 0, navTaken ? navOffered : 0};
         statusTaken = false;
@@ -695,6 +839,34 @@ public final class FullScreenBars {
         askers.clear();
         teller = tells == null ? FullScreenBars::tellHeights : tells;
         keyboard = FullScreenBars::keyboardInFront;
+        cutoutTop = -1;
+        // A test window's insets say nothing of a real phone's bar, so tests start where a window can't
+        // say (-1) and give the bar a height themselves where it matters.
+        testNavBar = -1;
+        testNavBarWindow = null;
+    }
+
+    /** Tests give every window a navigation bar [height] pixels tall at its foot, 0 for none. */
+    static void navBarForTests(int height) {
+        testNavBar = height;
+        testNavBarWindow = null;
+    }
+
+    /** Tests give [window] a navigation bar [height] pixels tall at its foot and every other window none. */
+    static void navBarForTests(Activity window, int height) {
+        testNavBar = height;
+        testNavBarWindow = new WeakReference<>(window);
+    }
+
+    /** Tests read each window's own insets, as a phone does. */
+    static void windowsOwnNavBarForTests() {
+        testNavBar = WINDOWS_OWN;
+        testNavBarWindow = null;
+    }
+
+    /** Tests give the window a camera cutout [top] pixels tall, since a test window has none. */
+    static void cutoutForTests(int top) {
+        cutoutTop = top;
     }
 
     /** Tests say whether the keyboard shows. */
@@ -793,6 +965,10 @@ public final class FullScreenBars {
         private boolean stopped;
         /** Whether the keyboard showed at the last frame with the navigation bar hidden (#288). */
         private boolean keys;
+        /** The reels top bars lowered below the camera cutout while the status bar is hidden (#525). */
+        private final ReelsBarCutout cutout = new ReelsBarCutout();
+        /** Sheet content Instagram sized past the window's foot, padded back up while bars are hidden (#626). */
+        private final SheetsOnScreen sheets = new SheetsOnScreen();
 
         Session(Activity activity) {
             this.activity = new WeakReference<>(activity);
@@ -897,9 +1073,31 @@ public final class FullScreenBars {
                     show();
                     giveBackShownHeights();
                 }
+                cutout.follow(decor, hides(true), cutoutTop >= 0 ? cutoutTop : ReelsBarCutout.safeTop(decor));
+                sheets.follow(decor, hidden, keyboardShows());
             } catch (Throwable failure) {
                 HookStatus.threw(FamilyNames.FULL_SCREEN_BARS, "check", failure);
             }
+        }
+
+        /** Whether the keyboard shows, or true when that can't be told, so a sheet is left as it is. */
+        private boolean keyboardShows() {
+            try {
+                return keyboard.shown();
+            } catch (Throwable failure) {
+                HookStatus.threw(FamilyNames.FULL_SCREEN_BARS, "keyboard", failure);
+                return true;
+            }
+        }
+
+        /** How many reels top bars are lowered below the camera cutout now, for tests. */
+        int barsLowered() {
+            return cutout.loweredCount();
+        }
+
+        /** How many sheet contents are padded up to the window's foot now, for tests. */
+        int sheetsLifted() {
+            return sheets.liftedCount();
         }
 
         @SuppressWarnings("deprecation")
@@ -931,6 +1129,8 @@ public final class FullScreenBars {
 
         @SuppressWarnings("deprecation")
         void show() {
+            cutout.putBack();
+            sheets.putBack();
             if (!hidden && !saved) return;
             hidden = false;
             saved = false;

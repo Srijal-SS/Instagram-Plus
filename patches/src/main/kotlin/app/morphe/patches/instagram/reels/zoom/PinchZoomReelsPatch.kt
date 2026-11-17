@@ -38,15 +38,16 @@ internal const val CREATE_ZOOM_CONFIG = "ClipsZoomUtil_createZoomConfig"
 /**
  * isLithoZoomableComponentEnabled: a reel's video sits in Instagram's zoomable component, and the
  * Reels gesture detector hands it a two-finger move. Read once, into the session's zoom settings.
- * 454 renumbered it from 453's 0x8105f500011b5e.
+ * 455 renumbered it from 454's 0x8105d100011b36 (453 had 0x8105f500011b5e).
  */
-internal const val ZOOMABLE_FLAG = 0x8105d100011b36L
+internal const val ZOOMABLE_FLAG = 0x8105c500011af0L
 
 /**
  * isLithoZoomGestureEnabled: a second finger on a reel starts a zoom instead of being ignored. Read
- * right after [ZOOMABLE_FLAG], into the same settings. 454 renumbered it from 453's 0x208105f500021b5f.
+ * right after [ZOOMABLE_FLAG], into the same settings. 455 renumbered it from 454's 0x208105d100021b37
+ * (453 had 0x208105f500021b5f).
  */
-internal const val ZOOM_GESTURE_FLAG = 0x208105d100021b37L
+internal const val ZOOM_GESTURE_FLAG = 0x208105c500021af1L
 
 /**
  * Lets two fingers zoom into a playing reel, through Instagram's own zoom for Reels, which it keeps
@@ -80,15 +81,23 @@ private fun refuse(detail: String): Nothing = throw PatchException("$PATCH: $det
 /**
  * Finds the one read of [ZOOMABLE_FLAG] and of [ZOOM_GESTURE_FLAG]. Both have to be the flag's own
  * read, in one method, each stored straight into a boolean of the settings class the method marked
- * [CREATE_ZOOM_CONFIG] asks the session for, and that method has to read both fields. Fails before
- * anything changes when any of it isn't so, since that's an update this patch hasn't seen.
+ * [CREATE_ZOOM_CONFIG] asks the session for, and that method has to read both fields. Where a flag is
+ * read more than once, the read is the one stored into those settings: 455 also reads
+ * [ZOOMABLE_FLAG] in a startup task that only warms the zoom classes up when it's on
+ * (`LX/07wO;->A01` at 348 on 386113969, beside `LX/0RU8;->A02`, the settings' factory), which stays
+ * Instagram's. Fails before anything changes when any of it isn't so, since that's an update this
+ * patch hasn't seen.
  */
 internal fun BytecodePatchContext.findReelZoom(): List<FlagLoad> {
     val settings = zoomSettingsType()
     val reads = listOf(ZOOMABLE_FLAG, ZOOM_GESTURE_FLAG).map { flag ->
         val id = flag.toString(16)
         val loads = findFlagLoads(PATCH, flag, "Z")
-        val read = loads.singleOrNull() ?: refuse("expected one read of the zoom flag $id, found ${loads.size}")
+        val kept = if (loads.size > 1) loads.filter { storedField(it)?.definingClass == settings.first } else loads
+        val read = kept.singleOrNull() ?: refuse(
+            "expected one read of the zoom flag $id, found ${loads.size}" +
+                if (loads.size > 1) ", ${kept.size} of them stored into the zoom settings ${settings.first}" else "",
+        )
         if (read.shared) refuse("the read of $id in ${read.type}->${read.name} is shared with another flag")
         read
     }

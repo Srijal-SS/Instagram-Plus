@@ -41,6 +41,10 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
+
 import app.hushgram.extension.shared.Utils;
 import app.hushgram.extension.shared.settings.preference.ImmediateAction;
 
@@ -279,6 +283,8 @@ public final class ScreenColors {
      * last rows (Report a problem, Support HushGram) follows a page's row or the other one.
      */
     private static boolean sharesCard(Preference above, Preference below) {
+        // A category open in place shows its rows under its own, so the next one starts a card.
+        if (above instanceof HushgramPreferenceFragment.Heading && ((HushgramPreferenceFragment.Heading) above).expanded) return false;
         return (opensPage(above) && (opensPage(below) || closesPage(below))) || (closesPage(above) && closesPage(below));
     }
 
@@ -299,6 +305,10 @@ public final class ScreenColors {
         return -1;
     }
 
+    /** A card's outer corners, and the small ones where two of its rows meet (#650). */
+    static final int CARD_RADIUS_DP = 20;
+    static final int JOIN_RADIUS_DP = 4;
+
     /**
      * Native Instagram list row presentation: edge-to-edge seamless rows with subtle touch ripple.
      */
@@ -315,6 +325,21 @@ public final class ScreenColors {
         int vertical = dp(row, 13);
         row.setPaddingRelative(horizontal, vertical, horizontal, vertical);
         row.setMinimumHeight(dp(row, 52));
+    }
+
+    /** A group's name over its first category: quiet, in sentence case, outside any card (#642). */
+    void paintGroupLabel(View row) {
+        TextView title = row.findViewById(android.R.id.title);
+        if (title != null) {
+            title.setTextColor(summary);
+            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            title.setLetterSpacing(0.02f);
+            title.setAllCaps(false);
+        }
+        row.setBackground(null);
+        row.setPaddingRelative(dp(row, 30), dp(row, 18), dp(row, 30), dp(row, 4));
+        row.setMinimumHeight(0);
     }
 
     /** A section title. */
@@ -593,6 +618,21 @@ public final class ScreenColors {
         View field = dialog.findViewById(android.R.id.edit);
         if (field instanceof EditText) paintField((EditText) field);
         if (window != null) startTextAtTheStart(window.getDecorView());
+        if (window != null) followFont(window.getDecorView());
+    }
+
+    /** Dialog windows already following the picked font, so a repaint doesn't watch one twice. */
+    private static final Set<View> FONT_WATCHED = Collections.synchronizedSet(
+            Collections.newSetFromMap(new WeakHashMap<>()));
+
+    /**
+     * With the font patch in the build, a dialog's text follows the font picked for Instagram's,
+     * as the settings page's does (#166). The "i" descriptions, pickers and prompts are windows of
+     * their own, which the page's watcher never sees.
+     */
+    private static void followFont(View decor) {
+        if (!PatchFamily.FONT.inBuild() || !FONT_WATCHED.add(decor)) return;
+        decor.getViewTreeObserver().addOnPreDrawListener(new SettingsDialog.FontDraw(decor));
     }
 
     /**

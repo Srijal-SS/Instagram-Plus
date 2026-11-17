@@ -14,12 +14,14 @@
             "op": "any",
             "patches": [
               "Hide ads",
+              "Hide Instagram Plus prompts",
               "Sanitize sharing links",
               "Open links in external browser",
               "Spoof location",
               "App-only proxy",
               "Skip the contacts and location popups",
-              "Skip the ad data reminder"
+              "Skip the ad data reminder",
+              "Keep photo locations from Instagram"
             ]
           },
           {
@@ -33,7 +35,8 @@
               "Hide that you're typing",
               "Hide your active status",
               "Don't report screenshots",
-              "Don't report Blend visits"
+              "Don't report Blend visits",
+              "Don't send feed view history"
             ]
           }
         ]
@@ -52,7 +55,8 @@
               "Hide that you're typing",
               "Hide your active status",
               "Don't report screenshots",
-              "Don't report Blend visits"
+              "Don't report Blend visits",
+              "Don't send feed view history"
             ]
           }
         },
@@ -80,6 +84,7 @@
           "Stop swipe to create",
           "Full resolution photos",
           "Hide the home feed",
+          "Don't send feed view history",
           "Stop swiping between tabs",
           "Ask before a like",
           "Ask before a refresh",
@@ -90,6 +95,7 @@
           "Keep your place in Home",
           "Start feed videos with sound",
           "Tap a feed video to pause it",
+          "Hold for 2x on feed videos",
           "Seek bar on feed videos",
           "Long press to zoom",
           "Rounded post corners",
@@ -99,8 +105,12 @@
           "Hide Follow on feed posts",
           "Hide captions",
           "Hide the audio icon on posts",
+          "Auto scroll in Home",
           "Keep Home's top bar",
-          "Hide activity bubbles"
+          "Hide activity bubbles",
+          "Hide Made with Edits",
+          "Save in the post menu",
+          "Watch again in the feed"
         ]
       },
       "anchors": [
@@ -227,6 +237,7 @@
         "op": "any",
         "patches": [
           "Hide the notes row",
+          "Split the notes row",
           "Hide the search bar in Messages",
           "Hide suggested accounts in DMs",
           "Hide Instants",
@@ -235,6 +246,7 @@
           "View DM photos and videos anonymously",
           "Hide your active status",
           "Show when someone was last active",
+          "Shorter Active now",
           "Lock your messages",
           "Don't report screenshots",
           "Don't report Blend visits",
@@ -242,9 +254,11 @@
           "Keep in chat",
           "Mark one-time photos and videos",
           "Swipe through a chat's reels",
+          "Swipe through a chat's photos and posts",
           "Chat history tools",
           "Preview chats",
           "Ask before a call",
+          "Call blocker",
           "Message box buttons",
           "Chat plus menu",
           "Glass in chats",
@@ -283,6 +297,7 @@
           "Hide Reels in the feed",
           "Hide suggested accounts in Reels",
           "Hide paid partnership Reels",
+          "Hide lives in Reels",
           "Hide AI-labeled reels",
           "Hide reels by caption words",
           "Hide reels with few views",
@@ -297,11 +312,16 @@
           "Show a reel's exact time",
           "Keep a seek bar on Reels",
           "Pinch to zoom on Reels",
+          "Double tap to skip on Reels",
+          "Hide the 2x popup on Reels",
           "Blur the bars around Reels",
           "Keep Reels auto scroll on",
           "Stop Reels scrolling",
           "Swipe left to open the profile",
-          "Find the reel you came from"
+          "Keep the tab bar on a reel's profile",
+          "Find the reel you came from",
+          "Open reel links on that reel",
+          "Control the reel above comments"
         ]
       },
       "anchors": [
@@ -346,6 +366,7 @@
           "Start stories with sound",
           "Stop swipe up to reply",
           "Hide the reply box on stories",
+          "Keep story buttons below the story",
           "Show a story's exact time",
           "See who a story mentions",
           "Hide Follow on stories",
@@ -353,7 +374,8 @@
           "View live anonymously",
           "Download any story",
           "Upload stories at full quality",
-          "Story text fonts"
+          "Story text fonts",
+          "Keep story viewers"
         ]
       },
       "anchors": [
@@ -372,6 +394,15 @@
             "op": "any",
             "patches": [
               "View stories anonymously"
+            ]
+          }
+        },
+        {
+          "title": "Keep story viewers",
+          "when": {
+            "op": "any",
+            "patches": [
+              "Keep story viewers"
             ]
           }
         }
@@ -463,7 +494,9 @@
           "Save comment photo",
           "Hide comments",
           "Hide the comment emoji row",
-          "Open comments without the keyboard"
+          "Open comments without the keyboard",
+          "Hide GIFs in comments",
+          "Search comments"
         ]
       },
       "anchors": [
@@ -502,10 +535,42 @@
           "Hide Notes on profile pictures",
           "Hide profile tabs",
           "Saved on your profile",
-          "Profile posts as a list"
+          "Profile posts as a list",
+          "Jump a profile's posts to a date",
+          "Sort reels on profiles",
+          "Ask before a follow",
+          "Sent follow requests",
+          "Keep online history"
         ]
       },
       "anchors": [
+        {
+          "title": "About this account button",
+          "when": {
+            "op": "any",
+            "patches": [
+              "Save profile picture"
+            ]
+          }
+        },
+        {
+          "title": "Keep profile history",
+          "when": {
+            "op": "any",
+            "patches": [
+              "Save profile picture"
+            ]
+          }
+        },
+        {
+          "title": "Keep online history",
+          "when": {
+            "op": "any",
+            "patches": [
+              "Keep online history"
+            ]
+          }
+        },
         {
           "title": "Show if a profile follows you",
           "when": {
@@ -700,6 +765,15 @@
       },
       "anchors": [
         {
+          "title": "Ask for VP9 instead of AV1",
+          "when": {
+            "op": "any",
+            "patches": [
+              "Ask for VP9 instead of AV1"
+            ]
+          }
+        },
+        {
           "title": "Download feed videos",
           "when": {
             "op": "any",
@@ -716,6 +790,32 @@
         },
         {
           "title": "Save videos other apps can open",
+          "when": {
+            "op": "unconditional"
+          }
+        }
+      ]
+    },
+    {
+      "id": "settings-viewinghistory",
+      "title": "Viewing history",
+      "builder": "ViewingHistoryCategory",
+      "page": true,
+      "when": {
+        "op": "any",
+        "patches": [
+          "Download any video"
+        ]
+      },
+      "anchors": [
+        {
+          "title": "Keep a viewing history",
+          "when": {
+            "op": "unconditional"
+          }
+        },
+        {
+          "title": "Clear viewing history",
           "when": {
             "op": "unconditional"
           }
@@ -745,6 +845,15 @@
         },
         {
           "title": "Stop the analytics upload alarm",
+          "when": {
+            "op": "any",
+            "patches": [
+              "Stop background wake-ups"
+            ]
+          }
+        },
+        {
+          "title": "Stop background feed refresh",
           "when": {
             "op": "any",
             "patches": [

@@ -96,11 +96,11 @@ public final class ReelFullScreenButton {
             Object icon = null;
             if (drawable != null) {
                 // The last icon over More is the one that makes up the margin More takes back.
-                long under = aboveMore && !ReelSpeedButton.shows(column) && !ReelTextButton.shows(column)
+                long under = aboveMore && !ReelMuteButton.shows(column) && !ReelSpeedButton.shows(column) && !ReelTextButton.shows(column)
                         && !ReelSoundButton.shows(column) && !ReelBlockButton.shows(column)
                         && !ReelNotInterestedButton.shows(column) && !ReelDownloadButton.shows(column)
                         ? ReelDownloadButton.underAboveMore(column, context, margin) : margin;
-                icon = ReelDownloadButton.bridge.icon(drawable, L10n.t(context, "Full screen"), new Click(column), size, under);
+                icon = ReelColumnFit.icon(drawable, L10n.t(context, "Full screen"), new Click(column), size, under);
             }
             if (icon == null) {
                 HookStatus.counted(FamilyNames.REEL_DOWNLOAD, COUNT_REFUSED);
@@ -131,7 +131,7 @@ public final class ReelFullScreenButton {
         Resources resources = context.getResources();
         int known = glyph;
         if (known == 0) {
-            known = ReelNotInterestedButton.glyphId(resources, context.getPackageName(), ICON_NAMES);
+            known = ReelNotInterestedButton.glyphId(resources, Utils.resourcePackage(context), ICON_NAMES);
             glyph = known;
         }
         if (known <= 0) return null;

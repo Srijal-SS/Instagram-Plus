@@ -30,7 +30,9 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -56,6 +58,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import app.hushgram.extension.instagram.settings.FamilyNames;
 import app.hushgram.extension.instagram.settings.Settings;
@@ -78,6 +81,8 @@ public class MessagesLockTest {
     private static final int FRAME = 0x7f0b0001;
     private static final int LIST = 0x7f0b0002;
     private static final int CHAT = 0x7f0b0003;
+    /** Saved's pages, in {@link MessagesLock#SAVED_PAGES}' order. */
+    private static final int[] SAVED_PAGES = {0x7f0b0010, 0x7f0b0011, 0x7f0b0012, 0x7f0b0013, 0x7f0b0014, 0x7f0b0015};
 
     /** Each ask's two answers, oldest first. */
     private final List<Runnable[]> asks = new ArrayList<>();
@@ -90,6 +95,7 @@ public class MessagesLockTest {
         ids.put(MessagesLock.INBOX_FRAME, FRAME);
         ids.put(MessagesLock.INBOX_LIST, LIST);
         ids.put(MessagesLock.CHAT_ROOT, CHAT);
+        for (int i = 0; i < SAVED_PAGES.length; i++) ids.put(MessagesLock.SAVED_PAGES[i], SAVED_PAGES[i]);
         MessagesLock.idsForTests = ids;
         MessagesLock.asker = (activity, confirmed, notConfirmed) -> asks.add(new Runnable[]{confirmed, notConfirmed});
         BaseSettings.PAUSED.save(false);
@@ -103,8 +109,13 @@ public class MessagesLockTest {
         MessagesLock.resetForTests();
         Settings.LOCK_MESSAGES.resetToDefault();
         Settings.LOCK_APP.resetToDefault();
+        Settings.LOCK_SAVED.resetToDefault();
+        Settings.LOCK_EACH_CHAT.resetToDefault();
         Settings.LOCK_AGAIN.resetToDefault();
         Settings.LOCKED_CHATS.resetToDefault();
+        // A chat hidden here stays out of every later class's lists in this sandbox otherwise.
+        Settings.HIDDEN_CHATS.resetToDefault();
+        HiddenChats.resetForTests();
         Settings.UNLOCK_WITH.resetToDefault();
         Settings.LOCK_PIN.resetToDefault();
         BaseSettings.PAUSED.save(false);
@@ -357,6 +368,112 @@ public class MessagesLockTest {
         MessagesLock.check(activity);
         assertEquals(View.GONE, cover.getVisibility());
         assertEquals(1, covers(activity));
+    }
+
+    /**
+     * Lock Saved on its own covers Saved over the whole screen, since its top bar names the
+     * collection, and asks once. The inbox, message notifications and the banner for a new message
+     * stay as they are (#597).
+     */
+    @Test
+    public void lockSavedCoversSavedAndLeavesTheMessagesAlone() {
+        Settings.LOCK_MESSAGES.save(false);
+        Settings.LOCK_SAVED.save(true);
+        Notification message = message("ig_direct", Notification.CATEGORY_MESSAGE);
+        assertSame("a message's notification lost its text", message, MessagesLock.notification(message));
+        assertFalse("the banner for a message waited", MessagesLock.holdBanner());
+        Activity inbox = inbox().get();
+        MessagesLock.check(inbox);
+        assertNull("the inbox got a cover", cover(inbox));
+        assertEquals("asked over the inbox", 0, asks.size());
+
+        Activity activity = saved(SAVED_PAGES[0]).get();
+        View content = activity.findViewById(android.R.id.content);
+        MessagesLock.check(activity);
+
+        View cover = cover(activity, MessagesLock.SAVED);
+        assertNotNull("no cover over Saved", cover);
+        assertEquals(View.VISIBLE, cover.getVisibility());
+        assertEquals(visible(content).width(), cover.getWidth());
+        assertEquals(visible(content).height(), cover.getHeight());
+        assertTrue(texts(cover).toString(), texts(cover).contains("Saved is locked"));
+        assertEquals(1, covers(activity));
+        assertEquals(1, asks.size());
+        assertEquals("Unlock Saved", MessagesLock.askTitle());
+        assertTrue("the settings aren't locked with it", MessagesLock.locked());
+        assertTrue(HookStatus.missing(FamilyNames.MESSAGES_LOCK).toString(), HookStatus.missing(FamilyNames.MESSAGES_LOCK).isEmpty());
+
+        asks.get(0)[0].run();
+        MessagesLock.check(activity);
+        assertEquals(View.GONE, cover.getVisibility());
+        assertFalse(MessagesLock.locked());
+    }
+
+    /** On a phone with no screen lock, Lock Saved on its own says it's Saved that can't be locked (#597). */
+    @Test
+    public void lockSavedWithNoPhoneLockNamesSaved() {
+        Map<String, Integer> ids = MessagesLock.idsForTests;
+        MessagesLock.resetForTests();
+        MessagesLock.idsForTests = ids;
+        ChatAccounts.signInForTests(ME);
+        Settings.UNLOCK_WITH.save(UnlockWith.PHONE_LOCK);
+        Settings.LOCK_MESSAGES.save(false);
+        Settings.LOCK_SAVED.save(true);
+        Activity activity = saved(SAVED_PAGES[0]).get();
+
+        MessagesLock.check(activity);
+        ShadowLooper.idleMainLooper();
+
+        assertEquals("Set a phone screen lock so HushGram can lock Saved.", ShadowToast.getTextOfLatestToast());
+    }
+
+    /**
+     * Every page of Saved gets the cover: a collection, the posts of one kind, its search, and the
+     * collection tiles 454 opens Saved on from the profile's bookmark (#492). A page
+     * that isn't on screen (one left behind in the back stack) doesn't, and turning the switch off
+     * takes the cover away.
+     */
+    @Test
+    public void lockSavedCoversItsCollectionsAndSearchToo() {
+        Settings.LOCK_MESSAGES.save(false);
+        Settings.LOCK_SAVED.save(true);
+        for (int i = 1; i < SAVED_PAGES.length; i++) {
+            Activity activity = saved(SAVED_PAGES[i]).get();
+            MessagesLock.check(activity);
+            View cover = cover(activity, MessagesLock.SAVED);
+            assertNotNull(MessagesLock.SAVED_PAGES[i] + " has no cover", cover);
+            assertEquals(MessagesLock.SAVED_PAGES[i], View.VISIBLE, cover.getVisibility());
+        }
+
+        Activity behind = saved(SAVED_PAGES[0]).get();
+        behind.findViewById(SAVED_PAGES[0]).setVisibility(View.GONE);
+        layout(behind);
+        MessagesLock.check(behind);
+        assertNull("a page off screen got the cover", cover(behind));
+
+        Activity activity = saved(SAVED_PAGES[0]).get();
+        MessagesLock.check(activity);
+        View cover = cover(activity, MessagesLock.SAVED);
+        assertEquals(View.VISIBLE, cover.getVisibility());
+        Settings.LOCK_SAVED.save(false);
+        MessagesLock.check(activity);
+        assertEquals("the cover stayed with the switch off", View.GONE, cover.getVisibility());
+        assertFalse(MessagesLock.locked());
+    }
+
+    /** With Lock all of Instagram on too, Saved has the one cover over everything. */
+    @Test
+    public void lockAllOfInstagramKeepsOneCoverOverSaved() {
+        Settings.LOCK_SAVED.save(true);
+        Settings.LOCK_APP.save(true);
+        Activity activity = saved(SAVED_PAGES[0]).get();
+
+        MessagesLock.check(activity);
+
+        assertNotNull(cover(activity, MessagesLock.APP));
+        assertNull(cover(activity, MessagesLock.SAVED));
+        assertEquals(1, covers(activity));
+        assertEquals("Unlock Instagram", MessagesLock.askTitle());
     }
 
     @Test
@@ -1172,6 +1289,261 @@ public class MessagesLockTest {
         assertNotSame(message, MessagesLock.notification(message));
     }
 
+    /** A chat opened under the cover isn't read: its seen receipt waits, and the unlock asked in it lets it go (#649). */
+    @Test
+    public void unlockingAChatLetsItsWaitingReceiptGo() {
+        MessagesLock.watch(RuntimeEnvironment.getApplication());
+        Activity activity = chat("Alice");
+        open(ALICE);
+        ThreadSeenTest.FakeChats chats = new ThreadSeenTest.FakeChats();
+        ThreadSeenTest.Session session = new ThreadSeenTest.Session(ME);
+        assertFalse("the switch is off", ThreadSeen.switchedOn());
+
+        assertTrue("sent from under the cover", ThreadSeen.hold(new ThreadSeenTest.Receipt(ALICE, "m1"), session,
+                ThreadSeen::switchedOn, chats, () -> 5_000L));
+        assertTrue(ThreadSeen.hold(new ThreadSeenTest.Receipt(BOB, "m2"), session, ThreadSeen::switchedOn, chats, () -> 5_000L));
+        MessagesLock.check(activity);
+        assertTrue(chats.sent.isEmpty());
+
+        asks.get(0)[0].run();
+
+        assertEquals("only the chat the unlock was asked in", java.util.Collections.singletonList(ME + ":" + ALICE + "/m1/s1"), chats.sent);
+        assertEquals(1, chats.cleared.size());
+        assertFalse("its next receipt goes as usual",
+                ThreadSeen.hold(new ThreadSeenTest.Receipt(ALICE, "m3"), session, ThreadSeen::switchedOn, chats, () -> 5_000L));
+    }
+
+    /** Coming in from a notification asks before the chat opens, and Ask for each chat counts the unlock for that chat. */
+    @Test
+    public void askForEachChatCountsTheUnlockForTheChatOpeningUnderIt() {
+        Settings.LOCK_EACH_CHAT.save(true);
+        MessagesLock.watch(RuntimeEnvironment.getApplication());
+        Activity activity = chat("Alice");
+        assertEquals("asked before the chat opened", 1, asks.size());
+        open(ALICE);
+
+        asks.get(0)[0].run();
+        open(ALICE);
+        MessagesLock.check(activity);
+
+        assertFalse(MessagesLock.locked());
+        assertEquals(1, asks.size());
+    }
+
+    /** Without the patch's start (not in the build), nothing waits for a lock that can't be there. */
+    @Test
+    public void receiptsWaitOnlyWithThePatchIn() {
+        assertTrue(MessagesLock.messagesLocked());
+        assertFalse(MessagesLock.receiptsWait());
+        assertFalse(MessagesLock.holdsReceipt(ME, ALICE));
+
+        MessagesLock.watch(RuntimeEnvironment.getApplication());
+        assertTrue(MessagesLock.receiptsWait());
+        assertTrue(MessagesLock.holdsReceipt(ME, ALICE));
+        MessagesLock.openForTests();
+        assertFalse(MessagesLock.receiptsWait());
+        assertFalse(MessagesLock.holdsReceipt(ME, ALICE));
+    }
+
+    @Test
+    public void aChatLockedByItselfHoldsOnlyItsOwnReceipts() {
+        Settings.LOCK_MESSAGES.save(false);
+        ChatLocks.add(ALICE, "Alice");
+        MessagesLock.watch(RuntimeEnvironment.getApplication());
+
+        assertTrue(MessagesLock.holdsReceipt(ME, ALICE));
+        assertTrue("an account that isn't known matches any", MessagesLock.holdsReceipt(null, ALICE));
+        assertFalse(MessagesLock.holdsReceipt(ME, BOB));
+        assertFalse("another account's chat", MessagesLock.holdsReceipt("999", ALICE));
+        assertFalse(MessagesLock.holdsReceipt(ME, null));
+    }
+
+    @Test
+    public void oneUnlockOpensEveryChatUntilInstagramLeaves() {
+        Object alice = new Object();
+        Object bob = new Object();
+        ChatLocks.reader = fragment -> fragment == alice ? ALICE : BOB;
+        Activity activity = chat("Alice");
+        ChatLocks.opened(alice);
+        MessagesLock.check(activity);
+        asks.get(0)[0].run();
+
+        ChatLocks.closed(alice);
+        ChatLocks.opened(bob);
+        MessagesLock.check(activity);
+
+        assertFalse(MessagesLock.locked());
+        assertEquals(1, asks.size());
+    }
+
+    @Test
+    public void askForEachChatAsksAgainInAnotherChat() {
+        Settings.LOCK_EACH_CHAT.save(true);
+        Object alice = new Object();
+        Object bob = new Object();
+        ChatLocks.reader = fragment -> fragment == alice ? ALICE : BOB;
+        Activity activity = chat("Alice");
+        ChatLocks.opened(alice);
+        MessagesLock.check(activity);
+        asks.get(0)[0].run();
+        MessagesLock.check(activity);
+        assertEquals(View.GONE, cover(activity).getVisibility());
+
+        // Back from a photo, or from the phone's own check on Android 9 and 10: the same chat.
+        ChatLocks.closed(alice);
+        ChatLocks.opened(alice);
+        assertFalse("the chat that was unlocked stays open", MessagesLock.locked());
+
+        ChatLocks.closed(alice);
+        ChatLocks.opened(bob);
+        assertTrue("another chat asks again", MessagesLock.locked());
+        MessagesLock.check(activity);
+        assertEquals(View.VISIBLE, cover(activity).getVisibility());
+        assertEquals(2, asks.size());
+    }
+
+    @Test
+    public void askForEachChatAsksAgainBackInTheInbox() {
+        Settings.LOCK_EACH_CHAT.save(true);
+        Object alice = new Object();
+        ChatLocks.reader = fragment -> ALICE;
+        Activity chat = chat("Alice");
+        ChatLocks.opened(alice);
+        MessagesLock.check(chat);
+        asks.get(0)[0].run();
+
+        ChatLocks.closed(alice);
+        Activity inbox = inbox().get();
+        MessagesLock.check(inbox);
+
+        assertTrue(MessagesLock.locked());
+        assertEquals("covered in the frame it shows", View.VISIBLE, cover(inbox, MessagesLock.INBOX_LIST).getVisibility());
+        assertEquals(2, asks.size());
+
+        // Unlocked in the inbox, the inbox stays open, and a chat still asks.
+        asks.get(1)[0].run();
+        MessagesLock.check(inbox);
+        assertFalse(MessagesLock.locked());
+        ChatLocks.opened(alice);
+        assertTrue(MessagesLock.locked());
+    }
+
+    /**
+     * Back in Instagram with the messages locked, the first tap on Messages opens the inbox and its
+     * cover asks, and the second tap lands while that ask is up. The hidden chats show once it says
+     * it's you, from the one ask, and a cancel shows nothing (#661).
+     */
+    @Test
+    public void aDoubleTapAsTheInboxCoverAsksShowsTheHiddenChatsOnceItsYou() {
+        try {
+            HiddenChats.add(ALICE, "Alice");
+            Activity inbox = inbox().get();
+            MessagesLock.check(inbox);
+            assertEquals("the cover asks", 1, asks.size());
+
+            HiddenChatsTap.toggle(inbox);
+            assertEquals("one ask on screen, not two", 1, asks.size());
+            assertFalse(HiddenChats.revealed());
+
+            asks.get(0)[1].run();
+            ShadowLooper.idleMainLooper();
+            assertFalse("cancelled, nothing shows", HiddenChats.revealed());
+            assertTrue(MessagesLock.locked());
+
+            MessagesLock.relock(true);
+            MessagesLock.check(inbox);
+            assertEquals(2, asks.size());
+            HiddenChatsTap.toggle(inbox);
+            asks.get(1)[0].run();
+            ShadowLooper.idleMainLooper();
+            assertFalse(MessagesLock.locked());
+            assertTrue("the double tap waited on the cover's ask", HiddenChats.revealed());
+            assertEquals("Showing your hidden chats", ShadowToast.getTextOfLatestToast());
+            assertEquals(2, asks.size());
+
+            // The cancelled double tap's wait went with its ask: a later yes shows nothing of it.
+            HiddenChatsTap.toggle(inbox);
+            assertFalse(HiddenChats.revealed());
+            MessagesLock.relock(true);
+            MessagesLock.check(inbox);
+            asks.get(2)[0].run();
+            ShadowLooper.idleMainLooper();
+            assertFalse(HiddenChats.revealed());
+        } finally {
+            HiddenChats.resetForTests();
+        }
+    }
+
+    /**
+     * A tap on Messages that opens the locked inbox holds its cover's ask for the double-tap time, so
+     * on a fast phone the second tap still reaches Instagram instead of the phone's prompt. A single
+     * tap is asked once that time is over (#661).
+     */
+    @Test
+    public void theInboxCoverWaitsOutTheDoubleTapTimeBeforeItAsks() {
+        try {
+            Settings.DOUBLE_TAP_HIDDEN_CHATS.save(true);
+            HiddenChatsTap.buttons = (activity, x, y) -> true;
+            Activity inbox = inbox().get();
+            long tapped = SystemClock.uptimeMillis();
+            HiddenChatsTap.decide(inbox, MotionEvent.ACTION_DOWN, 40, 40, tapped);
+            HiddenChatsTap.decide(inbox, MotionEvent.ACTION_UP, 40, 40, tapped);
+
+            MessagesLock.check(inbox);
+            assertEquals("held while a second tap may still come", 0, asks.size());
+            assertTrue(MessagesLock.locked());
+
+            ShadowLooper.idleMainLooper(ViewConfiguration.getDoubleTapTimeout() + 1, TimeUnit.MILLISECONDS);
+            MessagesLock.check(inbox);
+            assertEquals("asked once that time is over", 1, asks.size());
+            MessagesLock.check(inbox);
+            assertEquals(1, asks.size());
+        } finally {
+            HiddenChatsTap.resetForTests();
+            Settings.DOUBLE_TAP_HIDDEN_CHATS.resetToDefault();
+        }
+    }
+
+    /**
+     * The second tap lands while the cover's ask is held: Instagram keeps it, and the one ask that
+     * follows shows the hidden chats once it says it's you (#661).
+     */
+    @Test
+    public void aDoubleTapDuringTheHeldAskShowsTheHiddenChatsAfterOneAsk() {
+        try {
+            Settings.DOUBLE_TAP_HIDDEN_CHATS.save(true);
+            HiddenChatsTap.buttons = (activity, x, y) -> true;
+            HiddenChats.add(ALICE, "Alice");
+            Activity inbox = inbox().get();
+            long tapped = SystemClock.uptimeMillis();
+            HiddenChatsTap.decide(inbox, MotionEvent.ACTION_DOWN, 40, 40, tapped);
+            HiddenChatsTap.decide(inbox, MotionEvent.ACTION_UP, 40, 40, tapped + 60);
+            MessagesLock.check(inbox);
+            assertEquals(0, asks.size());
+
+            assertTrue("the second tap is kept from Instagram",
+                    HiddenChatsTap.decide(inbox, MotionEvent.ACTION_DOWN, 42, 41, tapped + 150));
+            MessagesLock.check(inbox);
+            assertEquals("still held while its finger is down", 0, asks.size());
+            assertTrue(HiddenChatsTap.decide(inbox, MotionEvent.ACTION_UP, 42, 41, tapped + 210));
+
+            ShadowLooper.idleMainLooper(HiddenChatsTap.HOLD_WHILE_DOWN_MS + 1, TimeUnit.MILLISECONDS);
+            MessagesLock.check(inbox);
+            assertEquals("the cover and the double tap share one ask", 1, asks.size());
+            assertFalse(HiddenChats.revealed());
+
+            asks.get(0)[0].run();
+            ShadowLooper.idleMainLooper();
+            assertFalse(MessagesLock.locked());
+            assertTrue(HiddenChats.revealed());
+            assertEquals("Showing your hidden chats", ShadowToast.getTextOfLatestToast());
+        } finally {
+            HiddenChatsTap.resetForTests();
+            HiddenChats.resetForTests();
+            Settings.DOUBLE_TAP_HIDDEN_CHATS.resetToDefault();
+        }
+    }
+
     @Test
     public void aChatLeavingTheFrontIsForgottenButOnlyByItself() {
         Object first = new Object();
@@ -1461,6 +1833,21 @@ public class MessagesLockTest {
         list.setId(LIST);
         frame.addView(list, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 600));
         root.addView(frame, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 800));
+        activity.setContentView(root);
+        layout(activity);
+        return controller;
+    }
+
+    /** One of Saved's pages under a top bar, as Instagram lays them out. */
+    private static ActivityController<Activity> saved(int page) {
+        ActivityController<Activity> controller = focused();
+        Activity activity = controller.get();
+        FrameLayout root = new FrameLayout(activity);
+        View view = new View(activity);
+        view.setId(page);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1200);
+        params.topMargin = 150;
+        root.addView(view, params);
         activity.setContentView(root);
         layout(activity);
         return controller;

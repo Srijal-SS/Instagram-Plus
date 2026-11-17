@@ -34,6 +34,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.util.ReflectionHelpers;
 
 import app.hushgram.extension.instagram.misc.GlassTabBar;
 import app.hushgram.extension.instagram.settings.Settings;
@@ -47,7 +48,7 @@ public class FullScreenBarsTest {
     @Rule public final SettingsContextRule settings = new SettingsContextRule();
 
     private static final int VIEWER = 7101, BAR = 7102, REELS_TAB = 7103, HOME_TAB = 7104, OTHER_TAB = 7105,
-            INBOX = 7106, CHAT = 7107;
+            INBOX = 7106, CHAT = 7107, TOP_BAR = 7108, SHEET_HOLDER = 7109, SHEET_CONTENT = 7110, INBOX_BAR = 7111;
 
     /** The window's own size: a view is only on screen as far as the window goes. */
     private int W, H;
@@ -68,6 +69,7 @@ public class FullScreenBarsTest {
         Settings.GLASS_TAB_BAR_FLOAT.resetToDefault();
         FullScreenBars.idForTests(FullScreenBars.INBOX, INBOX);
         FullScreenBars.idForTests(FullScreenBars.CHAT, CHAT);
+        FullScreenBars.idForTests(FullScreenBars.INBOX_BAR, INBOX_BAR);
         FullScreenBars.idForTests(FullScreenBars.VIEWER, VIEWER);
         FullScreenBars.idForTests(FullScreenBars.TAB_BAR, BAR);
         FullScreenBars.idForTests(FullScreenBars.REELS_TAB, REELS_TAB);
@@ -97,6 +99,14 @@ public class FullScreenBarsTest {
         Settings.FULL_SCREEN_HIDES.resetToDefault();
         Settings.GLASS_TAB_BAR.resetToDefault();
         Settings.GLASS_TAB_BAR_FLOAT.resetToDefault();
+        // A height taken here for the pill would otherwise reach the next class's tests.
+        ReflectionHelpers.callStaticMethod(GlassTabBar.class, "resetForTests");
+        // So would a watcher a test stood in for, the window it resumed, a guess and a test bar, even
+        // where the test stopped before its own finally.
+        FullScreenBars.registeredForTests(false);
+        FullScreenBars.nowResumed(null);
+        FullScreenBars.resetHeightsForTests(null);
+        ReflectionHelpers.callStaticMethod(app.hushgram.extension.instagram.misc.BottomSpace.class, "forgetGuess");
     }
 
     private View tab(int id) {
@@ -151,6 +161,263 @@ public class FullScreenBarsTest {
         showViewer(W, H);
         assertFalse(watch().isHidden());
         assertFalse(barsGone());
+    }
+
+    /** The viewer's top bar and the window's sizes as Instagram has them: laid out again, and its layout heard. */
+    private void relayout() {
+        layout();
+        activity.getWindow().getDecorView().getViewTreeObserver().dispatchOnGlobalLayout();
+    }
+
+    /**
+     * With the status bar hidden, a reels top bar inside the camera cutout's band is lowered below it
+     * by padding and height, the way Instagram's edge to edge screens do it, and gets its own back when
+     * the bar shows again (#525). Padding Instagram gives it meanwhile is the bar's own from then on.
+     */
+    @Test public void theReelsTopBarMovesBelowTheCameraCutoutWhileTheStatusBarIsHidden() {
+        FullScreenBars.idForTests(ReelsTopBar.BAR_ID, TOP_BAR);
+        Settings.FULL_SCREEN_REELS.save(true);
+        showViewer(W, H);
+        ViewGroup top = new FrameLayout(activity);
+        top.setId(TOP_BAR);
+        ((ViewGroup) viewer).addView(top, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 20));
+        relayout();
+        // The cutout reaches 30 pixels past where the bar starts, wherever the test window puts it.
+        FullScreenBars.cutoutForTests(ReelsBarCutout.layoutTop(top, activity.getWindow().getDecorView()) + 30);
+        View below = new FrameLayout(activity);
+        below.setId(TOP_BAR);
+        FrameLayout.LayoutParams low = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 20);
+        low.topMargin = 100;
+        ((ViewGroup) viewer).addView(below, low);
+        relayout();
+        FullScreenBars.Session session = watch();
+        assertTrue(session.isHidden());
+        assertEquals(30, top.getPaddingTop());
+        assertEquals("taller by as much, so its row keeps its height", 50, top.getLayoutParams().height);
+        assertEquals("a bar clear of the cutout stays as it is", 0, below.getPaddingTop());
+        assertEquals(1, session.barsLowered());
+
+        relayout();
+        session.evaluate();
+        assertEquals("lowered once, not again at each look", 30, top.getPaddingTop());
+        assertEquals(50, top.getLayoutParams().height);
+
+        top.setPadding(0, 40, 0, 0);
+        top.getLayoutParams().height = 60;
+        relayout();
+        session.evaluate();
+        assertEquals("Instagram's own padding already clears it", 40, top.getPaddingTop());
+        assertEquals(60, top.getLayoutParams().height);
+        assertEquals(0, session.barsLowered());
+
+        top.setPadding(0, 0, 0, 0);
+        top.getLayoutParams().height = 20;
+        relayout();
+        session.evaluate();
+        assertEquals(30, top.getPaddingTop());
+        assertEquals(50, top.getLayoutParams().height);
+
+        Settings.FULL_SCREEN_REELS.save(false);
+        session.evaluate();
+        assertFalse(session.isHidden());
+        assertEquals("the status bar back, the bar has its own padding", 0, top.getPaddingTop());
+        assertEquals(20, top.getLayoutParams().height);
+        assertEquals(0, session.barsLowered());
+    }
+
+    /**
+     * #626: on a Galaxy S21 with the bars hidden, Instagram sized the comments sheet's content past the
+     * window's foot, so the comment box sat under the screen. The content is padded up by as much while
+     * the bars stay hidden, kept as it is while the keyboard shows, and gets its own padding back when it
+     * fits again or the bars come back. Padding Instagram gives it meanwhile is the content's own.
+     */
+    @Test public void aSheetsContentSizedPastTheWindowsFootIsPaddedBackOnScreen() {
+        FullScreenBars.idForTests(SheetsOnScreen.HOLDER, SHEET_HOLDER);
+        FullScreenBars.idForTests(SheetsOnScreen.CONTENT, SHEET_CONTENT);
+        boolean[] up = {false};
+        FullScreenBars.keyboardForTests(() -> up[0]);
+        Settings.FULL_SCREEN_REELS.save(true);
+        showViewer(W, H);
+        int top = windowTop(root);
+        int shown = H / 2;
+        // Instagram's holder fills the window, and the sheet in it is slid up by a translation.
+        FrameLayout holder = new FrameLayout(activity);
+        holder.setId(SHEET_HOLDER);
+        root.addView(holder, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        FrameLayout sheet = new FrameLayout(activity);
+        sheet.setTranslationY(H - top - shown);
+        holder.addView(sheet, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        FrameLayout content = new FrameLayout(activity);
+        content.setId(SHEET_CONTENT);
+        sheet.addView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayout comments = new LinearLayout(activity);
+        comments.setOrientation(LinearLayout.VERTICAL);
+        comments.addView(new View(activity), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        View box = new View(activity);
+        comments.addView(box, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 30));
+        // The part showing worked out 40 pixels taller than the window has.
+        content.addView(comments, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, shown + 40));
+        relayout();
+        assertEquals("the box starts out under the window's foot", H + 40, windowTop(box) + box.getHeight());
+
+        FullScreenBars.Session session = watch();
+        assertTrue(session.isHidden());
+        assertEquals(40, comments.getPaddingBottom());
+        assertEquals(shown + 40, comments.getHeight());
+        assertEquals(1, session.sheetsLifted());
+        relayout();
+        assertEquals("the comment box ends at the window's foot", H, windowTop(box) + box.getHeight());
+        session.evaluate();
+        assertEquals("padded once, not again at each look", 40, comments.getPaddingBottom());
+
+        // Instagram shortens the content for the keys, past where the window's foot would have it.
+        up[0] = true;
+        resize(comments, shown / 2);
+        relayout();
+        session.evaluate();
+        assertEquals("kept as it is while the keyboard shows", 40, comments.getPaddingBottom());
+
+        up[0] = false;
+        resize(comments, shown);
+        relayout();
+        session.evaluate();
+        assertEquals("content that fits gets its own padding back", 0, comments.getPaddingBottom());
+        assertEquals(0, session.sheetsLifted());
+
+        comments.setPadding(0, 0, 0, 12);
+        resize(comments, shown + 40);
+        relayout();
+        session.evaluate();
+        assertEquals("on top of Instagram's own padding", 52, comments.getPaddingBottom());
+
+        Settings.FULL_SCREEN_REELS.save(false);
+        session.evaluate();
+        assertFalse(session.isHidden());
+        assertEquals("the bars back, the content has its own padding", 12, comments.getPaddingBottom());
+        assertEquals(0, session.sheetsLifted());
+    }
+
+    /**
+     * #626, the way Instagram 454 keeps a comments sheet to what shows: content as tall as its holder,
+     * its bottom padded by the part below the window's foot. Padding that comes up short is made up, and
+     * padding Instagram sets itself after that, as at each frame of a drag, takes over.
+     */
+    @Test public void aSheetsContentPaddedShortOfTheWindowsFootIsPaddedTheRestOfTheWay() {
+        FullScreenBars.idForTests(SheetsOnScreen.HOLDER, SHEET_HOLDER);
+        FullScreenBars.idForTests(SheetsOnScreen.CONTENT, SHEET_CONTENT);
+        Settings.FULL_SCREEN_REELS.save(true);
+        showViewer(W, H);
+        int top = windowTop(root);
+        int shown = H / 2;
+        int below = H - top - shown;
+        FrameLayout holder = new FrameLayout(activity);
+        holder.setId(SHEET_HOLDER);
+        root.addView(holder, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        FrameLayout sheet = new FrameLayout(activity);
+        sheet.setTranslationY(below);
+        holder.addView(sheet, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        FrameLayout content = new FrameLayout(activity);
+        content.setId(SHEET_CONTENT);
+        sheet.addView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayout comments = new LinearLayout(activity);
+        comments.setOrientation(LinearLayout.VERTICAL);
+        comments.addView(new View(activity), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        View box = new View(activity);
+        comments.addView(box, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 30));
+        content.addView(comments, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        // Instagram's padding 40 pixels short of the part below the foot.
+        comments.setPadding(0, 0, 0, below - 40);
+        relayout();
+        assertEquals("as tall as its holder", content.getHeight(), comments.getHeight());
+        assertEquals("the box starts out under the window's foot", H + 40, windowTop(box) + box.getHeight());
+
+        FullScreenBars.Session session = watch();
+        assertTrue(session.isHidden());
+        assertEquals(below, comments.getPaddingBottom());
+        assertEquals(1, session.sheetsLifted());
+        relayout();
+        assertEquals("the comment box ends at the window's foot", H, windowTop(box) + box.getHeight());
+        session.evaluate();
+        assertEquals("padded once, not again at each look", below, comments.getPaddingBottom());
+
+        // Padding Instagram sets that equals HushGram's can't be told apart from it, and shows the same.
+        comments.setPadding(0, 0, 0, below + 20);
+        relayout();
+        session.evaluate();
+        assertEquals("Instagram's own padding, past the foot this time, is left as it is", below + 20, comments.getPaddingBottom());
+        assertEquals(0, session.sheetsLifted());
+
+        comments.setPadding(0, 0, 0, below - 40);
+        relayout();
+        session.evaluate();
+        assertEquals(below, comments.getPaddingBottom());
+        Settings.FULL_SCREEN_REELS.save(false);
+        session.evaluate();
+        assertFalse(session.isHidden());
+        assertEquals("the bars back, the content has Instagram's padding back", below - 40, comments.getPaddingBottom());
+        assertEquals(0, session.sheetsLifted());
+    }
+
+    /**
+     * A sheet's content as tall as its holder with no padding of its own, or far past the foot while it
+     * slides, is left as Instagram has it (#626).
+     */
+    @Test public void aSheetsContentNotSizedToWhatShowsIsLeftAlone() {
+        FullScreenBars.idForTests(SheetsOnScreen.HOLDER, SHEET_HOLDER);
+        FullScreenBars.idForTests(SheetsOnScreen.CONTENT, SHEET_CONTENT);
+        Settings.FULL_SCREEN_REELS.save(true);
+        showViewer(W, H);
+        FrameLayout holder = new FrameLayout(activity);
+        holder.setId(SHEET_HOLDER);
+        root.addView(holder, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        FrameLayout content = new FrameLayout(activity);
+        content.setId(SHEET_CONTENT);
+        content.setTranslationY(20);
+        holder.addView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        View full = new View(activity);
+        content.addView(full, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        View sliding = new View(activity);
+        // Still a whole window below where it comes to rest.
+        sliding.setTranslationY(H);
+        content.addView(sliding, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, H / 2));
+        relayout();
+        assertTrue("both run past the window's foot", windowTop(full) + full.getHeight() > H && windowTop(sliding) + sliding.getHeight() > H);
+
+        FullScreenBars.Session session = watch();
+        assertTrue(session.isHidden());
+        assertEquals(0, full.getPaddingBottom());
+        assertEquals(0, sliding.getPaddingBottom());
+        assertEquals(0, session.sheetsLifted());
+    }
+
+    /** Gives [view] a new height the way Instagram does, asking for a layout. */
+    private static void resize(View view, int height) {
+        ViewGroup.LayoutParams params = view.getLayoutParams();
+        params.height = height;
+        view.setLayoutParams(params);
+    }
+
+    private static int windowTop(View view) {
+        int[] at = new int[2];
+        view.getLocationInWindow(at);
+        return at[1];
+    }
+
+    /** With the status bar kept and only the navigation bar hidden, the top bar stays where Instagram puts it (#525). */
+    @Test public void theTopBarStaysPutWhenOnlyTheNavigationBarHides() {
+        FullScreenBars.idForTests(ReelsTopBar.BAR_ID, TOP_BAR);
+        Settings.FULL_SCREEN_REELS.save(true);
+        Settings.FULL_SCREEN_HIDES.save(HiddenBars.NAVIGATION_BAR);
+        showViewer(W, H);
+        ViewGroup top = new FrameLayout(activity);
+        top.setId(TOP_BAR);
+        ((ViewGroup) viewer).addView(top, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 20));
+        relayout();
+        FullScreenBars.cutoutForTests(ReelsBarCutout.layoutTop(top, activity.getWindow().getDecorView()) + 30);
+        FullScreenBars.Session session = watch();
+        assertTrue(session.isHidden());
+        assertEquals(0, top.getPaddingTop());
+        assertEquals(20, top.getLayoutParams().height);
     }
 
     @Test public void aViewerFillingTheWindowHidesTheBarsAndLeavingItBringsThemBack() {
@@ -426,6 +693,132 @@ public class FullScreenBarsTest {
     }
 
     /**
+     * A window left with no navigation bar at its foot, like the top half of a split screen, gets no
+     * height for one: the height Instagram offered before doesn't stand in for its 0 with the keyboard
+     * up, and the bars coming back give only the status bar's height back.
+     */
+    @Test public void aWindowWithNoNavigationBarGetsNoHeightForOne() {
+        List<String> told = new ArrayList<>();
+        FullScreenBars.resetHeightsForTests((listener, status, nav) -> told.add(listener + " " + status + " " + nav));
+        FullScreenBars.registeredForTests(true);
+        boolean[] up = {false};
+        FullScreenBars.keyboardForTests(() -> up[0]);
+        try {
+            Settings.FULL_SCREEN_REELS.save(true);
+            FullScreenBars.nowResumed(activity);
+            FullScreenBars.heightsAsked(activity, "profile");
+            heights(75, 135);
+            showViewer(W, H);
+            FullScreenBars.Session session = watch();
+            assertTrue(session.isHidden());
+            shadowOf(Looper.getMainLooper()).idle();
+            assertEquals(Arrays.asList("profile 75 135", "profile 0 0"), told);
+
+            FullScreenBars.navBarForTests(0);
+            up[0] = true;
+            assertEquals(0, FullScreenBars.barHeight(0));
+            assertEquals("nothing stands in for the 0 with the keyboard up", 0, FullScreenBars.navBarHeight(0));
+            session.watchKeyboard();
+            shadowOf(Looper.getMainLooper()).idle();
+            assertEquals("the keyboard gives no height back", 2, told.size());
+            up[0] = false;
+
+            root.removeView(viewer);
+            layout();
+            session.evaluate();
+            assertFalse(session.isHidden());
+            shadowOf(Looper.getMainLooper()).idle();
+            assertEquals("only the status bar's height comes back", "profile 75 0", told.get(told.size() - 1));
+        } finally {
+            FullScreenBars.registeredForTests(false);
+            FullScreenBars.resetHeightsForTests(null);
+        }
+    }
+
+    /**
+     * #196: a window that reports no navigation bar, as a Samsung with its gesture hint hidden does while
+     * Instagram keeps its guessed height, still gets back the height Instagram offered as it pauses.
+     */
+    @Test public void aWindowReportingNoNavigationBarIsStillOwedItsHeight() {
+        List<String> told = new ArrayList<>();
+        FullScreenBars.resetHeightsForTests((listener, status, nav) -> told.add(listener + " " + status + " " + nav));
+        FullScreenBars.registeredForTests(true);
+        try {
+            Settings.FULL_SCREEN_REELS.save(true);
+            FullScreenBars.nowResumed(activity);
+            FullScreenBars.heightsAsked(activity, "reels");
+            heights(75, 135);
+            showViewer(W, H);
+            assertTrue(watch().isHidden());
+            shadowOf(Looper.getMainLooper()).idle();
+            assertEquals(Arrays.asList("reels 75 135", "reels 0 0"), told);
+
+            FullScreenBars.navBarForTests(0);
+            assertArrayEquals("both heights Instagram offered", new int[] {75, 135}, FullScreenBars.heightsToGiveBack());
+        } finally {
+            FullScreenBars.registeredForTests(false);
+            FullScreenBars.resetHeightsForTests(null);
+        }
+    }
+
+    /**
+     * #633: where the phone reports no bar, a reel's seek bar keeps clear of the hidden bar's height, also
+     * with "Remove the empty space at the bottom" left out, so Instagram's guess is 0.
+     */
+    @Test public void aWindowReportingNoNavigationBarKeepsRoomForAHiddenOne() {
+        try {
+            ReflectionHelpers.callStaticMethod(app.hushgram.extension.instagram.misc.BottomSpace.class, "forgetGuess");
+            Settings.FULL_SCREEN_REELS.save(true);
+            showViewer(W, H);
+            assertTrue(watch().isHidden());
+            assertEquals(0, FullScreenBars.navBarHeight(63));
+            assertEquals("a window that can't say keeps the hidden bar's room", 63, FullScreenBars.unreportedNavHeight());
+
+            FullScreenBars.navBarForTests(0);
+            assertEquals("one that reports no bar keeps it too", 63, FullScreenBars.unreportedNavHeight());
+        } finally {
+            FullScreenBars.resetHeightsForTests(null);
+        }
+    }
+
+    /**
+     * A window just made isn't attached as it first resumes, and GlassTabBar names it in front before
+     * this class hears the resume. The window it opened over answers for its bar: over one with no bar at
+     * its foot, the height Instagram offered before doesn't stand in for a 0 with the keyboard up.
+     */
+    @Test public void aWindowNotYetAttachedTakesTheBarOfTheOneItOpenedOver() {
+        FullScreenBars.registeredForTests(true);
+        boolean[] up = {false};
+        FullScreenBars.keyboardForTests(() -> up[0]);
+        ActivityController<Activity> made = Robolectric.buildActivity(Activity.class).create();
+        try {
+            Settings.FULL_SCREEN_REELS.save(true);
+            FullScreenBars.nowResumed(activity);
+            FullScreenBars.heightsAsked(activity, "reels");
+            heights(75, 135);
+            showViewer(W, H);
+            assertTrue(watch().isHidden());
+
+            FullScreenBars.windowsOwnNavBarForTests();
+            android.view.WindowInsets insets = activity.getWindow().getDecorView().getRootWindowInsets();
+            assertNotNull("the window left is attached", insets);
+            int bottom = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                    ? insets.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.navigationBars()).bottom
+                    : insets.getStableInsetBottom();
+            assertEquals("the test window has no bar at its foot", 0, bottom);
+            assertNull("the new one isn't attached yet", made.get().getWindow().getDecorView().getRootWindowInsets());
+            ReflectionHelpers.callStaticMethod(GlassTabBar.class, "nowInFront",
+                    ReflectionHelpers.ClassParameter.from(Activity.class, made.get()));
+            up[0] = true;
+            assertEquals("the window it opened over has no bar", 0, FullScreenBars.navBarHeight(0));
+        } finally {
+            made.destroy();
+            FullScreenBars.registeredForTests(false);
+            FullScreenBars.resetHeightsForTests(null);
+        }
+    }
+
+    /**
      * #203: with Full screen Home on, the first tab opened from Home (Messages, Profile) was built
      * while Home had the bars hidden, so it heard 0 and drew under the status bar until the next
      * switch. Its kept listener hears the real heights once the bars come back.
@@ -481,6 +874,35 @@ public class FullScreenBarsTest {
             Settings.GLASS_TAB_BAR.save(false);
             heights(75, 0);
             assertEquals("Glass tab bar off, nobody is told", 1, told.size());
+        } finally {
+            FullScreenBars.registeredForTests(false);
+            FullScreenBars.resetHeightsForTests(null);
+        }
+    }
+
+    /**
+     * A chat hides the tab bar, and with a floating pill its keyboard changes the navigation bar's
+     * height. The main activity's own listener is kept, and being told the new pair lays the bar out
+     * and shows it: that show is skipped, so the pill stays off the message box. A hide still goes
+     * through, a listener that throws ends the tell all the same, and a show outside a tell goes through.
+     */
+    @Test public void aTellLeavesTheTabBarAChatHid() {
+        List<String> asked = new ArrayList<>();
+        FullScreenBars.resetHeightsForTests((listener, status, nav) -> {
+            asked.add(listener + " show " + FullScreenBars.keepsTabBarThroughATell(View.VISIBLE));
+            asked.add(listener + " hide " + FullScreenBars.keepsTabBarThroughATell(View.GONE));
+            if ("broken".equals(listener)) throw new IllegalStateException("listener failed");
+        });
+        FullScreenBars.registeredForTests(true);
+        try {
+            Settings.GLASS_TAB_BAR.save(true);
+            Settings.GLASS_TAB_BAR_FLOAT.save(true);
+            FullScreenBars.nowResumed(activity);
+            FullScreenBars.heightsAsked(activity, "main activity");
+            FullScreenBars.heightsAsked(activity, "broken");
+            heights(75, 135);
+            assertEquals(Arrays.asList("main activity show true", "main activity hide false", "broken show true", "broken hide false"), asked);
+            assertFalse("a show outside a tell goes through", FullScreenBars.keepsTabBarThroughATell(View.VISIBLE));
         } finally {
             FullScreenBars.registeredForTests(false);
             FullScreenBars.resetHeightsForTests(null);
@@ -601,6 +1023,32 @@ public class FullScreenBarsTest {
 
         messagesView(INBOX, W, H);
         assertEquals(FullScreenBars.Screen.MESSAGES, screen());
+    }
+
+    /** A screen headed by your messages' own top bar, with a Compose list below it and no list id. */
+    private FrameLayout composeInbox(int height) {
+        FrameLayout screen = new FrameLayout(activity);
+        View top = new View(activity);
+        top.setId(INBOX_BAR);
+        screen.addView(top, new FrameLayout.LayoutParams(W, H / 12));
+        root.addView(screen, new FrameLayout.LayoutParams(W, height));
+        layout();
+        return screen;
+    }
+
+    /** #187: 454's messages list is Compose, so its top bar names the screen; a sliver or a hidden one doesn't. */
+    @Test public void theComposeMessagesListCountsByItsTopBar() {
+        FrameLayout inbox = composeInbox(H);
+        assertEquals(FullScreenBars.Screen.MESSAGES, screen());
+        Settings.FULL_SCREEN_MESSAGES.save(true);
+        assertTrue(watch().isHidden());
+
+        inbox.setVisibility(View.GONE);
+        layout();
+        assertEquals("left behind out of sight", FullScreenBars.Screen.OTHER, screen());
+        root.removeView(inbox);
+        composeInbox(H / 4);
+        assertEquals("a sliver of it", FullScreenBars.Screen.OTHER, screen());
     }
 
     /** #288: a reel opened from a chat is Reels, and the Messages switch leaves it alone. */

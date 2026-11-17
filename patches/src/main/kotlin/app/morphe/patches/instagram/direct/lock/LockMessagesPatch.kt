@@ -81,7 +81,7 @@ val lockMessagesPatch = bytecodePatch(
         "Turn it on in Instagram Plus Settings > Messages.",
     default = true,
 ) {
-    category("Messages")
+    category("Privacy")
     dependsOn(settingsPatch, instagramExtensionPatch)
     compatibleWith(*AppCompatibilities.instagram())
 
@@ -95,6 +95,7 @@ val lockMessagesPatch = bytecodePatch(
         val search = findSearchTargets()
         val recents = findRecentTargets()
         val touch = findHiddenChatsTouch()
+        val menu = findHiddenChatMenuOrSkip()
         hideNotificationText(targets.notify)
         hideDirectPosts(posts)
         holdBanner(targets.banner)
@@ -104,6 +105,7 @@ val lockMessagesPatch = bytecodePatch(
         hideChatsFromSearch(search)
         hideChatsFromRecents(recents)
         hookHiddenChatsTouch(touch)
+        menu?.let(::hookHiddenChatMenu)
         enableStatus("messagesLock")
     }
 }

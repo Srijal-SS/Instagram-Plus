@@ -54,9 +54,10 @@ internal const val MUSIC_CARD = "$EXTENSION_PACKAGE/stories/StoriesTray;->musicC
  * 451's 0x810cc0000146f1; its one static session check there is still asked by the code that
  * casts to the repository right after. 453 renumbered it again to 0x810c9b0001461a, still the one
  * static session check asked by the path that casts to the repository. 454 moved it to
- * 0x810c6600014620, read by 01hH.A00, which the same six places ask.
+ * 0x810c6600014620, read by 01hH.A00, which the same six places ask. 455 moved it to
+ * 0x810c56000145f8, read by 00bM.A00 on 386113969.
  */
-internal const val MUSIC_CARD_FLAG = 0x810c6600014620L
+internal const val MUSIC_CARD_FLAG = 0x810c56000145f8L
 
 /** The name only the music midcard repository's constructor holds, which it gives its base class. */
 internal const val MUSIC_CARD_REPOSITORY = "MusicMidcardRepository"
@@ -96,6 +97,19 @@ internal val MADE_REELS = listOf(
     "EMPTY_STORY_STATE_REEL",
 )
 
+/**
+ * Asks [FLOAT_TRAY] first thing in the floating tray's show. It has no switch of its own: Hide suggested stories
+ * names it for its tray switches (#357), and Keep Home's top bar names it because a kept header never slides the
+ * floating tray away (#677). Declared before the patches naming it, which read it as they're built.
+ */
+internal val floatingTrayGuardPatch = bytecodePatch {
+    dependsOn(settingsPatch, instagramExtensionPatch)
+
+    execute {
+        guardTray(findFloatingTrayShow(), FLOAT_TRAY)
+    }
+}
+
 @Suppress("unused")
 val hideSuggestedStoriesPatch = bytecodePatch(
     name = "Hide suggested stories",
@@ -104,13 +118,12 @@ val hideSuggestedStoriesPatch = bytecodePatch(
         "Turn it off in Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
-    dependsOn(settingsPatch, instagramExtensionPatch)
+    dependsOn(settingsPatch, instagramExtensionPatch, floatingTrayGuardPatch)
     compatibleWith(*AppCompatibilities.instagram())
 
     execute {
         requireStatusMethod("storiesTray")
         guardTray(findTrayRowBuild())
-        guardTray(findFloatingTrayShow(), FLOAT_TRAY)
         val parse = findTrayItemParse()
         val netegoCheck = findStoryNetegoCheck()
         val midcards = findStoryMidcards()

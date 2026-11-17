@@ -21,6 +21,7 @@ import java.util.WeakHashMap;
 
 import app.hushgram.extension.instagram.settings.FamilyNames;
 import app.hushgram.extension.shared.Logger;
+import app.hushgram.extension.shared.Utils;
 import app.hushgram.extension.shared.diagnostics.HookStatus;
 
 /**
@@ -140,18 +141,24 @@ public final class CommentsSheet {
 
     /** Paints the screen's root and its sheet; false when the sheet isn't above the root yet. */
     private static boolean paintScreen(View root) {
-        tint(root, "comments screen");
+        // Backgrounds in the accent color already paint the sheet, and black would cover them (#577).
+        boolean keepAccent = AccentTheme.paintsSurfaces();
+        if (!keepAccent) tint(root, "comments screen");
+        // The strip under the navigation bar shows the reel unless something covers it (#571).
+        if (root.isAttachedToWindow()) PureBlackNav.commentsShown(root);
         View sheet = findSheet(root);
         if (sheet == null) return false;
-        tint(sheet, "comments sheet");
-        watch(sheet, root);
+        if (!keepAccent) {
+            tint(sheet, "comments sheet");
+            watch(sheet, root);
+        }
         return true;
     }
 
     /** The nearest ancestor whose id is named bottom_sheet_container. */
     private static View findSheet(View root) {
         int id = sheetId;
-        if (id == -1) sheetId = id = root.getResources().getIdentifier(SHEET_ID_NAME, "id", root.getContext().getPackageName());
+        if (id == -1) sheetId = id = root.getResources().getIdentifier(SHEET_ID_NAME, "id", Utils.resourcePackage(root.getContext()));
         return id == 0 ? null : findSheet(root, id);
     }
 
@@ -242,7 +249,7 @@ public final class CommentsSheet {
         Object value = field.get(host);
         if (!(value instanceof ViewGroup)) return;
         ViewGroup sheet = (ViewGroup) value;
-        if (!isNight(sheet)) return;
+        if (!isNight(sheet) || AccentTheme.paintsSurfaces()) return;
         tint(sheet, "comments sheet");
     }
 }

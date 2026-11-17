@@ -16,8 +16,17 @@ internal const val HIDE_SOCIAL_FOOTER = "$DECLUTTER->hideSocialFooter()Z"
 internal const val HIDE_EVERY_COMMENT_BAR = "$DECLUTTER->hideEveryCommentBar()Z"
 internal const val HIDE_SAVE_BUTTON = "$DECLUTTER->hideSaveButton()Z"
 internal const val HIDE_SAVE_COUNT = "$DECLUTTER->hideSaveCount()Z"
+internal const val HIDE_LIKE_BUTTON = "$DECLUTTER->hideLikeButton()Z"
+internal const val HIDE_LIKE_COUNT = "$DECLUTTER->hideLikeCount()Z"
+internal const val HIDE_COMMENT_BUTTON = "$DECLUTTER->hideCommentButton()Z"
+internal const val HIDE_COMMENT_COUNT = "$DECLUTTER->hideCommentCount()Z"
+internal const val HIDE_REPOST_COUNT = "$DECLUTTER->hideRepostCount()Z"
+internal const val SHARE_COUNT = "$DECLUTTER->shareCount(Ljava/lang/Object;)Ljava/lang/Object;"
 internal const val HIDE_COMMENT_BAR = "$DECLUTTER->hideCommentBar(Ljava/lang/Object;)Z"
+internal const val KEEP_COMMENT_BAR_SPACE = "$DECLUTTER->keepCommentBarSpace(Landroid/view/View;Ljava/lang/Object;)V"
 internal const val HIDE_DIRECT_REPLY_BAR = "$DECLUTTER->hideDirectReplyBar(Ljava/lang/Object;)Z"
+internal const val HIDE_PAUSE_ICON = "$DECLUTTER->hidePauseIcon()Z"
+internal const val HIDE_PAUSE_SOUND_BUTTON = "$DECLUTTER->hidePauseSoundButton()Z"
 
 /**
  * A part of the Reels viewer the patch hides: the method whose marker ends in [marker], and the
@@ -87,6 +96,56 @@ internal val SAVE_PARTS = listOf(
     ReelPart("ClipsUfiComponent_maybeCreateSaveButtonComponent", HIDE_SAVE_BUTTON),
     ReelPart("ClipsUfiComponent_maybeCreateSaveCountComponent", HIDE_SAVE_COUNT),
 )
+
+/**
+ * The Like button and the like count in the same column (#668). On Instagram 454 the clips UFI
+ * builds each in a private method of its own, marked like the Save builders, and adds what it
+ * answers the same way, so an empty answer leaves no gap. Each takes more than the Save builders
+ * (the like actions and the like count's state), so only the kind of method is checked.
+ */
+internal val LIKE_PARTS = listOf(
+    ReelPart("ClipsUfiComponent_createLikeButtonComponent", HIDE_LIKE_BUTTON),
+    ReelPart("ClipsUfiComponent_createLikeCountComponent", HIDE_LIKE_COUNT),
+)
+
+/**
+ * The big pause icon a paused reel shows, and the sound button beside it (#686). On Instagram 454
+ * the pause-and-mute component builds each in a private method of its own, marked like the clips UFI
+ * builders, and its render adds what they answer to a list that skips an empty answer, so a paused
+ * reel then shows just its frame. The render also hides the reel's buttons while paused, which stays.
+ * The sound button's builder is called from two places, before or after the icon, and both answer
+ * through it. Each takes the component scope, the sound one a flag too, and is an instance method.
+ */
+internal val PAUSE_PARTS = listOf(
+    ReelPart("PauseAndMuteComponent_createPauseIcon", HIDE_PAUSE_ICON),
+    ReelPart("PauseAndMuteComponent_createMuteButton", HIDE_PAUSE_SOUND_BUTTON),
+)
+
+/**
+ * The Comment button's component, by its render's marker. Its builder in the clips UFI carries no
+ * marker of its own on 454: it's the one method of the UFI answering this component. The comment
+ * count's builder is the one other method of the UFI taking the same parameters and loading
+ * [UFI_COUNT], the resource name of the count's text.
+ */
+internal const val COMMENT_BUTTON_RENDER = "ClipsCommentButtonComponent_render"
+internal const val UFI_COUNT = "ufi_count"
+internal val COMMENT_BUTTON = ReelPart(COMMENT_BUTTON_RENDER, HIDE_COMMENT_BUTTON)
+internal val COMMENT_COUNT = ReelPart(UFI_COUNT, HIDE_COMMENT_COUNT)
+
+/**
+ * The repost count under the Repost button (#719). Its builder in the clips UFI holds no marker on
+ * 454 either: it's the one unmarked method of the UFI taking the Save builders' parameters (the
+ * scope and two colors) and loading [UFI_COUNT]. The save count's loads its own text name.
+ */
+internal val REPOST_COUNT = ReelPart(UFI_COUNT, HIDE_REPOST_COUNT)
+
+/**
+ * The share count under the Share button (#719) has no builder of its own on 454: the clips UFI's
+ * render builds it inline after this marker, through the UFI's text builder, and adds what that
+ * answers to the column. Every way through it, a share count or none, meets at that add, where
+ * [SHARE_COUNT] is handed the count and can answer nothing in its place.
+ */
+internal const val SHARE_COUNT_MARKER = "ClipsUfiComponent_createShareCountComponent"
 
 /**
  * The overlays near the username that aren't a creation pill (#332): the suggested search terms
@@ -167,6 +226,7 @@ internal const val CHAT_SOURCE = "DIRECT"
 /** Where the viewer was opened from, an enum that keeps its name, which the controller holds. */
 internal const val CLIPS_VIEWER_SOURCE = "Lcom/instagram/clips/intf/ClipsViewerSource;"
 
-internal val CLEANUP_MARKERS = REEL_PARTS.map { it.marker } + SAVE_PARTS.map { it.marker } + PRODUCT_CTA.marker + FLOATING_BUBBLES + SOCIAL_CONTEXT_CHECK +
+internal val CLEANUP_MARKERS = REEL_PARTS.map { it.marker } + SAVE_PARTS.map { it.marker } + LIKE_PARTS.map { it.marker } +
+    PAUSE_PARTS.map { it.marker } + COMMENT_BUTTON_RENDER + SHARE_COUNT_MARKER + PRODUCT_CTA.marker + FLOATING_BUBBLES + SOCIAL_CONTEXT_CHECK +
     COMMENT_BAR_SHOW + COMMENT_BAR_HIDE + COMMENT_BAR_CREATED + COMMENT_BAR_UNVANISH +
     DIRECT_REPLY_BAR_SHOW + DIRECT_REPLY_BAR_HIDE + DIRECT_REPLY_BAR_CREATED

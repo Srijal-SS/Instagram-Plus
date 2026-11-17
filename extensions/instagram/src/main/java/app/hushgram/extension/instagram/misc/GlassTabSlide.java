@@ -4,6 +4,7 @@
  */
 package app.hushgram.extension.instagram.misc;
 
+import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -20,6 +21,7 @@ import java.lang.reflect.Proxy;
 import java.util.WeakHashMap;
 import java.util.function.BooleanSupplier;
 
+import app.hushgram.extension.instagram.reels.ReelSeekTouch;
 import app.hushgram.extension.instagram.settings.FamilyNames;
 import app.hushgram.extension.instagram.settings.Settings;
 import app.hushgram.extension.shared.diagnostics.HookStatus;
@@ -43,6 +45,15 @@ import app.hushgram.extension.shared.diagnostics.HookStatus;
  * one, unless that tab is already open. A cancel from the system clicks nothing. Either way the highlight
  * goes back to the selected tab, sliding as it does after a tap.
  *
+ * <p>From the moment a finger goes down on the pill until it lets go, the glass is told where it is
+ * ({@link Host#hold}), for Glass lens under your finger (#705). That's watched with Slide across the tabs
+ * off too, and keeps nothing from Instagram.
+ *
+ * <p>On Reels, Instagram's touch strip for the seek bar runs over the bar's top edge, but the bar's tabs sit
+ * above it and would take a drag that starts there. Such a gesture goes to the strip itself, all of it, so
+ * it seeks the reel the way it does without the glass (#526). The glass bar's slide does that with Slide
+ * across the tabs off too, and then slides nothing.
+ *
  * <p>Paused, it passes every touch on and starts nothing. Anything that throws ends the slide, is counted
  * in Diagnostics, and the touch goes on to Instagram.
  */
@@ -59,6 +70,23 @@ final class GlassTabSlide {
 
         /** Puts the highlight's middle at [x], in the bar's own pixels, or sends it back to the selected tab for NaN. */
         void follow(float x);
+
+        /** A reel's seek bar touch strip when [x], [y], in the bar's own pixels, are on it and on the bar too, else null. */
+        @Nullable
+        View stripAt(float x, float y);
+
+        /**
+         * Whether one of Instagram's bottom sheets shows in the bar's window. The sheet covers the bar, so
+         * a press where the bar is belongs to the sheet, like the share sheet's Send button (#526).
+         */
+        boolean underASheet();
+
+        /**
+         * Where a finger held on the pill is, in the bar's own pixels, or NaN once it lifts, swipes up or down
+         * off the bar or a second finger joins (#705). Told with Slide across the tabs off too. Does nothing
+         * unless the glass draws something for it.
+         */
+        default void hold(float x) { }
     }
 
     static final int IDLE = 0;
@@ -70,6 +98,8 @@ final class GlassTabSlide {
     static final int REFUSED = 3;
     /** A slide stopped by Pause. Instagram already had its cancel, so the rest of the gesture goes nowhere. */
     static final int DROPPED = 4;
+    /** A gesture that went down on a reel's seek bar strip: all of it goes to the strip, none to Instagram's screen. */
+    static final int ROUTED = 5;
 
     /** The watcher in each window's callbacks, held weakly both ways so a closed window takes it along. */
     private static final WeakHashMap<Window, WeakReference<Watcher>> watchers = new WeakHashMap<>();
@@ -77,14 +107,20 @@ final class GlassTabSlide {
     private final ViewGroup bar;
     private final Host host;
     private final BooleanSupplier running;
+    /** Whether a finger slides across the tabs: Slide across the tabs. Strip drags go to the strip either way. */
+    private final boolean slides;
     private final float slop;
     private final int[] place = new int[2];
     private int state = IDLE;
+    /** The strip the gesture under way goes to while {@link #ROUTED}. */
+    @Nullable private View routed;
     private float downX, downY;
     /** The bar's left edge on the screen as the finger went down. The bar can't move while a finger slides. */
     private float barLeft;
     /** Whether the tab under the finger as it went down has a long press of its own. */
     private boolean tabHolds;
+    /** Whether the host was told a finger holds the pill and not yet that it let go (#705). */
+    private boolean holding;
 
     /**
      * @param bar     the tab bar, whose children are the tabs
@@ -92,10 +128,21 @@ final class GlassTabSlide {
      * @param running whether slides are allowed right now: false while HushGram is paused
      */
     GlassTabSlide(ViewGroup bar, Host host, BooleanSupplier running) {
+        this(bar, host, running, true);
+    }
+
+    /** As above, and [slides] says whether a finger on the pill slides across the tabs or only strip drags are watched. */
+    GlassTabSlide(ViewGroup bar, Host host, BooleanSupplier running, boolean slides) {
         this.bar = bar;
         this.host = host;
         this.running = running;
+        this.slides = slides;
         this.slop = ViewConfiguration.get(bar.getContext()).getScaledTouchSlop();
+    }
+
+    /** Whether a finger on the pill slides across the tabs, as against only strip drags being watched. */
+    boolean slides() {
+        return slides;
     }
 
     /** Where the gesture under way stands: {@link #IDLE}, {@link #WATCHING}, {@link #SLIDING} and so on. */
@@ -178,21 +225,38 @@ final class GlassTabSlide {
         if (action == MotionEvent.ACTION_DOWN) {
             // A slide whose end never came lets the highlight go back first.
             if (state == SLIDING) host.follow(Float.NaN);
+            letGo();
             state = IDLE;
-            if (!running.getAsBoolean() || !barStill()) return false;
+            routed = null;
+            if (!running.getAsBoolean() || !barStill() || host.underASheet()) return false;
             bar.getLocationOnScreen(place);
             float x = event.getRawX() - place[0];
             float y = event.getRawY() - place[1];
+            View strip = host.stripAt(x, y);
+            if (strip != null) {
+                routed = strip;
+                state = ROUTED;
+                route(event);
+                return true;
+            }
             if (!host.onPill(x, y)) return false;
-            View tab = tabAt(x);
-            tabHolds = tab != null && tab.isLongClickable();
             barLeft = place[0];
             downX = event.getRawX();
             downY = event.getRawY();
+            holding = true;
+            host.hold(x);
+            if (!slides) {
+                // No slide to watch for: the gesture is Instagram's, and only the hold is followed.
+                state = REFUSED;
+                return false;
+            }
+            View tab = tabAt(x);
+            tabHolds = tab != null && tab.isLongClickable();
             state = WATCHING;
             return false;
         }
         boolean ends = action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL;
+        followHold(event, action, ends);
         switch (state) {
             case WATCHING:
                 if (ends || action == MotionEvent.ACTION_POINTER_DOWN || !running.getAsBoolean()) {
@@ -242,6 +306,13 @@ final class GlassTabSlide {
             case DROPPED:
                 if (ends) state = IDLE;
                 return true;
+            case ROUTED:
+                route(event);
+                if (ends) {
+                    state = IDLE;
+                    routed = null;
+                }
+                return true;
             case REFUSED:
                 if (ends) state = IDLE;
                 return false;
@@ -250,15 +321,71 @@ final class GlassTabSlide {
         }
     }
 
+    /**
+     * Tells the host where a held finger is now, or that it let go: as it lifts, as a second finger joins,
+     * while paused, or as it swipes up or down further than sideways before any slide, off the bar (#705).
+     */
+    private void followHold(MotionEvent event, int action, boolean ends) {
+        if (!holding) return;
+        if (ends || action == MotionEvent.ACTION_POINTER_DOWN || !running.getAsBoolean()) {
+            letGo();
+            return;
+        }
+        if (action != MotionEvent.ACTION_MOVE) return;
+        if (state != SLIDING) {
+            float dx = Math.abs(event.getRawX() - downX);
+            float dy = Math.abs(event.getRawY() - downY);
+            if (dy >= slop && dy > dx) {
+                letGo();
+                return;
+            }
+        }
+        host.hold(event.getRawX() - barLeft);
+    }
+
+    /** Tells the host the held finger let go, once. */
+    private void letGo() {
+        if (!holding) return;
+        holding = false;
+        host.hold(Float.NaN);
+    }
+
     /** Ends whatever was under way after a failure, so the rest of the gesture is Instagram's. */
     void giveUp() {
         boolean sliding = state == SLIDING;
+        View strip = state == ROUTED ? routed : null;
         state = REFUSED;
-        if (!sliding) return;
+        routed = null;
         try {
-            host.follow(Float.NaN);
+            letGo();
+            if (sliding) host.follow(Float.NaN);
+            if (strip != null) {
+                // The strip had the gesture's start, so it hears the gesture end.
+                long now = SystemClock.uptimeMillis();
+                MotionEvent cancel = MotionEvent.obtain(now, now, MotionEvent.ACTION_CANCEL, 0f, 0f, 0);
+                try {
+                    strip.dispatchTouchEvent(cancel);
+                } finally {
+                    cancel.recycle();
+                }
+            }
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.GLASS_TAB_BAR, "tab slide", failure);
+        }
+    }
+
+    /** Hands [event] to the strip the gesture went down on, in the strip's own pixels. */
+    private void route(MotionEvent event) {
+        View strip = routed;
+        if (strip == null || !strip.isAttachedToWindow()) return;
+        strip.getLocationOnScreen(place);
+        MotionEvent copy = MotionEvent.obtain(event);
+        try {
+            copy.offsetLocation(event.getRawX() - place[0] - event.getX(), event.getRawY() - place[1] - event.getY());
+            // Through the strip's gate (#452) as a press from the bar, or it hands the press to the tab under it.
+            ReelSeekTouch.fromTheBar(strip, copy);
+        } finally {
+            copy.recycle();
         }
     }
 

@@ -4,12 +4,15 @@
  */
 package app.morphe.patches.instagram.stories.loop
 
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.instagram.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.instagram.misc.extension.enableStatus
 import app.morphe.patches.instagram.misc.extension.instagramExtensionPatch
+import app.morphe.patches.instagram.misc.extension.jumpTargets
+import app.morphe.patches.instagram.misc.extension.parameterRegister
 import app.morphe.patches.instagram.misc.extension.requireStatusMethod
 import app.morphe.patches.instagram.misc.extension.uniqueMethod
 import app.morphe.patches.instagram.misc.flags.FlagLoad
@@ -26,6 +29,7 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 private const val PATCH = "Loop a story"
 internal const val STORY_LOOP = "$EXTENSION_PACKAGE/stories/StoryLoop;"
 internal const val LOOP = "$STORY_LOOP->loop(I)Z"
+internal const val ASKING = "$STORY_LOOP->asking(Ljava/lang/Object;)V"
 
 /** A story, photo or video, as the story viewer holds it. Redex keeps its name. */
 private const val STORY_ITEM = "Lcom/instagram/model/reels/ReelItem;"
@@ -34,10 +38,10 @@ private const val STORY_ITEM = "Lcom/instagram/model/reels/ReelItem;"
  * The server flag behind Instagram's own story loop test. On 450 it's read once, in the story
  * viewer's private check of whether a story item plays again, after the check has already said no
  * for an ad and for a few special kinds of story. 452 renumbered it from 451's 0x81100c000156bd, 453 from 452's 0x810ff8000155de,
- * and 454 from 453's 0x810fdd000155ff (A1S there, A1U on 454);
+ * 454 from 453's 0x810fdd000155ff (A1S there, A1U on 454), and 455 from 454's 0x810f9f00015620 (A1X on 455);
  * the one read there is still the viewer's private check of one story item.
  */
-internal const val STORY_LOOP_FLAG = 0x810f9f00015620L
+internal const val STORY_LOOP_FLAG = 0x810f890001561aL
 
 /**
  * Plays a story again when it ends instead of moving on. In the default selection with its switch
@@ -49,7 +53,8 @@ internal const val STORY_LOOP_FLAG = 0x810f9f00015620L
 val loopStoryPatch = bytecodePatch(
     name = "Loop a story",
     description = "Plays a story again from the start when it ends, instead of moving on to the next one. Tap or " +
-        "swipe to move on. Starts off. Turn it on in Instagram Plus Settings > Stories.",
+        "swipe to move on. With it off, Loop this story in a story's menu loops just that one. Starts off. " +
+        "Turn it on in Instagram Plus Settings > Stories.",
 ) {
     category("Stories")
     dependsOn(settingsPatch, instagramExtensionPatch)
@@ -62,10 +67,21 @@ val loopStoryPatch = bytecodePatch(
     }
 }
 
-/** Finds the loop test's read with [findStoryLoop] and has the extension answer it through [LOOP]. */
+/**
+ * Finds the loop test's read with [findStoryLoop] and has the extension answer it through [LOOP].
+ * The check tells [ASKING] its story item first thing, so a story looped from its menu (#610) gets
+ * its yes. Nothing jumps back to the check's start, or this fails before anything changes.
+ */
 internal fun BytecodePatchContext.loopStories() {
     val read = findStoryLoop()
+    val check = mutableClassDefBy(read.type).methods.single {
+        it.name == read.name && it.returnType == read.returnType &&
+            it.parameterTypes.map(CharSequence::toString) == read.parameters
+    }
+    if (0 in check.jumpTargets()) refuse("something jumps back to ${read.type}->${read.name}'s first instruction")
     answerFlagLoads(listOf(read to LOOP))
+    val item = check.parameterRegister(0)
+    check.addInstructions(0, "invoke-static/range { $item .. $item }, $ASKING")
 }
 
 private fun refuse(detail: String): Nothing = throw PatchException("$PATCH: $detail")

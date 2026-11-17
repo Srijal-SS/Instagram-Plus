@@ -9,6 +9,12 @@ package app.hushgram.extension.instagram.reels;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -20,6 +26,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.Window;
+import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -52,8 +59,8 @@ import app.hushgram.extension.shared.settings.HushgramPause;
  *
  * <p>The dim: once the Reels screen has gone the Dim after choice ({@link BurnInWait}) without a
  * touch, the reel's overlay (its button column, author and caption), its seek bar, the Interested row
- * under some reels (the views without an id beside the button column), the top bar and the tab bar
- * are drawn at {@link #IDLE_LEVEL} of what Instagram draws them at, and the next touch brings them
+ * under some reels (the views without an id beside the button column), the Add comment bar, the top
+ * bar and the tab bar are drawn at {@link #IDLE_LEVEL} of what Instagram draws them at, and the next touch brings them
  * back. Only their alpha changes, so a dimmed button still takes its tap. They're found by the ids
  * Instagram 450 gives them ({@link #DIMMED_IDS}), and a view inside one already dimmed is left alone,
  * so nothing is dimmed twice. A finger held on the screen counts as a touch until it lifts.
@@ -67,7 +74,9 @@ import app.hushgram.extension.shared.settings.HushgramPause;
  *
  * <p>The shift moves the window's content around a small square, {@link #STEP_DP} at a time, every
  * {@link #SHIFT_EVERY_MS}. It's one view's translation, the content frame's, which Instagram doesn't
- * animate, where each control's would be fought over with Instagram's own animations.
+ * animate, where each control's would be fought over with Instagram's own animations. The strips a step
+ * leaves bare are painted black over the decor ({@link Gap}), since the window under the content takes
+ * Instagram's theme and showed white there in light mode (#669).
  *
  * <p>Stories (#479), with Dim stories too on ({@link #stories}): while the story viewer fills the
  * window with no reel drawn over it, its progress bar, header (with HushGram's eye, Download and speed
@@ -111,12 +120,13 @@ public final class BurnInGuard {
      * The ids of what dims, as Instagram 450 and 451 name them: a reel's overlay and its parts (the
      * button column, the author and caption), the Reels top bar and the tab bar, and outside the
      * overlay the reel's seek bar ({@code scrubber}, 451; HushGram's time label fades with it, see
-     * {@link ReelTimeLabel}) (#162).
+     * {@link ReelTimeLabel}) (#162), and the Add comment bar under a reel, in the footer below the
+     * overlay ({@code comment_composer_inner_layout}, 454, #648). The comment sheet's own box has other ids.
      */
     static final String[] DIMMED_IDS = {
             "clips_item_overlay_component", "clips_ufi_component", "clips_media_info_component",
             "clips_viewer_media_info_container", "clips_viewer_media_info", "clips_viewer_action_bar", "tab_bar",
-            "scrubber"
+            "scrubber", "comment_composer_inner_layout"
     };
 
     /**
@@ -129,11 +139,13 @@ public final class BurnInGuard {
     /**
      * What a finger landing on counts as a touch even on the reel (#162): the button column, the
      * author and caption, the seek bar and the strip under the reel that takes its drags (451), the
-     * top bar and the tab bar. The overlay holding them isn't one, since its empty parts are the reel.
+     * top bar, the tab bar and the Add comment bar (#648). The overlay holding them isn't one, since its
+     * empty parts are the reel.
      */
     static final String[] WAKING_IDS = {
             "clips_ufi_component", "clips_media_info_component", "clips_viewer_media_info_container",
-            "clips_viewer_media_info", "clips_viewer_action_bar", "tab_bar", "scrubber", "clips_expanded_touch_view"
+            "clips_viewer_media_info", "clips_viewer_action_bar", "tab_bar", "scrubber", "clips_expanded_touch_view",
+            "comment_composer_inner_layout"
     };
 
     /** Save and its count, in the button column, which a finger landing on doesn't count as a touch (#162). */
@@ -148,6 +160,9 @@ public final class BurnInGuard {
      */
     static final String STORY_ID = "reel_viewer_root";
 
+    /** A story's progress bar, which draws a seek bar shape past its few pixels of height (#630). */
+    static final String STORY_BAR_ID = "reel_viewer_progress_bar";
+
     /**
      * The ids of what dims on a story, as Instagram 453 names them (#479): the progress bar, the header
      * (picture, name, time and the row of buttons at its end, where HushGram's eye, Download and speed
@@ -155,7 +170,7 @@ public final class BurnInGuard {
      * one already dimmed is left alone, as on Reels.
      */
     static final String[] STORY_DIMMED_IDS = {
-            "reel_viewer_progress_bar", "reel_viewer_header_container", "reel_viewer_header",
+            STORY_BAR_ID, "reel_viewer_header_container", "reel_viewer_header",
             "reel_header_extras_container", "reel_viewer_message_composer_container", "reel_item_toolbar_container",
             "viewer_reel_item_toolbar_container", "self_reel_item_toolbar_container",
             "reel_item_toolbar_footer_container"
@@ -181,8 +196,12 @@ public final class BurnInGuard {
     private static final Map<Window, Boolean> WRAPPED = new WeakHashMap<>();
     /** Views this class dimmed: the alpha they had, then the alpha written here. */
     private static final Map<View, float[]> DIMMED = new WeakHashMap<>();
+    /** Dimmed bars that draw past their edges, and the overlapping rendering each had (see {@link #drawWhole}). */
+    private static final Map<View, Boolean> FLATTENED = new WeakHashMap<>();
     /** Content views this class moved: the [x, y] they had, then the [x, y] written here. */
     private static final Map<View, float[]> MOVED = new WeakHashMap<>();
+    /** Decor views whose overlay holds the black over what the shift left bare (#669). */
+    private static final Map<View, Gap> GAPS = new WeakHashMap<>();
     private static final Runnable TICK = BurnInGuard::tick;
     private static final Focus FOCUS = new Focus();
     private static final Layout LAYOUT = new Layout();
@@ -280,7 +299,7 @@ public final class BurnInGuard {
         synchronized (IDS) {
             Integer found = IDS.get(name);
             if (found == null) {
-                found = context.getResources().getIdentifier(name, "id", context.getPackageName());
+                found = context.getResources().getIdentifier(name, "id", Utils.resourcePackage(context));
                 IDS.put(name, found);
             }
             return found;
@@ -538,11 +557,41 @@ public final class BurnInGuard {
             held[1] = alpha * IDLE_LEVEL;
         }
         if (alpha != held[1]) view.setAlpha(held[1]);
+        drawWhole(view);
+    }
+
+    /**
+     * Has [view] take its dim on each thing it draws when it's a seek bar or a story's progress bar
+     * whose parent lets it draw past its edges (#450, #586). A view below full alpha with overlapping
+     * rendering is drawn into a layer the size of the view, which cuts off whatever it draws past its
+     * edges, however its parents clip. A reel's bar is a few pixels high and the wave runs over and
+     * under it, so dimmed it was cut flat along the bar's top, the handle too. Where a bar draws over
+     * itself (the played part over the track) that part comes out a touch brighter while dimmed. The
+     * flag is put back as {@link View#getHasOverlappingRendering} read it, so it stays forced after:
+     * a bar's answer never changes. {@link #undim} gives it back.
+     */
+    private static void drawWhole(View view) {
+        if (FLATTENED.containsKey(view)) return;
+        ViewParent parent = view.getParent();
+        if (!(parent instanceof ViewGroup) || ((ViewGroup) parent).getClipChildren()) return;
+        if (!(view instanceof SeekBar)) {
+            int bar = id(view.getContext(), STORY_BAR_ID);
+            if (bar == 0 || view.getId() != bar) return;
+        }
+        FLATTENED.put(view, view.getHasOverlappingRendering());
+        view.forceHasOverlappingRendering(false);
     }
 
     /** Brings back each view dimmed here, if its alpha is still the one written here. */
     private static void undim() {
         dimming = false;
+        if (!FLATTENED.isEmpty()) {
+            for (Map.Entry<View, Boolean> entry : FLATTENED.entrySet()) {
+                View view = entry.getKey();
+                if (view != null) view.forceHasOverlappingRendering(entry.getValue());
+            }
+            FLATTENED.clear();
+        }
         if (DIMMED.isEmpty()) return;
         for (Map.Entry<View, float[]> entry : DIMMED.entrySet()) {
             View view = entry.getKey();
@@ -556,6 +605,7 @@ public final class BurnInGuard {
         // peekDecorView, so an activity that never made its views doesn't get them made here as it leaves.
         Window window = activity.getWindow();
         View decor = window == null ? null : window.peekDecorView();
+        if (decor != null && !shifting) bare(decor);
         View content = decor == null ? null : decor.findViewById(android.R.id.content);
         if (content == null) return;
         float[] held = MOVED.get(content);
@@ -581,10 +631,90 @@ public final class BurnInGuard {
         float step = STEP_DP * content.getResources().getDisplayMetrics().density;
         held[2] = held[0] + at[0] * step;
         held[3] = held[1] + at[1] * step;
+        cover(decor, content, held);
         if (x == held[2] && y == held[3]) return;
         content.setTranslationX(held[2]);
         content.setTranslationY(held[3]);
         HookStatus.counted(FamilyNames.REEL_DECLUTTER, COUNT_SHIFTED);
+    }
+
+    /**
+     * Puts black over the strips the shift leaves bare (#669), from where the content was before it to
+     * where it is now. Reels and stories are black screens, but the window under them takes Instagram's
+     * theme, so in light mode a step to one side showed a white line down the other.
+     */
+    private static void cover(View decor, View content, float[] held) {
+        float dx = held[2] - held[0];
+        float dy = held[3] - held[1];
+        if (dx == 0f && dy == 0f) {
+            bare(decor);
+            return;
+        }
+        Gap gap = GAPS.get(decor);
+        if (gap == null || gap.content.get() != content) {
+            bare(decor);
+            gap = new Gap(content);
+            GAPS.put(decor, gap);
+            decor.getOverlay().add(gap);
+        }
+        gap.setBounds(0, 0, decor.getWidth(), decor.getHeight());
+        if (gap.baseX != held[0] || gap.baseY != held[1] || gap.dx != dx || gap.dy != dy) {
+            gap.baseX = held[0];
+            gap.baseY = held[1];
+            gap.dx = dx;
+            gap.dy = dy;
+            gap.invalidateSelf();
+        }
+    }
+
+    /** Takes the black {@link #cover} put on [decor] off again. */
+    private static void bare(View decor) {
+        Gap gap = GAPS.remove(decor);
+        if (gap != null) decor.getOverlay().remove(gap);
+    }
+
+    /** The black over the strips the shift left bare, drawn over the decor in its overlay (#669). */
+    static final class Gap extends Drawable {
+        final WeakReference<View> content;
+        /** The translation the content had before the shift, and the shift on top of it. */
+        float baseX, baseY, dx, dy;
+        private final Paint paint = new Paint();
+        private final int[] at = new int[2];
+        private final int[] decorAt = new int[2];
+
+        Gap(View content) {
+            this.content = new WeakReference<>(content);
+            paint.setColor(Color.BLACK);
+        }
+
+        @Override public void draw(@NonNull Canvas canvas) {
+            View view = content.get();
+            if (view == null) return;
+            view.getLocationInWindow(at);
+            View root = view.getRootView();
+            root.getLocationInWindow(decorAt);
+            // Where the content would be without the shift, in the decor's own coordinates.
+            float left = at[0] - decorAt[0] - view.getTranslationX() + baseX;
+            float top = at[1] - decorAt[1] - view.getTranslationY() + baseY;
+            float right = left + view.getWidth();
+            float bottom = top + view.getHeight();
+            // A step is rarely whole pixels (2 dp is 5.25 px at 2.625), so each strip reaches to the
+            // next whole pixel and no half-lit seam is left between it and the content.
+            if (dx > 0f) canvas.drawRect(left, top, (float) Math.ceil(left + dx), bottom, paint);
+            else if (dx < 0f) canvas.drawRect((float) Math.floor(right + dx), top, right, bottom, paint);
+            if (dy > 0f) canvas.drawRect(left, top, right, (float) Math.ceil(top + dy), paint);
+            else if (dy < 0f) canvas.drawRect(left, (float) Math.floor(bottom + dy), right, bottom, paint);
+        }
+
+        @Override public void setAlpha(int alpha) {
+        }
+
+        @Override public void setColorFilter(@Nullable ColorFilter filter) {
+        }
+
+        @Override public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
     }
 
     private static void schedule(long next) {
@@ -795,8 +925,11 @@ public final class BurnInGuard {
         if (DIMMED.isEmpty()) return;
         for (Map.Entry<View, float[]> entry : DIMMED.entrySet()) {
             View view = entry.getKey();
+            if (view == null) continue;
             // Already counted when it was first dimmed.
-            if (view != null && view.getAlpha() != entry.getValue()[1]) dim(view, COUNT_DIMMED);
+            if (view.getAlpha() != entry.getValue()[1]) dim(view, COUNT_DIMMED);
+            // A bar whose room was made after it dimmed.
+            else drawWhole(view);
         }
     }
 
@@ -940,7 +1073,9 @@ public final class BurnInGuard {
         paused = false;
         LAYOUT.lastLook = Long.MIN_VALUE / 2;
         DIMMED.clear();
+        FLATTENED.clear();
         MOVED.clear();
+        GAPS.clear();
         WRAPPED.clear();
     }
 }

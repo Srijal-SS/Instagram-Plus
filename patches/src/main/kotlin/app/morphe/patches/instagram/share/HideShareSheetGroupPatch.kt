@@ -10,7 +10,7 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.instagram.misc.extension.EXTENSION_PACKAGE
-import app.morphe.patches.instagram.misc.extension.classesHolding
+import app.morphe.patches.instagram.misc.extension.classesLoadingString
 import app.morphe.patches.instagram.misc.extension.enableStatus
 import app.morphe.patches.instagram.misc.extension.freeLocalsAt
 import app.morphe.patches.instagram.misc.extension.instagramExtensionPatch
@@ -36,6 +36,7 @@ internal const val HIDE_GROUP_BUTTON = "$EXTENSION_PACKAGE/share/ShareSheet;->hi
 internal const val HIDE_GROUP_ACTION = "$EXTENSION_PACKAGE/share/ShareSheet;->hideGroupAction()Z"
 internal const val HIDE_GROUP_SEND = "$EXTENSION_PACKAGE/share/ShareSheet;->hideGroupSend()Z"
 internal const val FILTER_ACTIONS = "$EXTENSION_PACKAGE/share/ShareSheetActions;->filter(Ljava/util/List;)Ljava/util/List;"
+internal const val HIDE_SEARCH_BOX = "$EXTENSION_PACKAGE/share/ShareSheet;->searchBox(Landroid/view/View;)V"
 
 /**
  * Names the share sheet gives its round buttons that only the code naming its row holds: the row's
@@ -72,8 +73,8 @@ private const val LAYOUT_PARAMS = "Landroid/view/ViewGroup\$LayoutParams;"
 val hideShareSheetGroupPatch = bytecodePatch(
     name = "Hide group buttons on the share sheet",
     description = "Takes the New group button and the button that sends to several people as a group off the " +
-        "share sheet, and lets you pick which of the round buttons under the people it shows. You can still start " +
-        "a group from your messages. Both start off. Find them in Instagram Plus Settings > Sharing.",
+        "share sheet, and lets you pick which of the round buttons under the people it shows and hide its search " +
+        "bar. You can still start a group from your messages. All start off. Find them in Instagram Plus Settings > Sharing.",
 ) {
     category("Interaction")
     dependsOn(settingsPatch, instagramExtensionPatch)
@@ -84,10 +85,12 @@ val hideShareSheetGroupPatch = bytecodePatch(
         val sheet = findShareSheet()
         val send = findGroupSend()
         val actions = findActionListOrWarn()
+        val search = findSearchBoxOrWarn()
         guardGroupButton(sheet.build)
         guardGroupAction(sheet.reveals)
         guardGroupSend(send)
         actions?.let { filterActionList(it) }
+        search?.let { hookSearchBox(it) }
         enableStatus("shareSheet")
     }
 }
@@ -223,7 +226,10 @@ internal class ActionListSite(
  */
 internal fun BytecodePatchContext.findActionList(): ActionListSite {
     val sites = mutableListOf<ActionListSite>()
-    classesHolding(*ACTION_NAMES.toTypedArray()).forEach { classDef ->
+    // 455's x86_64 builds ask a pool for whatsapp_status in the builder, so a class holding all three names misses it.
+    val loading = ACTION_NAMES.map { name -> classesLoadingString(name) }
+    val alsoLoading = loading.drop(1).map { classes -> classes.mapTo(HashSet()) { it.type } }
+    loading.first().filter { classDef -> alsoLoading.all { classDef.type in it } }.forEach { classDef ->
         classDef.methods.forEach { method ->
             val code = method.implementation?.instructions?.toList() ?: return@forEach
             val asks = code.indices.filter { at -> code[at].isPickerCall() }
@@ -284,6 +290,47 @@ internal fun BytecodePatchContext.filterActionList(site: ActionListSite) {
             invoke-static/range { v${site.register} .. v${site.register} }, $FILTER_ACTIONS
             move-result-object v${site.register}
         """,
+    )
+}
+
+/** Where the share sheet keeps its search box: the method, the index of the write and the register holding the box. */
+internal class SearchBoxSite(val method: SheetMethod, val at: Int, val box: Int)
+
+/**
+ * Finds where the share sheet keeps the search box it just found by its id: the one write of
+ * [STICKY_SEARCH_BOX] in the sheet of a value cast to [SEARCH_BOX] by the instruction before, which
+ * onViewCreated makes. The sheet shows the box again a few lines later, which the extension undoes
+ * each time the box is laid out. Fails unless there's
+ * exactly one, with no branch entering right after it, where the hook goes.
+ */
+internal fun BytecodePatchContext.findSearchBox(): SearchBoxSite {
+    val sheet = classDefByOrNull(SHARE_SHEET) ?: refuse("$SHARE_SHEET isn't in this Instagram")
+    val found = sheet.methods.flatMap { method ->
+        val code = method.implementation?.instructions?.toList() ?: emptyList()
+        code.indices.filter { at -> code[at].keepsSearchBox() && code.getOrNull(at - 1)?.castsToSearchBox((code[at] as TwoRegisterInstruction).registerA) == true }
+            .map { at -> method to at }
+    }
+    val (method, at) = found.singleOrNull() ?: refuse("$SHARE_SHEET keeps a found $STICKY_SEARCH_BOX in ${found.size} places, expected one")
+    if (at + 1 in method.jumpTargets()) refuse("a branch enters $SHARE_SHEET->${method.name} right after it keeps the search box")
+    return SearchBoxSite(method.site(SHARE_SHEET), at, (method.implementation!!.instructions.elementAt(at) as TwoRegisterInstruction).registerA)
+}
+
+/** Where the sheet keeps its search box, or null with a warning, so the group buttons still go in. */
+internal fun BytecodePatchContext.findSearchBoxOrWarn(): SearchBoxSite? = try {
+    findSearchBox()
+} catch (refusal: PatchException) {
+    patchLog.warning("${refusal.message}. $PATCH goes in without the switch hiding the search bar.")
+    null
+}
+
+/**
+ * Hands the search box to [HIDE_SEARCH_BOX] right after the sheet keeps it, which hides it while
+ * the user wants it gone. A range call, so the box's register may sit anywhere.
+ */
+internal fun BytecodePatchContext.hookSearchBox(site: SearchBoxSite) {
+    mutableMethod(site.method).addInstructions(
+        site.at + 1,
+        "invoke-static/range { v${site.box} .. v${site.box} }, $HIDE_SEARCH_BOX",
     )
 }
 
@@ -400,6 +447,14 @@ private fun Method.testsGroupButton(): Boolean {
         } == true
     }
 }
+
+private fun Instruction.keepsSearchBox() = opcode == Opcode.IPUT_OBJECT &&
+    ((this as ReferenceInstruction).reference as FieldReference).let { field ->
+        field.definingClass == SHARE_SHEET && field.name == STICKY_SEARCH_BOX && field.type == SEARCH_BOX
+    }
+
+private fun Instruction.castsToSearchBox(register: Int) = opcode == Opcode.CHECK_CAST &&
+    (this as OneRegisterInstruction).registerA == register && (this as ReferenceInstruction).reference.toString() == SEARCH_BOX
 
 private fun Instruction.writes(register: Int): Boolean {
     if (!opcode.setsRegister()) return false

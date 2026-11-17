@@ -59,6 +59,9 @@ import org.robolectric.annotation.GraphicsMode;
 import org.robolectric.shadows.ShadowLooper;
 import org.robolectric.util.ReflectionHelpers;
 
+import app.hushgram.extension.instagram.reels.FullScreenBars;
+import app.hushgram.extension.instagram.reels.ReelBlurBars;
+import app.hushgram.extension.instagram.reels.ReelSeekRoom;
 import app.hushgram.extension.instagram.settings.Settings;
 import app.hushgram.extension.shared.SettingsContextRule;
 import app.hushgram.extension.shared.diagnostics.HookStatus;
@@ -85,11 +88,18 @@ public class GlassTabBarTest {
         Settings.GLASS_TAB_BAR_OPACITY.resetToDefault();
         Settings.GLASS_TAB_BAR_REFRACT_STRENGTH.resetToDefault();
         Settings.GLASS_TAB_BAR_HAPTICS.resetToDefault();
+        Settings.GLASS_TAB_BAR_HAPTIC_STRENGTH.resetToDefault();
+        Settings.GLASS_TAB_BAR_TAP_SOUND.resetToDefault();
+        Settings.GLASS_TAB_BAR_TAP_SOUND_VOLUME.resetToDefault();
         Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL.resetToDefault();
         Settings.GLASS_TAB_BAR_SLIDE.resetToDefault();
         Settings.GLASS_TAB_BAR_LIQUID.resetToDefault();
         Settings.GLASS_TAB_BAR_KEEP_SIZE.resetToDefault();
+        Settings.GLASS_TAB_BAR_HOLD_LENS.resetToDefault();
+        Settings.GLASS_TAB_BAR_SHRINK_ON_SCROLL.resetToDefault();
+        Settings.GLASS_TAB_BAR_MATERIAL.resetToDefault();
         Settings.GLASS_TAB_BAR_REFRACT.resetToDefault();
+        GlassTabBar.animationsOnForTests = null;
         BaseSettings.PAUSED.save(false);
         PauseForTests.resume();
         GlassTabBar.resetForTests();
@@ -152,6 +162,70 @@ public class GlassTabBarTest {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * #720: the Material look draws the pill solid in Material 3's surface container with fully round ends,
+     * and the marker on the tab you're on in its secondary container. Below Android 12 those are the
+     * baseline colors. It rests while the liquid look is on.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void theMaterialLookIsASolidRoundPillInMaterialColors() throws Exception {
+        GlassTabBar.animationsOnForTests = false;
+        for (int base : new int[]{Color.BLACK, Color.WHITE}) {
+            int[] expected = base == Color.BLACK ? new int[]{0xff211f26, 0xff4a4458} : new int[]{0xfff3edf7, 0xffe8def8};
+            try (GlassHost host = new GlassHost(base, true, GlassHeight.STANDARD, false, false)) {
+                Settings.GLASS_TAB_BAR_MATERIAL.save(true);
+                assertTrue(GlassTabBar.material());
+                GlassTabBar.apply(host.activity);
+                host.layout();
+                try (Pixels plain = host.background()) {
+                    RectF drawn = ReflectionHelpers.getField(host.bar.getBackground(), "rect");
+                    int middle = plain.bitmap.getPixel(Math.round(drawn.centerX()), Math.round(drawn.centerY()));
+                    assertEquals("the pill is solid: " + Integer.toHexString(middle), expected[0], middle);
+                    int corner = plain.bitmap.getPixel(Math.round(drawn.left) + host.dp(3), Math.round(drawn.top) + host.dp(6));
+                    assertTrue("its ends are fully round: " + Integer.toHexString(corner), Color.alpha(corner) < 0x40);
+                }
+                assertTrue(host.bar.getChildAt(0).performClick());
+                try (Pixels active = host.background()) {
+                    RectF slot = ReflectionHelpers.getField(host.bar.getBackground(), "capsule");
+                    int marker = active.bitmap.getPixel(Math.round(slot.centerX()), Math.round(slot.centerY()));
+                    assertEquals("the marker: " + Integer.toHexString(marker), expected[1], marker);
+                }
+                host.capture(base == Color.BLACK ? "material-dark" : "material-light");
+            }
+        }
+        Settings.GLASS_TAB_BAR.save(true);
+        Settings.GLASS_TAB_BAR_MATERIAL.save(true);
+        Settings.GLASS_TAB_BAR_LIQUID.save(true);
+        assertFalse("the liquid look wins", GlassTabBar.material());
+    }
+
+    /** #720: Android 12 and 13 give the Material look the phone's own tones, and its pill never blurs. */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 33, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void theMaterialLookTakesThePhonesTonesAndNeverBlurs() {
+        GlassTabBar.animationsOnForTests = false;
+        Context context = RuntimeEnvironment.getApplication();
+        int[] light = GlassTabBar.materialColors(context, false);
+        assertEquals(context.getColor(android.R.color.system_neutral1_50), light[0]);
+        assertEquals(context.getColor(android.R.color.system_accent2_100), light[1]);
+        int[] dark = GlassTabBar.materialColors(context, true);
+        assertEquals(GlassTabBar.blend(context.getColor(android.R.color.system_neutral1_900),
+                context.getColor(android.R.color.system_neutral1_800), 0.2f), dark[0]);
+        assertEquals(context.getColor(android.R.color.system_accent2_700), dark[1]);
+        for (boolean material : new boolean[]{false, true}) {
+            try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, true)) {
+                Settings.GLASS_TAB_BAR_MATERIAL.save(material);
+                GlassTabBar.apply(host.activity);
+                host.layout();
+                assertEquals("blur with the Material look " + (material ? "on" : "off"), !material,
+                        (boolean) ReflectionHelpers.getField(host.glass(), "blurWanted"));
             }
         }
     }
@@ -397,6 +471,84 @@ public class GlassTabBarTest {
     }
 
     /**
+     * #646: Instagram opens the story camera by moving its main screens, the tab bar with them, beside the
+     * window, so the bar still counts as shown. The pill isn't on the screen then, so the camera gets the
+     * navigation bar's real height and its bottom row stops above the buttons, and nothing is recorded
+     * under the pill. Back from the camera, the screens run behind the pill again.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 33, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aPillMovedBesideTheWindowForTheStoryCameraGivesTheNavigationBarBack() {
+        GlassTabBar.resetForTests();
+        GlassTabBar.animationsOnForTests = false;
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, true)) {
+            int nav = host.dp(24);
+            host.controller.pause().resume();
+            host.frame();
+            assertEquals("on the screen", 0, GlassTabBar.navBarHeight(nav));
+            Object pill = host.bar.getBackground();
+            ReflectionHelpers.setField(pill, "lastRecorded", 1L);
+            host.frame();
+            assertTrue("on the screen, the glass recorded", (long) ReflectionHelpers.getField(pill, "lastRecorded") != 1L);
+
+            int width = host.activity.getWindow().getDecorView().getWidth();
+            assertTrue("the window was laid out", width > 0);
+            host.root.setTranslationX(width);
+            host.frame();
+            assertTrue("still counts as shown", host.bar.isShown());
+            assertEquals("the camera stops above the navigation bar", nav, GlassTabBar.navBarHeight(nav));
+            ReflectionHelpers.callInstanceMethod(pill, "cancelCatchUp");
+            ReflectionHelpers.setField(pill, "lastRecorded", 1L);
+            host.frame();
+            assertEquals("beside the window, the glass recorded", 1L, (long) ReflectionHelpers.getField(pill, "lastRecorded"));
+            assertFalse("beside the window, the glass arranged a catch-up", (boolean) ReflectionHelpers.getField(pill, "catchUpPending"));
+
+            host.root.setTranslationX(-width);
+            host.frame();
+            assertEquals("moved aside the other way", nav, GlassTabBar.navBarHeight(nav));
+
+            host.root.setTranslationX(0);
+            host.frame();
+            assertEquals("back from the camera", 0, GlassTabBar.navBarHeight(nav));
+            assertTrue("back from the camera, the glass recorded", (long) ReflectionHelpers.getField(pill, "lastRecorded") != 1L);
+        }
+    }
+
+    /**
+     * #646: the camera's 9:16 layout reads the navigation bar's height Instagram keeps once, as it's
+     * made, which can be while the pill is still in front and Instagram was answered 0. It gets the
+     * height the pill took. A height given through, a bar HushGram's full screen hides and heights
+     * nobody knows yet go through as they came.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 33, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aCameraLayoutMadeUnderThePillGetsTheNavigationBar() {
+        GlassTabBar.resetForTests();
+        GlassTabBar.animationsOnForTests = false;
+        assertEquals("no heights yet", 0, GlassTabBar.cameraNavBarHeight(0));
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, true)) {
+            int nav = host.dp(24);
+            host.controller.pause().resume();
+            host.frame();
+            assertEquals("the pill is in front", 0, GlassTabBar.navBarHeight(nav));
+            assertEquals("the camera's layout gets the height the pill took", nav, GlassTabBar.cameraNavBarHeight(0));
+
+            host.root.setTranslationX(host.activity.getWindow().getDecorView().getWidth());
+            host.frame();
+            assertEquals("beside the window", nav, GlassTabBar.navBarHeight(nav));
+            assertEquals("a height given through stays", nav, GlassTabBar.cameraNavBarHeight(nav));
+            assertEquals("and a 0 then is Instagram's own", 0, GlassTabBar.cameraNavBarHeight(0));
+
+            host.root.setTranslationX(0);
+            host.frame();
+            assertEquals("a bar full screen hides", 0, GlassTabBar.navBarHeight(0, nav));
+            assertEquals("keeps the camera's 0", 0, GlassTabBar.cameraNavBarHeight(0));
+        }
+    }
+
+    /**
      * #196: a stopped activity's window stays hidden through its resume, and its screens read the
      * navigation bar's height as they resume. A floating pill set to show in it counts already, so
      * Instagram's copy goes back to the pill's 0 ahead of them. A hidden bar or another activity doesn't.
@@ -423,6 +575,141 @@ public class GlassTabBarTest {
                 other.pause().stop().destroy();
             }
         }
+    }
+
+    /**
+     * A floating pill back in front after another window had the navigation bar's height given through
+     * keeps the bar's room under itself as its activity resumes, and when Instagram's next insets pass
+     * offers back the 0 the resume put in its copy. That 0 read as no navigation bar, and the pill sat in
+     * the three-button bar with no lift (S25, 2026-11-11). A sheet over it and the Reels viewers keep the
+     * bar's room too, and the real height Instagram offers next is still answered 0.
+     */
+    @Test
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aPillBackInFrontKeepsTheNavigationBarsRoomWhenInstagramOffersBackItsZero() throws Exception {
+        GlassTabBar.resetForTests();
+        resetFullScreenHeights();
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+            int nav = host.dp(24);
+            navBarAtTheFoot(nav);
+            host.controller.pause().resume();
+            host.frame();
+            int height = host.bar.getLayoutParams().height;
+            assertEquals("shown in front", 0, FullScreenBars.navBarHeight(nav));
+            host.frame();
+            assertEquals("the pill makes room for the bar", height + nav, host.bar.getLayoutParams().height);
+
+            host.controller.pause();
+            ActivityController<Activity> other = Robolectric.buildActivity(Activity.class).setup();
+            try {
+                assertEquals("another window gets the height", nav, FullScreenBars.navBarHeight(nav));
+            } finally {
+                other.pause().stop().destroy();
+            }
+            host.controller.resume();
+            host.frame();
+            assertEquals("back in front, before any pass", height + nav, host.bar.getLayoutParams().height);
+
+            assertEquals("Instagram keeps the pill's 0", 0, FullScreenBars.navBarHeight(0));
+            host.frame();
+            assertEquals("the pill keeps the bar's room", height + nav, host.bar.getLayoutParams().height);
+            assertEquals("a sheet stops above the bar", nav, GlassTabBar.cameraNavBarHeight(0));
+            assertEquals("a Reels viewer stops above the slot and the bar", 100 + nav, GlassTabBar.reelsMargin(100));
+
+            assertEquals("the real height again", 0, FullScreenBars.navBarHeight(nav));
+            host.frame();
+            assertEquals(height + nav, host.bar.getLayoutParams().height);
+        } finally {
+            resetFullScreenHeights();
+        }
+    }
+
+    /**
+     * A floating pill whose window is left with no navigation bar at its foot, as the top half of a
+     * split screen is, gives up the bar's room when Instagram then offers 0 (as it does with `Remove the
+     * empty space at the bottom` on) rather than floating that high over nothing, and comes back in
+     * front with none.
+     */
+    @Test
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aPillWhoseWindowLosesTheNavigationBarGivesUpItsRoom() throws Exception {
+        GlassTabBar.resetForTests();
+        resetFullScreenHeights();
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+            int nav = host.dp(24);
+            navBarAtTheFoot(nav);
+            host.controller.pause().resume();
+            host.frame();
+            int height = host.bar.getLayoutParams().height;
+            assertEquals("shown in front", 0, FullScreenBars.navBarHeight(nav));
+            host.frame();
+            assertEquals("the pill makes room for the bar", height + nav, host.bar.getLayoutParams().height);
+
+            navBarAtTheFoot(0);
+            assertEquals(0, FullScreenBars.navBarHeight(0));
+            host.frame();
+            assertEquals("no bar, no room", height, host.bar.getLayoutParams().height);
+            assertEquals("a sheet goes down to the foot", 0, GlassTabBar.cameraNavBarHeight(0));
+
+            host.controller.pause().resume();
+            host.frame();
+            assertEquals("back in front with no room", height, host.bar.getLayoutParams().height);
+        } finally {
+            resetFullScreenHeights();
+        }
+    }
+
+    /**
+     * A floating pill coming back in front reads its own window's navigation bar, though FullScreenBars
+     * still names the window just left as it hears the resume after GlassTabBar does. Read from that
+     * window, which had no bar at its foot (a landscape chat with the bar on the side), the resume gave
+     * the pill no room until the next pass.
+     */
+    @Test
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aPillBackInFrontReadsItsOwnWindowsNavigationBar() throws Exception {
+        GlassTabBar.resetForTests();
+        resetFullScreenHeights();
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+            int nav = host.dp(24);
+            ReflectionHelpers.callStaticMethod(FullScreenBars.class, "navBarForTests",
+                    ReflectionHelpers.ClassParameter.from(Activity.class, host.controller.get()),
+                    ReflectionHelpers.ClassParameter.from(int.class, nav));
+            host.controller.pause().resume();
+            host.frame();
+            int height = host.bar.getLayoutParams().height;
+            assertEquals("shown in front", 0, FullScreenBars.navBarHeight(nav));
+            host.frame();
+            assertEquals("the pill makes room for the bar", height + nav, host.bar.getLayoutParams().height);
+
+            host.controller.pause();
+            ActivityController<Activity> other = Robolectric.buildActivity(Activity.class).setup();
+            try {
+                assertEquals("another window gets the height", nav, FullScreenBars.navBarHeight(nav));
+                ReflectionHelpers.callStaticMethod(FullScreenBars.class, "nowResumed",
+                        ReflectionHelpers.ClassParameter.from(Activity.class, other.get()));
+            } finally {
+                other.pause().stop().destroy();
+            }
+            host.controller.resume();
+            host.frame();
+            assertEquals("back in front, its own bar read", height + nav, host.bar.getLayoutParams().height);
+        } finally {
+            resetFullScreenHeights();
+        }
+    }
+
+    /** FullScreenBars starts and ends with nothing offered, taken or kept, telling the patch's listeners. */
+    private static void resetFullScreenHeights() throws Exception {
+        Class<?> teller = Class.forName("app.hushgram.extension.instagram.reels.FullScreenBars$Teller");
+        ReflectionHelpers.callStaticMethod(FullScreenBars.class, "resetHeightsForTests",
+                ReflectionHelpers.ClassParameter.from(teller, null));
+    }
+
+    /** Gives the front window a navigation bar [height] pixels tall at its foot, 0 for none. */
+    private static void navBarAtTheFoot(int height) {
+        ReflectionHelpers.callStaticMethod(FullScreenBars.class, "navBarForTests",
+                ReflectionHelpers.ClassParameter.from(int.class, height));
     }
 
     /**
@@ -486,6 +773,8 @@ public class GlassTabBarTest {
             host.frame();
             host.frame();
             assertEquals("a sheet came up, and the insets didn't go round", asked, insets.get());
+            assertTrue("the pill's slide sees the sheet, so the sheet keeps its presses (#526)",
+                    ((GlassTabSlide.Host) host.glass()).underASheet());
             assertEquals("under a sheet Instagram keeps the 0", 0, GlassTabBar.navBarHeight(nav));
             assertEquals("the keyboard over the sheet too", 0, GlassTabBar.navBarHeightOverTheKeyboard(nav));
             assertEquals("the Reels viewer under the sheet keeps its size", nav, GlassTabBar.reelsMargin(0));
@@ -495,6 +784,8 @@ public class GlassTabBarTest {
 
             holder.removeView(sheet);
             host.frame();
+            assertFalse("the sheet went, and the bar's presses are its own again",
+                    ((GlassTabSlide.Host) host.glass()).underASheet());
             assertEquals("the sheet went, and the insets didn't go round", asked, insets.get());
             assertEquals("the keyboard with no sheet gets the height", nav, GlassTabBar.navBarHeightOverTheKeyboard(nav));
             assertEquals("Instagram pads the Reels viewer by it, so the viewer gives up as much (#222)", 0, GlassTabBar.reelsMargin(0));
@@ -610,6 +901,69 @@ public class GlassTabBarTest {
             synchronized (ids) {
                 if (previous == null) ids.remove(GlassTabBar.STORY_ROOT);
                 else ids.put(GlassTabBar.STORY_ROOT, previous);
+            }
+        }
+    }
+
+    /**
+     * #632: on Android 17 the floating pill stayed over an open chat's reply box. While a chat shows on
+     * top in the bar's window the floating pill steps aside, as over a story, and shows again once the
+     * chat goes. A docked bar keeps its place, since Instagram lays the chat's box out above it.
+     */
+    @Test
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aChatOnTopHidesTheFloatingPillOnly() {
+        int chatId = 0x7f0b0124;
+        Map<String, Integer> ids = ReflectionHelpers.getStaticField(GlassTabBar.class, "IDS");
+        Integer previous;
+        synchronized (ids) { previous = ids.put(GlassTabBar.CHAT_ROOT, chatId); }
+        try {
+            for (boolean floating : new boolean[] {true, false}) {
+                GlassTabBar.resetForTests();
+                HookStatus.clear();
+                try (GlassHost host = new GlassHost(Color.BLACK, floating, GlassHeight.STANDARD, false, false)) {
+                    int nav = host.dp(24);
+                    int full = ViewGroup.LayoutParams.MATCH_PARENT;
+                    host.controller.pause().resume();
+                    host.frame();
+
+                    // The Messages tab's screen under the bar, with a chat opened in it.
+                    FrameLayout content = new FrameLayout(host.activity);
+                    host.root.addView(content, 0, new FrameLayout.LayoutParams(full, full));
+                    FrameLayout chat = new FrameLayout(host.activity);
+                    chat.setId(chatId);
+                    content.addView(chat, new FrameLayout.LayoutParams(full, full));
+                    for (int i = 0; i < 4; i++) host.frame();
+                    if (!floating) {
+                        assertEquals("a docked bar stays under a chat", View.VISIBLE, host.bar.getVisibility());
+                        continue;
+                    }
+                    assertEquals("hidden over the chat", View.INVISIBLE, host.bar.getVisibility());
+                    assertEquals("the chat's reply box stops above the navigation bar", nav, GlassTabBar.navBarHeight(nav));
+
+                    // A profile opened from the chat goes after it in the container, and has the bar.
+                    View profile = new View(host.activity);
+                    content.addView(profile, new FrameLayout.LayoutParams(full, full));
+                    host.frame();
+                    assertEquals("a screen over the chat", View.VISIBLE, host.bar.getVisibility());
+                    content.removeView(profile);
+                    host.frame();
+                    assertEquals("back on the chat", View.INVISIBLE, host.bar.getVisibility());
+
+                    content.removeView(chat);
+                    host.frame();
+                    assertEquals("the chat went", View.VISIBLE, host.bar.getVisibility());
+                    assertEquals(0, GlassTabBar.navBarHeight(nav));
+
+                    String report = String.join("\n", HookStatus.report());
+                    assertTrue(report, report.contains(GlassTabBar.COUNT_CHAT_ASIDE));
+                    assertFalse(report, report.contains(GlassTabBar.COUNT_STORY_ASIDE));
+                }
+            }
+        } finally {
+            synchronized (ids) {
+                if (previous == null) ids.remove(GlassTabBar.CHAT_ROOT);
+                else ids.put(GlassTabBar.CHAT_ROOT, previous);
             }
         }
     }
@@ -1228,6 +1582,58 @@ public class GlassTabBarTest {
         }
     }
 
+    /**
+     * Shrink the pill as you scroll (#638): without the liquid look, the switch has a scroll down make the whole
+     * standard pill smaller toward its bottom edge and a scroll up bring it back, every tab kept. Off, or paused,
+     * nothing shrinks, and Hide the tab bar as you scroll takes over.
+     */
+    @Test
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void shrinkThePillAsYouScrollScalesTheStandardPill() {
+        GlassTabBar.animationsOnForTests = false;
+        for (boolean wanted : new boolean[]{false, true}) {
+            try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+                Settings.GLASS_TAB_BAR_SHRINK_ON_SCROLL.save(wanted);
+                GlassTabBar.apply(host.activity);
+                host.frame();
+                GlassScrollHide hide = ReflectionHelpers.getField(host.glass(), "scrollHide");
+                if (!wanted) {
+                    assertNull("off, no scroll watcher", hide);
+                    continue;
+                }
+                assertNotNull("on, the scroll shrinks the pill", hide);
+                GlassScrollHide.Shrinker shrinker = ReflectionHelpers.getField(hide, "shrinker");
+                assertSame(host.glass(), shrinker);
+                int tabs = host.bar.getChildCount();
+                assertTrue(shrinker.shrink(true, true));
+                assertEquals(GlassTabBar.SHRUNK_SCALE, host.bar.getScaleX(), 0f);
+                assertEquals(GlassTabBar.SHRUNK_SCALE, host.bar.getScaleY(), 0f);
+                assertTrue("toward the bottom", host.bar.getPivotY() > host.bar.getHeight() / 2f);
+                assertEquals("every tab stays", tabs, host.bar.getChildCount());
+                for (int i = 0; i < tabs; i++) assertEquals(View.VISIBLE, host.bar.getChildAt(i).getVisibility());
+                assertTrue(shrinker.shrink(false, true));
+                assertEquals(1f, host.bar.getScaleX(), 0f);
+                assertEquals(1f, host.bar.getScaleY(), 0f);
+
+                BaseSettings.PAUSED.save(true);
+                PauseForTests.pause(HushgramPause.Reason.SWITCH);
+                assertFalse("paused, nothing shrinks", shrinker.shrink(true, true));
+                assertEquals(1f, host.bar.getScaleX(), 0f);
+                BaseSettings.PAUSED.save(false);
+                PauseForTests.resume();
+            }
+        }
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+            Settings.GLASS_TAB_BAR_SHRINK_ON_SCROLL.save(true);
+            Settings.GLASS_TAB_BAR_HIDE_ON_SCROLL.save(true);
+            GlassTabBar.apply(host.activity);
+            host.frame();
+            GlassScrollHide hide = ReflectionHelpers.getField(host.glass(), "scrollHide");
+            assertNotNull(hide);
+            assertNull("the slide-away takes over", ReflectionHelpers.getField(hide, "shrinker"));
+        }
+    }
+
     private static void send(Window.Callback callback, long down, long time, int action, float x, float y) {
         MotionEvent event = MotionEvent.obtain(down, time, action, x, y, 0);
         try {
@@ -1279,6 +1685,9 @@ public class GlassTabBarTest {
             Settings.GLASS_TAB_BAR_SLIDE.save(false);
             Settings.GLASS_TAB_BAR_LIQUID.save(false);
             Settings.GLASS_TAB_BAR_KEEP_SIZE.save(false);
+            Settings.GLASS_TAB_BAR_HOLD_LENS.save(false);
+            Settings.GLASS_TAB_BAR_SHRINK_ON_SCROLL.save(false);
+            Settings.GLASS_TAB_BAR_MATERIAL.save(false);
             Settings.GLASS_TAB_BAR_REFRACT.save(false);
             controller = Robolectric.buildActivity(Activity.class).setup();
             activity = controller.get();
@@ -1614,14 +2023,13 @@ public class GlassTabBarTest {
     }
 
     /**
-     * #289, #391: the blur slider starts at exactly the radius the glass has always used (18dp, worked out
-     * at a quarter size) at any density, each notch reaches at least as far as the one before, and the
-     * steps older builds saved keep the radius they drew.
+     * #289, #391: the blur slider starts at 8dp, worked out at a quarter size at any density, each notch
+     * reaches at least as far as the one before, and the steps older builds saved keep the radius they drew.
      */
     @Test
     public void blurRadiusStartsAtTodaysRadiusAndGrowsWithTheSlider() {
         IntegerSetting slider = Settings.GLASS_TAB_BAR_BLUR_RADIUS;
-        assertEquals(18, GlassTabBar.BLUR_DP);
+        assertEquals(8, GlassTabBar.BLUR_DP);
         assertEquals(GlassTabBar.BLUR_DP, (int) slider.defaultValue);
         assertFalse("the radius is read on every draw", slider.rebootApp);
         assertEquals(2, slider.minimum());
@@ -1749,6 +2157,104 @@ public class GlassTabBarTest {
         }
     }
 
+    /** #705: a held finger grows the bubble over a moment, never past full, and eases it back from wherever it got to. */
+    @Test
+    public void aHeldFingerGrowsTheBubbleOverAMomentAndEasesItBack() {
+        long grow = GlassTabBar.HOLD_GROW_MS;
+        assertEquals(0f, GlassTabBar.holdAmount(0, 0f, true), 0f);
+        assertEquals("eases out", 0.75f, GlassTabBar.holdAmount(grow / 2, 0f, true), 0.001f);
+        assertEquals(1f, GlassTabBar.holdAmount(grow, 0f, true), 0f);
+        assertEquals(1f, GlassTabBar.holdAmount(grow * 10, 0f, true), 0f);
+        assertEquals("a clock behind starts it at rest", 0f, GlassTabBar.holdAmount(-30, 0f, true), 0f);
+        assertEquals("a lift doesn't snap it back", 1f, GlassTabBar.holdAmount(0, 1f, false), 0f);
+        assertEquals(0.25f, GlassTabBar.holdAmount(grow / 2, 1f, false), 0.001f);
+        assertEquals(0f, GlassTabBar.holdAmount(grow, 1f, false), 0f);
+        assertEquals("a lift halfway eases back from there", 0.6f, GlassTabBar.holdAmount(0, 0.6f, false), 0f);
+        float last = -1f;
+        for (long t = 0; t <= grow; t += 10) {
+            float now = GlassTabBar.holdAmount(t, 0f, true);
+            assertTrue(t + " ms", now >= last && now <= 1f);
+            last = now;
+        }
+        assertEquals(1f, GlassTabBar.holdScale(0f), 0f);
+        assertEquals(1f + GlassTabBar.HOLD_SWELL, GlassTabBar.holdScale(1f), 0f);
+        assertEquals("never past full", GlassTabBar.holdScale(1f), GlassTabBar.holdScale(3f), 0f);
+        assertEquals(1f, GlassTabBar.holdScale(-1f), 0f);
+        assertEquals("no finger, the lens as it always was", 1f, GlassTabBar.lensBoost(0f), 0f);
+        assertEquals(1f + GlassLens.HOLD_BEND, GlassTabBar.lensBoost(1f), 0f);
+        assertEquals(GlassTabBar.lensBoost(1f), GlassTabBar.lensBoost(4f), 0f);
+    }
+
+    /**
+     * #705: with Glass lens under your finger on, a finger held on the liquid bubble grows it to its full size
+     * and it eases back once the finger lifts. A finger on another tab, not sliding, leaves it be, and with the
+     * phone's animations off it grows at once. With the switch off a held finger changes nothing.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aFingerHeldOnTheBubbleGrowsItWithGlassLensUnderYourFinger() {
+        for (boolean on : new boolean[]{true, false}) {
+            GlassTabBar.animationsOnForTests = true;
+            try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+                String where = on ? "on" : "off";
+                Settings.GLASS_TAB_BAR_LIQUID.save(true);
+                Settings.GLASS_TAB_BAR_HOLD_LENS.save(on);
+                assertTrue(host.bar.getChildAt(0).performClick());
+                GlassTabBar.apply(host.activity);
+                host.frame();
+                Object pill = host.bar.getBackground();
+                RectF capsule = ReflectionHelpers.getField(pill, "capsule");
+                try (Pixels ignored = host.background()) { }
+                settle(pill, GlassTabBar.SLIDE_MS * 4);
+                try (Pixels ignored = host.background()) { }
+                float rest = capsule.height();
+                assertEquals(where + ": settled", 1f, (float) ReflectionHelpers.getField(pill, "bubbleNow"), 0f);
+                GlassTabSlide.Host glass = (GlassTabSlide.Host) host.glass();
+                View first = host.bar.getChildAt(0);
+                glass.hold((first.getLeft() + first.getRight()) / 2f);
+                try (Pixels ignored = host.background()) { }
+                assertEquals(where + ": it grows from rest", 0f, (float) ReflectionHelpers.getField(pill, "holdNow"), 0f);
+                holdFor(pill, GlassTabBar.HOLD_GROW_MS);
+                try (Pixels ignored = host.background()) { }
+                if (!on) {
+                    assertEquals(where + ": nothing grows", 0f, (float) ReflectionHelpers.getField(pill, "holdNow"), 0f);
+                    assertEquals(where + ": the rest size", rest, capsule.height(), 0.5f);
+                    continue;
+                }
+                assertEquals(where + ": fully grown", 1f, (float) ReflectionHelpers.getField(pill, "holdNow"), 0.001f);
+                assertEquals(where + ": swollen by HOLD_SWELL", rest * (1f + GlassTabBar.HOLD_SWELL), capsule.height(), 1f);
+
+                glass.hold(Float.NaN);
+                try (Pixels ignored = host.background()) { }
+                assertEquals("the lift doesn't snap it back", 1f, (float) ReflectionHelpers.getField(pill, "holdNow"), 0.001f);
+                holdFor(pill, GlassTabBar.HOLD_GROW_MS);
+                try (Pixels ignored = host.background()) { }
+                assertEquals("eased back", 0f, (float) ReflectionHelpers.getField(pill, "holdNow"), 0.001f);
+                assertEquals("back to its rest size", rest, capsule.height(), 0.5f);
+
+                View fourth = host.bar.getChildAt(3);
+                glass.hold((fourth.getLeft() + fourth.getRight()) / 2f);
+                try (Pixels ignored = host.background()) { }
+                holdFor(pill, GlassTabBar.HOLD_GROW_MS);
+                try (Pixels ignored = host.background()) { }
+                assertEquals("a finger on another tab leaves the bubble be", 0f, (float) ReflectionHelpers.getField(pill, "holdNow"), 0f);
+                glass.hold(Float.NaN);
+                try (Pixels ignored = host.background()) { }
+
+                GlassTabBar.animationsOnForTests = false;
+                glass.hold((first.getLeft() + first.getRight()) / 2f);
+                try (Pixels ignored = host.background()) { }
+                assertEquals("animations off, it grows at once", 1f, (float) ReflectionHelpers.getField(pill, "holdNow"), 0.001f);
+            }
+        }
+    }
+
+    /** Puts the change of a finger on the bubble [ago] ms back on the frame clock (#705). */
+    private static void holdFor(Object pill, long ago) {
+        ReflectionHelpers.setField(pill, "heldSince", android.view.animation.AnimationUtils.currentAnimationTimeMillis() - ago);
+    }
+
     /**
      * #289: the lens only runs on Android 13 and newer. Before, it answers false without trying, and the bubble
      * has its rim and gradient alone.
@@ -1870,6 +2376,49 @@ public class GlassTabBarTest {
         }
     }
 
+    /**
+     * #391: with the liquid look off, Bend light at the edges paints the rim over the standard pill too, round
+     * its own corners, and there's no Search circle to give a rim of its own. Off, no rim is made. Paused, the
+     * bar is the plain pill and no rim is asked for.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 33, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void theStandardPillBendsLightAtItsEdgesToo() {
+        GlassTabBar.animationsOnForTests = false;
+        for (boolean refract : new boolean[]{true, false}) {
+            try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, true)) {
+                FrameLayout feed = new FrameLayout(host.activity);
+                feed.setBackgroundColor(Color.RED);
+                host.root.addView(feed, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                Settings.GLASS_TAB_BAR_LIQUID.save(false);
+                Settings.GLASS_TAB_BAR_REFRACT.save(refract);
+                GlassTabBar.apply(host.activity);
+                host.frame();
+                host.frame();
+                Object pill = host.bar.getBackground();
+                assertTrue("no backdrop recorded", (boolean) ReflectionHelpers.getField(pill, "recorded"));
+                host.recordBackground();
+                GlassLens rim = ReflectionHelpers.getField(pill, "rimLens");
+                assertNull("no circle beside the standard pill", ReflectionHelpers.getField(pill, "circleRim"));
+                if (!refract) {
+                    assertNull("off, no rim", rim);
+                    continue;
+                }
+                assertNotNull("the standard pill gets the rim", rim);
+                assertEquals(1, rim.asked);
+
+                PauseForTests.pause(HushgramPause.Reason.SWITCH);
+                try {
+                    host.recordBackground();
+                    assertEquals("paused, the plain pill", 1, rim.asked);
+                } finally {
+                    PauseForTests.resume();
+                }
+            }
+        }
+    }
+
     @Test
     public void theCapsuleSlideIsTimedNotCountedAndEasesOut() {
         assertEquals(0f, GlassTabBar.slideProgress(0), 0f);
@@ -1884,6 +2433,63 @@ public class GlassTabBarTest {
             float now = GlassTabBar.slideProgress(t);
             assertTrue(now >= last);
             last = now;
+        }
+    }
+
+    /** #289: the liquid bubble's spring goes a little past the tab, comes back, and rests with no visible step. */
+    @Test
+    public void theBubblesSpringGoesALittlePastItsTabAndRests() {
+        assertEquals(0f, GlassTabBar.springProgress(0), 0f);
+        assertEquals(0f, GlassTabBar.springProgress(-5), 0f);
+        assertEquals(1f, GlassTabBar.springProgress(GlassTabBar.SPRING_MS), 0f);
+        assertEquals(1f, GlassTabBar.springProgress(GlassTabBar.SPRING_MS * 3), 0f);
+        float peak = 0f;
+        for (long t = 0; t < GlassTabBar.SPRING_MS; t += 7) peak = Math.max(peak, GlassTabBar.springProgress(t));
+        assertTrue("past the tab: " + peak, peak > 1.05f);
+        assertTrue("only a little: " + peak, peak < 1.09f);
+        assertEquals("no step when it rests", 1f, GlassTabBar.springProgress(GlassTabBar.SPRING_MS - 1), 0.004f);
+    }
+
+    /**
+     * #289: partway through its spring the liquid bubble has gone past the first tab, but it squashes against
+     * the pill's end instead of leaving it. The flat capsule has landed on the tab by then and doesn't go past.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 29, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void theSpringCarriesTheBubblePastItsTabButNotOutOfThePill() {
+        GlassTabBar.animationsOnForTests = true;
+        for (boolean liquid : new boolean[]{true, false}) {
+            try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+                Settings.GLASS_TAB_BAR_LIQUID.save(liquid);
+                assertTrue(host.bar.getChildAt(2).performClick());
+                GlassTabBar.apply(host.activity);
+                host.frame();
+                Object pill = host.bar.getBackground();
+                RectF capsule = ReflectionHelpers.getField(pill, "capsule");
+                try (Pixels ignored = host.background()) { }
+                settle(pill, GlassTabBar.SPRING_MS * 2);
+                try (Pixels ignored = host.background()) { }
+
+                assertTrue(host.bar.getChildAt(0).performClick());
+                try (Pixels ignored = host.background()) { }
+                settle(pill, GlassTabBar.SLIDE_MS + 20);
+                try (Pixels ignored = host.background()) { }
+                float target = ReflectionHelpers.getField(pill, "toLeft");
+                float reached = ReflectionHelpers.getField(pill, "nowLeft");
+                if (liquid) {
+                    assertTrue("past the tab: " + reached + " vs " + target, reached < target - 1f);
+                    RectF shape = ReflectionHelpers.getField(pill, "shrunk");
+                    assertTrue("inside the pill: " + capsule + " in " + shape,
+                            capsule.left >= shape.left + host.dp(GlassTabBar.HIGHLIGHT_INSET_DP) - 0.5f);
+                } else {
+                    assertEquals(target, reached, 0.5f);
+                }
+
+                settle(pill, GlassTabBar.SPRING_MS);
+                try (Pixels ignored = host.background()) { }
+                assertEquals("rests on the tab", target, (float) ReflectionHelpers.getField(pill, "nowLeft"), 0f);
+            }
         }
     }
 
@@ -1939,6 +2545,152 @@ public class GlassTabBarTest {
     }
 
     /**
+     * #640: at 100% every style plays the tick it always has. Lighter and stronger move it to the built-in
+     * tick or heavy click, a weaker or harder and longer pulse, or a smaller primitive or the click primitive,
+     * and a motor that runs at one strength only gets a longer pulse above 100%.
+     */
+    @Test
+    public void hapticStrengthMovesEachStyleOffItsOwnTick() {
+        int q = android.os.Build.VERSION_CODES.Q;
+        int t = android.os.Build.VERSION_CODES.TIRAMISU;
+        int tick = android.os.VibrationEffect.Composition.PRIMITIVE_TICK;
+        int click = android.os.VibrationEffect.Composition.PRIMITIVE_CLICK;
+        assertEquals(100, (int) Settings.GLASS_TAB_BAR_HAPTIC_STRENGTH.defaultValue);
+
+        GlassTabBar.Haptics.Plan plan = GlassTabBar.Haptics.plan(HapticStyle.SYSTEM, 100, t, true, true, true);
+        assertEquals(android.os.VibrationEffect.EFFECT_CLICK, plan.effect);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SYSTEM, 50, t, true, true, true);
+        assertEquals(android.os.VibrationEffect.EFFECT_TICK, plan.effect);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SYSTEM, 150, t, true, true, true);
+        assertEquals(android.os.VibrationEffect.EFFECT_HEAVY_CLICK, plan.effect);
+
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SHORT, 100, t, true, true, true);
+        assertEquals(-1, plan.effect);
+        assertEquals(-1, plan.primitive);
+        assertEquals(GlassTabBar.Haptics.SHORT_MS, plan.ms);
+        assertEquals(GlassTabBar.Haptics.SHORT_AMPLITUDE, plan.amplitude);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SHORT, 50, t, true, true, true);
+        assertEquals(GlassTabBar.Haptics.SHORT_MS, plan.ms);
+        assertEquals(85, plan.amplitude);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SHORT, 200, t, true, true, true);
+        assertEquals("past the motor's top, the rest goes into the length", 255, plan.amplitude);
+        assertTrue(plan.ms > GlassTabBar.Haptics.SHORT_MS);
+
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SOFT, 100, t, true, true, true);
+        assertEquals(tick, plan.primitive);
+        assertEquals(GlassTabBar.Haptics.SOFT_SCALE, plan.scale, 0.001f);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SOFT, 50, t, true, true, true);
+        assertEquals(GlassTabBar.Haptics.SOFT_SCALE / 2f, plan.scale, 0.001f);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.FULL, 100, t, true, true, true);
+        assertEquals(tick, plan.primitive);
+        assertEquals(1f, plan.scale, 0.001f);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.FULL, 150, t, true, true, true);
+        assertEquals("a full tick made stronger is the click primitive", click, plan.primitive);
+        assertEquals(0.75f, plan.scale, 0.001f);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.FULL, 150, t, true, true, false);
+        assertEquals("without the click primitive the tick stays at its top", tick, plan.primitive);
+        assertEquals(1f, plan.scale, 0.001f);
+
+        // A motor that runs at one strength only (#640's phone may be one): the built-in effects as before
+        // up to 100%, and a pulse that grows with the slider above it.
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SYSTEM, 100, t, false, false, false);
+        assertEquals(android.os.VibrationEffect.EFFECT_CLICK, plan.effect);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SHORT, 100, t, false, false, false);
+        assertEquals(android.os.VibrationEffect.EFFECT_TICK, plan.effect);
+        for (HapticStyle style : HapticStyle.values()) {
+            GlassTabBar.Haptics.Plan stronger = GlassTabBar.Haptics.plan(style, 150, t, false, true, true);
+            GlassTabBar.Haptics.Plan strongest = GlassTabBar.Haptics.plan(style, 200, t, false, true, true);
+            assertEquals(style.name(), -1, stronger.effect);
+            assertEquals(style.name(), -1, stronger.primitive);
+            assertEquals(style.name(), android.os.VibrationEffect.DEFAULT_AMPLITUDE, stronger.amplitude);
+            assertEquals(style.name(), Math.round(GlassTabBar.Haptics.PULSE_MS * 1.5f * 1.5f), stronger.ms);
+            assertEquals(style.name(), GlassTabBar.Haptics.PULSE_MS * 4, strongest.ms);
+        }
+        assertTrue("long enough for a coin motor to spin up", GlassTabBar.Haptics.PULSE_MS * 4 >= 50);
+
+        // Android 10, before primitives, still plays the built-in tick, heavier when stronger.
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SOFT, 100, q, true, false, false);
+        assertEquals(android.os.VibrationEffect.EFFECT_TICK, plan.effect);
+        plan = GlassTabBar.Haptics.plan(HapticStyle.SOFT, 150, q, true, false, false);
+        assertEquals(android.os.VibrationEffect.EFFECT_HEAVY_CLICK, plan.effect);
+    }
+
+    /**
+     * #689: 200% was still barely felt on some phones. Everything past 100% played the one built-in heavy click
+     * (or the click primitive at its top), so 125% to 200% felt the same, and a phone's heavy click can be weak.
+     * Past 150% every style plays a full-strength pulse that keeps growing to the top of the slider, on any motor.
+     */
+    @Test
+    public void hapticStrengthKeepsGrowingToTheTopOfTheSlider() {
+        int t = android.os.Build.VERSION_CODES.TIRAMISU;
+        for (HapticStyle style : HapticStyle.values()) {
+            for (boolean amplitude : new boolean[] {true, false}) {
+                for (boolean primitives : new boolean[] {true, false}) {
+                    String what = style + " amplitude=" + amplitude + " primitives=" + primitives;
+                    GlassTabBar.Haptics.Plan high = GlassTabBar.Haptics.plan(style, 175, t, amplitude, primitives, primitives);
+                    GlassTabBar.Haptics.Plan top = GlassTabBar.Haptics.plan(style, 200, t, amplitude, primitives, primitives);
+                    assertEquals(what, -1, top.effect);
+                    assertEquals(what, -1, top.primitive);
+                    assertEquals(what, amplitude ? 255 : android.os.VibrationEffect.DEFAULT_AMPLITUDE, top.amplitude);
+                    assertEquals(what, -1, high.effect);
+                    assertTrue(what + " grows from " + high.ms + " to " + top.ms, top.ms > high.ms);
+                    assertTrue(what + " clearly felt, even on a coin motor: " + top.ms, top.ms >= 50);
+                    assertTrue(what + " still a tap, not a buzz: " + top.ms, top.ms <= 80);
+                }
+            }
+        }
+        assertEquals("up to 150% the crisp heavy click stays", android.os.VibrationEffect.EFFECT_HEAVY_CLICK,
+                GlassTabBar.Haptics.plan(HapticStyle.SYSTEM, 150, t, true, false, false).effect);
+        int last = 0;
+        for (int percent = 125; percent <= 200; percent += 25) {
+            int ms = GlassTabBar.Haptics.plan(HapticStyle.SYSTEM, percent, t, false, false, false).ms;
+            assertTrue("one strength motors get longer at every step: " + percent + "% is " + ms + " ms", ms > last);
+            last = ms;
+        }
+    }
+
+    /** #640: the click's volume follows the slider on a curve, 70% close to the phone's own click and 100% full. */
+    @Test
+    public void theTapSoundVolumeFollowsTheSliderOnACurve() {
+        assertEquals(70, (int) Settings.GLASS_TAB_BAR_TAP_SOUND_VOLUME.defaultValue);
+        assertFalse("off to start", Settings.GLASS_TAB_BAR_TAP_SOUND.defaultValue);
+        assertEquals(1f, GlassTabBar.TapSound.volumeOf(100), 0.001f);
+        assertEquals(0.49f, GlassTabBar.TapSound.volumeOf(70), 0.001f);
+        assertEquals(0.01f, GlassTabBar.TapSound.volumeOf(10), 0.001f);
+        assertTrue(GlassTabBar.TapSound.volumeOf(40) < GlassTabBar.TapSound.volumeOf(50));
+        assertEquals(1f, GlassTabBar.TapSound.volumeOf(150), 0.001f);
+    }
+
+    /**
+     * #640: with the haptics off, the highlight moving to another tab clicks once Tap sound on the tab bar is
+     * on, read as it moves so no restart is needed, and stays quiet while it's off.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 34, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void theTapSoundClicksWhenTheHighlightMovesToAnotherTab() throws Exception {
+        GlassTabBar.animationsOnForTests = false;
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, false)) {
+            GlassTabBar.apply(host.activity);
+            host.layout();
+            ReflectionHelpers.setStaticField(GlassTabBar.TapSound.class, "lastClick", 0L);
+            assertTrue(host.bar.getChildAt(0).performClick());
+            host.background().close();
+            assertTrue(host.bar.getChildAt(3).performClick());
+            host.background().close();
+            assertEquals("off, nothing plays", 0L, (long) ReflectionHelpers.getStaticField(GlassTabBar.TapSound.class, "lastClick"));
+
+            Settings.GLASS_TAB_BAR_TAP_SOUND.save(true);
+            assertTrue(host.bar.getChildAt(1).performClick());
+            host.background().close();
+            assertTrue("on, the move to another tab clicks",
+                    (long) ReflectionHelpers.getStaticField(GlassTabBar.TapSound.class, "lastClick") > 0L);
+        } finally {
+            ReflectionHelpers.setStaticField(GlassTabBar.TapSound.class, "lastClick", 0L);
+        }
+    }
+
+    /**
      * Where the tabs swipe sideways, Home's pager is the content's sibling with the bar's height as its
      * bottom margin. Floating, it runs down behind the pill like the content's own screens; a sibling
      * that isn't the pager, and a margin that isn't the bar's height, are left alone.
@@ -1960,23 +2712,27 @@ public class GlassTabBarTest {
         holder.addView(pager);
         holder.addView(other);
 
-        GlassTabBar.screensAboveTheBar(content, 0x7f0b0001, 126, 0);
+        // The count is what the debug line reports (#509), so a pass that moves nothing writes nothing.
+        assertEquals("the content's screen and the pager moved", 2,
+                GlassTabBar.screensAboveTheBar(content, 0x7f0b0001, 126, 0));
 
         assertEquals("the content's screen", 0, margin(screen));
         assertEquals("a screen Instagram already let run down", 0, margin(hiddenBar));
         assertEquals("Home's swipe pager", 0, margin(pager));
         assertEquals("another sibling", 126, margin(other));
+        assertEquals("the same pass again moves nothing", 0,
+                GlassTabBar.screensAboveTheBar(content, 0x7f0b0001, 126, 0));
 
         View tallerPager = withMargin(new View(context), 126);
         tallerPager.setId(0x7f0b0003);
         holder.addView(tallerPager);
-        GlassTabBar.screensAboveTheBar(content, 0x7f0b0003, 126, 150);
+        assertEquals("only the new pager moved", 1, GlassTabBar.screensAboveTheBar(content, 0x7f0b0003, 126, 150));
         assertEquals("not floating, the pager stops at a taller pill's top", 150, margin(tallerPager));
         assertEquals("a margin already changed stays", 0, margin(pager));
 
         View noPager = withMargin(new View(context), 126);
         holder.addView(noPager);
-        GlassTabBar.screensAboveTheBar(content, 0, 126, 0);
+        assertEquals(0, GlassTabBar.screensAboveTheBar(content, 0, 126, 0));
         assertEquals("no pager id, no sibling touched", 126, margin(noPager));
     }
 
@@ -2143,6 +2899,454 @@ public class GlassTabBarTest {
         assertEquals("and so does what's round it", Color.GREEN, glass.getPixel(50, 80));
     }
 
+    /**
+     * #583: Instagram's rows leave their background to the window, so what the glass recorded there was
+     * empty and the sharp screen under the pill showed through. The bar's colour goes under everything now,
+     * and what's drawn still goes over it, with a SurfaceView's place still cleared.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void theGlassFillsWhatTheScreensLeaveEmptyWithTheBarsColour() {
+        Context context = RuntimeEnvironment.getApplication();
+        FrameLayout parent = new FrameLayout(context);
+        FrameLayout feed = new FrameLayout(context);
+        View row = new View(context);
+        row.setBackground(new ColorDrawable(Color.GREEN));
+        CountingSurface video = new CountingSurface(context);
+        feed.addView(row);
+        feed.addView(video);
+        View bar = new View(context);
+        parent.addView(feed);
+        parent.addView(bar);
+        parent.layout(0, 0, 100, 100);
+        feed.layout(0, 0, 100, 100);
+        row.layout(0, 10, 100, 30);
+        video.layout(0, 50, 100, 70);
+        bar.layout(0, 80, 100, 100);
+        Set<View> paths = new HashSet<>();
+        assertTrue(GlassTabBar.surfacePaths(parent, 1, paths));
+
+        Bitmap glass = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+        GlassTabBar.drawUnderBar(new Canvas(glass), Color.WHITE, parent, 1, 0, 100, paths, new HashSet<>(), null, null);
+
+        assertEquals("nothing drawn there, so the bar's colour fills it", Color.WHITE, glass.getPixel(50, 5));
+        assertEquals("and under the last row", Color.WHITE, glass.getPixel(50, 40));
+        assertEquals("a row draws over it", Color.GREEN, glass.getPixel(50, 20));
+        assertEquals("a SurfaceView's place stays cleared", 0, glass.getPixel(50, 60));
+    }
+
+    /**
+     * #429: a row that throws as the glass draws it, as one Instagram is recycling while a list scrolls can,
+     * is left out of that recording, and what's round it still draws. The throw cut the whole recording short
+     * before, and the pill dropped to its plain tint for the frame and back, a flicker while swiping.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void aRowThatThrowsAsTheGlassDrawsItIsLeftOutAndTheRestStillDraws() {
+        Context context = RuntimeEnvironment.getApplication();
+        FrameLayout parent = new FrameLayout(context);
+        FrameLayout feed = new FrameLayout(context);
+        View recycled = new View(context) {
+            @Override protected void onDraw(Canvas canvas) {
+                canvas.save();
+                canvas.translate(0, 40);
+                throw new RuntimeException("Canvas: trying to use a recycled bitmap");
+            }
+        };
+        recycled.setBackground(new ColorDrawable(Color.BLUE));
+        View row = new View(context);
+        row.setBackground(new ColorDrawable(Color.GREEN));
+        CountingSurface video = new CountingSurface(context);
+        feed.addView(recycled);
+        feed.addView(row);
+        feed.addView(video);
+        View bar = new View(context);
+        parent.addView(feed);
+        parent.addView(bar);
+        parent.layout(0, 0, 100, 100);
+        feed.layout(0, 0, 100, 100);
+        recycled.layout(0, 0, 100, 20);
+        row.layout(0, 30, 100, 50);
+        video.layout(0, 60, 100, 75);
+        bar.layout(0, 80, 100, 100);
+        Set<View> paths = new HashSet<>();
+        assertTrue(GlassTabBar.surfacePaths(parent, 1, paths));
+
+        Bitmap glass = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(glass);
+        int saves = canvas.getSaveCount();
+        Throwable threw = GlassTabBar.drawUnderBar(canvas, Color.WHITE, parent, 1, 0, 100, paths, new HashSet<>(),
+                null, null);
+
+        assertNotNull("the throw comes back for the report", threw);
+        assertEquals("the saves it left open are gone", saves, canvas.getSaveCount());
+        assertEquals("a row after it draws where it sits", Color.GREEN, glass.getPixel(50, 40));
+        assertEquals(Color.WHITE, glass.getPixel(50, 55));
+        assertEquals("a SurfaceView's place is still cleared", 0, glass.getPixel(50, 70));
+
+        recycled.setVisibility(View.GONE);
+        assertNull("nothing threw", GlassTabBar.drawUnderBar(new Canvas(Bitmap.createBitmap(100, 100,
+                Bitmap.Config.ARGB_8888)), Color.WHITE, parent, 1, 0, 100, paths, new HashSet<>(), null, null));
+    }
+
+    /**
+     * #583: the viewer stays out of the glass (#222), and a copy of its reel goes in its place, through
+     * the video's own crop, so a floating pill blurs the reel behind it. Before a copy, the place is clear.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void aFloatingPillBlursACopyOfTheReelInTheLeftOutViewersPlace() {
+        Context context = RuntimeEnvironment.getApplication();
+        FrameLayout parent = new FrameLayout(context);
+        parent.setBackground(new ColorDrawable(Color.RED));
+        AtomicInteger drawn = new AtomicInteger();
+        FrameLayout viewer = new FrameLayout(context) {
+            @Override public void draw(Canvas canvas) {
+                drawn.incrementAndGet();
+                super.draw(canvas);
+            }
+        };
+        TextureView video = new TextureView(context);
+        View elsewhere = new TextureView(context);
+        viewer.addView(video);
+        viewer.addView(elsewhere);
+        parent.addView(viewer);
+        parent.addView(new View(context));
+        parent.layout(0, 0, 100, 200);
+        viewer.layout(0, 0, 100, 200);
+        video.layout(0, 80, 100, 200);
+        elsewhere.layout(0, 0, 100, 60);
+        Matrix shiftedDown = new Matrix();
+        shiftedDown.setTranslate(0, 20);
+        video.setTransform(shiftedDown);
+
+        Set<View> paths = new HashSet<>();
+        Set<View> skipped = new HashSet<>();
+        assertTrue(GlassTabBar.leaveOut(viewer, parent, paths, skipped));
+        ReelFrames reels = new ReelFrames();
+
+        Bitmap before = Bitmap.createBitmap(100, 200, Bitmap.Config.ARGB_8888);
+        GlassTabBar.drawUnderBar(new Canvas(before), Color.BLACK, parent, 1, 150, 50, paths, skipped, null, reels);
+        assertEquals("no copy yet: the place stays clear, not the bar's colour", 0, before.getPixel(50, 170));
+
+        ReelBlurBars.FrameSource original = ReelFrames.source;
+        ReelFrames.Copier originalCopier = ReelFrames.copier;
+        // The copy that holds the main thread: before Android 14, and for a video whose surface gives nothing back.
+        ReelFrames.copier = null;
+        Map<View, Integer> asked = new HashMap<>();
+        ReelFrames.source = (from, reuse, width, height) -> {
+            asked.merge(from, 1, Integer::sum);
+            assertEquals(100 / ReelFrames.SCALE, width);
+            assertEquals(120 / ReelFrames.SCALE, height);
+            Bitmap frame = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            frame.eraseColor(Color.YELLOW);
+            return frame;
+        };
+        try {
+            assertTrue(reels.copy(viewer, parent, 150, 50, 1000L));
+            assertNull("only the video behind the strip is copied", asked.get(elsewhere));
+            assertEquals(Integer.valueOf(1), asked.get(video));
+            reels.copy(viewer, parent, 150, 50, 1000L + ReelFrames.COPY_EVERY_MS - 1);
+            assertEquals("a copy too soon isn't taken", Integer.valueOf(1), asked.get(video));
+            reels.copy(viewer, parent, 150, 50, 1000L + ReelFrames.COPY_EVERY_MS);
+            assertEquals(Integer.valueOf(2), asked.get(video));
+
+            Bitmap glass = Bitmap.createBitmap(100, 200, Bitmap.Config.ARGB_8888);
+            GlassTabBar.drawUnderBar(new Canvas(glass), Color.BLACK, parent, 1, 150, 50, paths, skipped, null, reels);
+            assertEquals("the reel's copy fills the video's place", Color.YELLOW, glass.getPixel(50, 170));
+            assertEquals("through the video's crop", 0, glass.getPixel(50, 90));
+            assertEquals("and the viewer's other place stays clear", 0, glass.getPixel(50, 40));
+            assertEquals("the viewer itself is never drawn again (#222)", 0, drawn.get());
+
+            viewer.setTranslationY(-100);
+            assertFalse("moved off the strip, the reel isn't copied", reels.copy(viewer, parent, 150, 50, 5000L));
+            viewer.setTranslationY(0);
+        } finally {
+            ReelFrames.source = original;
+            ReelFrames.copier = originalCopier;
+        }
+    }
+
+    /**
+     * #672: on Android 14 the reel's copy is read from its surface and lands later, so the main thread never
+     * waits on the GPU for it. One copy is on its way at a time, into a bitmap the glass isn't drawing, and a
+     * video whose surface keeps giving nothing back is read the old way.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 34)
+    public void onAndroid14AReelIsCopiedWithoutHoldingTheMainThread() {
+        Context context = RuntimeEnvironment.getApplication();
+        FrameLayout parent = new FrameLayout(context);
+        FrameLayout viewer = new FrameLayout(context);
+        TextureView video = new TextureView(context);
+        viewer.addView(video);
+        parent.addView(viewer);
+        parent.addView(new View(context));
+        parent.layout(0, 0, 100, 200);
+        viewer.layout(0, 0, 100, 200);
+        video.layout(0, 80, 100, 200);
+        Set<View> paths = new HashSet<>();
+        Set<View> skipped = new HashSet<>();
+        assertTrue(GlassTabBar.leaveOut(viewer, parent, paths, skipped));
+        ReelFrames reels = new ReelFrames();
+
+        ReelBlurBars.FrameSource originalSource = ReelFrames.source;
+        ReelFrames.Copier originalCopier = ReelFrames.copier;
+        assertNotNull("Android 14 copies from the video's surface", originalCopier);
+        java.util.List<Bitmap> into = new java.util.ArrayList<>();
+        java.util.List<java.util.function.Consumer<Boolean>> landing = new java.util.ArrayList<>();
+        AtomicInteger heldTheMainThread = new AtomicInteger();
+        ReelFrames.copier = (from, bitmap, done) -> {
+            assertSame(video, from);
+            into.add(bitmap);
+            landing.add(done);
+        };
+        ReelFrames.source = (from, reuse, width, height) -> {
+            heldTheMainThread.incrementAndGet();
+            Bitmap frame = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            frame.eraseColor(Color.BLUE);
+            return frame;
+        };
+        try {
+            long now = 1000L;
+            assertTrue(reels.copy(viewer, parent, 150, 50, now));
+            assertEquals("one copy asked for", 1, into.size());
+            assertEquals(100 / ReelFrames.SCALE, into.get(0).getWidth());
+            assertEquals(120 / ReelFrames.SCALE, into.get(0).getHeight());
+            assertEquals("the main thread never waited on the GPU", 0, heldTheMainThread.get());
+            assertEquals("not landed yet, the place stays clear", 0, glass(parent, paths, skipped, reels).getPixel(50, 170));
+
+            reels.copy(viewer, parent, 150, 50, now + 3 * ReelFrames.COPY_EVERY_MS);
+            assertEquals("one copy on its way at a time", 1, into.size());
+            into.get(0).eraseColor(Color.YELLOW);
+            landing.get(0).accept(true);
+            assertEquals("the landed copy fills the video's place", Color.YELLOW,
+                    glass(parent, paths, skipped, reels).getPixel(50, 170));
+
+            for (int miss = 0; miss < ReelFrames.MOST_MISSES; miss++) {
+                now += ReelFrames.COPY_EVERY_MS;
+                reels.copy(viewer, parent, 150, 50, now);
+                assertEquals(2 + miss, into.size());
+                assertTrue("the next copy never writes the one being drawn", into.get(into.size() - 1) != into.get(0));
+                landing.get(landing.size() - 1).accept(false);
+                assertEquals("a copy that comes back empty keeps the last one", Color.YELLOW,
+                        glass(parent, paths, skipped, reels).getPixel(50, 170));
+            }
+            assertEquals(0, heldTheMainThread.get());
+            now += ReelFrames.COPY_EVERY_MS;
+            reels.copy(viewer, parent, 150, 50, now);
+            assertEquals("after that many misses the surface isn't asked again", 1 + ReelFrames.MOST_MISSES, into.size());
+            assertEquals("and the video is read the old way", 1, heldTheMainThread.get());
+            assertEquals(Color.BLUE, glass(parent, paths, skipped, reels).getPixel(50, 170));
+        } finally {
+            ReelFrames.source = originalSource;
+            ReelFrames.copier = originalCopier;
+        }
+    }
+
+    /**
+     * #583: copied eight times a second, the blur under the pill stepped behind the reel. A copy from the
+     * surface leaves the main thread alone, so each recording asks for the next one, and a paused reel,
+     * still showing the frame copied last, isn't copied again either way.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 34)
+    public void theReelBehindThePillIsCopiedEachRecordingOnlyWhileItPlays() {
+        Context context = RuntimeEnvironment.getApplication();
+        FrameLayout parent = new FrameLayout(context);
+        FrameLayout viewer = new FrameLayout(context);
+        TextureView video = new TextureView(context);
+        viewer.addView(video);
+        parent.addView(viewer);
+        parent.addView(new View(context));
+        parent.layout(0, 0, 100, 200);
+        viewer.layout(0, 0, 100, 200);
+        video.layout(0, 80, 100, 200);
+        Set<View> paths = new HashSet<>();
+        Set<View> skipped = new HashSet<>();
+        assertTrue(GlassTabBar.leaveOut(viewer, parent, paths, skipped));
+        ReelFrames reels = new ReelFrames();
+
+        ReelBlurBars.FrameSource originalSource = ReelFrames.source;
+        ReelFrames.Copier originalCopier = ReelFrames.copier;
+        java.util.function.ToLongFunction<TextureView> originalFrameAt = ReelFrames.frameAt;
+        long[] made = {1L};
+        ReelFrames.frameAt = from -> made[0];
+        java.util.List<java.util.function.Consumer<Boolean>> landing = new java.util.ArrayList<>();
+        ReelFrames.copier = (from, bitmap, done) -> landing.add(done);
+        AtomicInteger heldTheMainThread = new AtomicInteger();
+        ReelFrames.source = (from, reuse, width, height) -> {
+            heldTheMainThread.incrementAndGet();
+            return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        };
+        try {
+            long now = 1000L;
+            reels.copy(viewer, parent, 150, 50, now);
+            landing.get(0).accept(true);
+            assertTrue("the copy keeps up with the glass", ReelFrames.COPY_LATER_EVERY_MS <= GlassTabBar.RECORD_EVERY_MS);
+
+            made[0]++;
+            now += GlassTabBar.RECORD_EVERY_MS;
+            reels.copy(viewer, parent, 150, 50, now);
+            assertEquals("the next recording asks for the reel's next frame", 2, landing.size());
+            landing.get(1).accept(true);
+
+            now += GlassTabBar.RECORD_EVERY_MS;
+            reels.copy(viewer, parent, 150, 50, now);
+            assertEquals("a paused reel shows the frame copied last, so it isn't copied again", 2, landing.size());
+
+            made[0] = 0L;
+            reels.copy(viewer, parent, 150, 50, now);
+            assertEquals("a video that doesn't say when its frame was made is copied as before", 3, landing.size());
+            landing.get(2).accept(false);
+            made[0] = 7L;
+            now += GlassTabBar.RECORD_EVERY_MS;
+            reels.copy(viewer, parent, 150, 50, now);
+            assertEquals(4, landing.size());
+            landing.get(3).accept(false);
+            now += GlassTabBar.RECORD_EVERY_MS;
+            reels.copy(viewer, parent, 150, 50, now);
+            assertEquals("a copy that came back empty is asked for again on the same frame", 5, landing.size());
+            assertEquals(0, heldTheMainThread.get());
+
+            // The copy that holds the main thread: before Android 14, and for a video whose surface gives nothing back.
+            ReelFrames.copier = null;
+            ReelFrames reelsTheOldWay = new ReelFrames();
+            made[0] = 20L;
+            reelsTheOldWay.copy(viewer, parent, 150, 50, now);
+            assertEquals(1, heldTheMainThread.get());
+            now += GlassTabBar.RECORD_EVERY_MS;
+            made[0]++;
+            reelsTheOldWay.copy(viewer, parent, 150, 50, now);
+            assertEquals("read the old way, it's still taken only every so often (#672)", 1, heldTheMainThread.get());
+            now += ReelFrames.COPY_EVERY_MS;
+            reelsTheOldWay.copy(viewer, parent, 150, 50, now);
+            assertEquals(2, heldTheMainThread.get());
+            now += ReelFrames.COPY_EVERY_MS;
+            reelsTheOldWay.copy(viewer, parent, 150, 50, now);
+            assertEquals("and never for a paused reel", 2, heldTheMainThread.get());
+        } finally {
+            ReelFrames.source = originalSource;
+            ReelFrames.copier = originalCopier;
+            ReelFrames.frameAt = originalFrameAt;
+        }
+    }
+
+    private static Bitmap glass(ViewGroup parent, Set<View> paths, Set<View> skipped, ReelFrames reels) {
+        Bitmap drawn = Bitmap.createBitmap(100, 200, Bitmap.Config.ARGB_8888);
+        GlassTabBar.drawUnderBar(new Canvas(drawn), Color.BLACK, parent, 1, 150, 50, paths, skipped, null, reels);
+        return drawn;
+    }
+
+    /**
+     * #672: only a reel behind the pill itself is copied. With Run Reels behind off, Reels stops its viewer
+     * above the pill, inside the blur's reach, and copying it there cost a copy eight times a second for a
+     * few blurred rows.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 33, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void onlyAReelBehindThePillItselfIsCopied() {
+        GlassTabBar.animationsOnForTests = false;
+        ReelBlurBars.FrameSource original = ReelFrames.source;
+        AtomicInteger copies = new AtomicInteger();
+        ReelFrames.source = (from, reuse, width, height) -> {
+            copies.incrementAndGet();
+            return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        };
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, true)) {
+            FrameLayout viewer = new FrameLayout(host.activity);
+            TextureView video = new TextureView(host.activity);
+            viewer.addView(video);
+            host.root.addView(viewer, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            GlassTabBar.apply(host.activity);
+            host.frame();
+            Object pill = host.bar.getBackground();
+            assertTrue("no backdrop recorded", (boolean) ReflectionHelpers.getField(pill, "recorded"));
+            ReflectionHelpers.callInstanceMethod(pill, "cancelCatchUp");
+            float top = ReflectionHelpers.getField(pill, "stripTop");
+            float pad = ReflectionHelpers.getField(pill, "stripPad");
+            assertTrue("the blur reaches past the pill", pad > 2);
+            Set<View> skipped = ReflectionHelpers.getField(pill, "skipped");
+            skipped.add(viewer);
+            int width = host.root.getWidth();
+
+            int abovePill = (int) Math.floor(top + pad) - 1;
+            viewer.layout(0, 0, width, abovePill);
+            video.layout(0, 0, width, abovePill);
+            ReflectionHelpers.callInstanceMethod(pill, "copyReels", ReflectionHelpers.ClassParameter.from(long.class, 1000L));
+            assertEquals("a reel only in the blur's reach isn't copied", 0, copies.get());
+
+            int intoPill = (int) Math.ceil(top + pad) + 10;
+            viewer.layout(0, 0, width, intoPill);
+            video.layout(0, 0, width, intoPill);
+            ReflectionHelpers.callInstanceMethod(pill, "copyReels", ReflectionHelpers.ClassParameter.from(long.class, 2000L));
+            assertEquals("one behind the pill is", 1, copies.get());
+        } finally {
+            ReelFrames.source = original;
+        }
+    }
+
+    /**
+     * #672: on Reels the screen draws for every frame of the video, and the glass records under the bar with
+     * those frames. A catch-up a frame had arranged recorded again a few milliseconds after the next frame
+     * already had, and asked for a frame of its own: a third more frames than Reels drew, and the phone ran
+     * warm. A frame that records drops the catch-up, and one that finds frames still coming waits for them
+     * to stop and asks for nothing until then.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = 33, qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aCatchUpWaitsForFramesToStopAndAFrameThatRecordsDropsIt() {
+        GlassTabBar.animationsOnForTests = false;
+        try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, true)) {
+            Object[] pill = {null};
+            AtomicInteger captures = new AtomicInteger();
+            View feed = new View(host.activity) {
+                @Override public void draw(Canvas canvas) {
+                    if (pill[0] != null && (boolean) ReflectionHelpers.getField(pill[0], "drawingBackdrop")) captures.incrementAndGet();
+                    super.draw(canvas);
+                }
+            };
+            host.root.addView(feed, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            GlassTabBar.apply(host.activity);
+            host.frame();
+            ShadowLooper.idleMainLooper(GlassTabBar.RESEARCH_MS * (GlassTabBar.MISS_REDRAWS + 1), java.util.concurrent.TimeUnit.MILLISECONDS);
+            pill[0] = host.bar.getBackground();
+            assertTrue("no backdrop recorded", (boolean) ReflectionHelpers.getField(pill[0], "recorded"));
+            ReflectionHelpers.callInstanceMethod(pill[0], "cancelCatchUp");
+            AtomicInteger askedForFrames = new AtomicInteger();
+            host.barInvalidated = askedForFrames::incrementAndGet;
+
+            arrangeCatchUp(pill[0]);
+            int before = captures.get();
+            ShadowLooper.idleMainLooper(GlassTabBar.RECORD_EVERY_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+            ReflectionHelpers.callInstanceMethod(pill[0], "recordIfDue");
+            assertEquals("the due frame recorded", before + 1, captures.get());
+            assertFalse("and dropped the catch-up", (boolean) ReflectionHelpers.getField(pill[0], "catchUpPending"));
+            ShadowLooper.idleMainLooper(GlassTabBar.MAX_STALE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+            assertEquals("nothing recorded it again", before + 1, captures.get());
+            assertEquals("or asked for a frame", 0, askedForFrames.get());
+
+            arrangeCatchUp(pill[0]);
+            before = captures.get();
+            for (int i = 0; i < 3; i++) {
+                ShadowLooper.idleMainLooper(10, java.util.concurrent.TimeUnit.MILLISECONDS);
+                ReflectionHelpers.callInstanceMethod(pill[0], "recordIfDue");
+            }
+            // Past the time the catch-up was arranged for.
+            ShadowLooper.idleMainLooper(10, java.util.concurrent.TimeUnit.MILLISECONDS);
+            assertEquals("frames still coming, the catch-up recorded nothing", before, captures.get());
+            assertEquals("and asked for no frame of its own", 0, askedForFrames.get());
+            assertTrue("it waits for them to stop", (boolean) ReflectionHelpers.getField(pill[0], "catchUpPending"));
+            ShadowLooper.idleMainLooper(GlassTabBar.RECORD_EVERY_MS + 4, java.util.concurrent.TimeUnit.MILLISECONDS);
+            assertEquals("they stopped, and the last one is caught up", before + 1, captures.get());
+            assertEquals("with one frame to show it", 1, askedForFrames.get());
+        }
+    }
+
     private static final class CountingSurface extends SurfaceView {
         int drawn;
 
@@ -2210,11 +3414,12 @@ public class GlassTabBarTest {
     }
 
     /**
-     * #262: a view under the bar that throws as the glass records it, as one Instagram is recycling can
-     * while a list scrolls, costs the blur that recording and no more. The glass tries again shortly, so
-     * the blur comes back even on a still screen, rests on the plain tint after too many failures in a
-     * row, and records again once the rest is over. Before, the first throw turned the blur off for as
-     * long as the bar lived, and the pill sat on the dark tint.
+     * #262: a recording that fails costs the blur that recording and no more. The glass tries again
+     * shortly, so the blur comes back even on a still screen, rests on the plain tint after too many
+     * failures in a row, and records again once the rest is over. Before, the first throw turned the blur
+     * off for as long as the bar lived, and the pill sat on the dark tint. #429: a view that throws as the
+     * glass draws it, as one Instagram is recycling can while a list scrolls, is only left out, so the
+     * pill keeps its blur instead of flashing the tint.
      */
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -2223,13 +3428,15 @@ public class GlassTabBarTest {
         GlassTabBar.animationsOnForTests = false;
         HookStatus.clear();
         try (GlassHost host = new GlassHost(Color.BLACK, true, GlassHeight.STANDARD, false, true)) {
+            boolean[] recycled = {false};
             boolean[] throwing = {false};
             Object[] pill = {null};
             View feed = new View(host.activity) {
                 @Override public void draw(Canvas canvas) {
                     // Only as the glass records it: the window's own draw goes on.
-                    if (throwing[0] && pill[0] != null && (boolean) ReflectionHelpers.getField(pill[0], "drawingBackdrop")) {
-                        throw new IllegalStateException("recycled");
+                    if (pill[0] != null && (boolean) ReflectionHelpers.getField(pill[0], "drawingBackdrop")) {
+                        if (recycled[0]) throw new IllegalStateException("recycled");
+                        if (throwing[0]) throw new OutOfMemoryError("recording");
                     }
                     super.draw(canvas);
                 }
@@ -2241,9 +3448,19 @@ public class GlassTabBarTest {
             pill[0] = host.bar.getBackground();
             assertTrue("no backdrop recorded", (boolean) ReflectionHelpers.getField(pill[0], "recorded"));
             GlassTabBar.BlurTries tries = ReflectionHelpers.getField(host.glass(), "tries");
+            ReflectionHelpers.callInstanceMethod(pill[0], "cancelCatchUp");
+
+            recycled[0] = true;
+            ReflectionHelpers.callInstanceMethod(pill[0], "recordBackdrop");
+            assertTrue("a view that throws is left out and the blur stays",
+                    (boolean) ReflectionHelpers.getField(pill[0], "recorded"));
+            assertFalse(tries.resting(SystemClock.uptimeMillis()));
+            assertFalse("nothing to try again", (boolean) ReflectionHelpers.getField(pill[0], "catchUpPending"));
+            String report = String.join("\n", HookStatus.report());
+            assertTrue(report, report.contains("IllegalStateException"));
+            recycled[0] = false;
 
             throwing[0] = true;
-            ReflectionHelpers.callInstanceMethod(pill[0], "cancelCatchUp");
             ReflectionHelpers.callInstanceMethod(pill[0], "recordBackdrop");
             assertFalse("a recording cut short isn't shown", (boolean) ReflectionHelpers.getField(pill[0], "recorded"));
             assertFalse("one failure doesn't rest the blur", tries.resting(SystemClock.uptimeMillis()));
@@ -2251,10 +3468,10 @@ public class GlassTabBarTest {
             throwing[0] = false;
             ShadowLooper.idleMainLooper(GlassTabBar.RECORD_EVERY_MS * 2, java.util.concurrent.TimeUnit.MILLISECONDS);
             assertTrue("the blur came back on a still screen", (boolean) ReflectionHelpers.getField(pill[0], "recorded"));
-            String report = String.join("\n", HookStatus.report());
-            assertTrue(report, report.contains("IllegalStateException"));
+            String missing = HookStatus.missing(app.hushgram.extension.instagram.settings.FamilyNames.GLASS_TAB_BAR).toString();
+            assertTrue(missing, missing.contains("'blur' hook (it threw java.lang.OutOfMemoryError)"));
 
-            // A view that throws every time it's drawn.
+            // A recording that fails every time.
             throwing[0] = true;
             for (int i = 0; i < GlassTabBar.BLUR_TRIES; i++) ReflectionHelpers.callInstanceMethod(pill[0], "recordBackdrop");
             assertTrue("too many in a row, and the blur rests", tries.resting(SystemClock.uptimeMillis()));
@@ -2284,7 +3501,7 @@ public class GlassTabBarTest {
                 @Override public void draw(Canvas canvas) {
                     if (pill[0] != null && (boolean) ReflectionHelpers.getField(pill[0], "drawingBackdrop")) {
                         captures.incrementAndGet();
-                        if (throwing[0]) throw new IllegalStateException("still recycled");
+                        if (throwing[0]) throw new OutOfMemoryError("still failing");
                     }
                     super.draw(canvas);
                 }
@@ -2345,7 +3562,7 @@ public class GlassTabBarTest {
                 @Override public void draw(Canvas canvas) {
                     if (pill[0] != null && (boolean) ReflectionHelpers.getField(pill[0], "drawingBackdrop")) {
                         captures.incrementAndGet();
-                        if (throwing[0]) throw new IllegalStateException("still recycled beside video");
+                        if (throwing[0]) throw new OutOfMemoryError("still failing beside video");
                     }
                     super.draw(canvas);
                 }
@@ -2494,6 +3711,41 @@ public class GlassTabBarTest {
     }
 
     /**
+     * #512: on the classic bar the Reels viewer is one of the content's own screens. A pill with no lift
+     * and no navigation bar room gives it a slot as tall as Instagram's bar, and the walk that runs the
+     * screens behind the pill took that slot for Instagram's margin and zeroed it every frame, so the
+     * reel jumped. The slot stays, and a plain screen at Instagram's height still runs behind.
+     */
+    @Test
+    public void aReelsSlotAsTallAsInstagramsBarIsNotTakenForInstagramsMargin() {
+        Context context = RuntimeEnvironment.getApplication();
+        int reels = 0x7f0b0010;
+        FrameLayout holder = new FrameLayout(context);
+        FrameLayout content = new FrameLayout(context);
+        View viewer = withMargin(new FrameLayout(context), 0);
+        viewer.setId(reels);
+        content.addView(viewer);
+        View home = withMargin(new FrameLayout(context), 126);
+        content.addView(home);
+        FrameLayout bar = new FrameLayout(context);
+        holder.addView(content);
+        holder.addView(bar);
+        Map<View, Integer> given = new HashMap<>();
+
+        assertEquals(1, GlassTabBar.reelsAboveTheBar(holder, bar, reels, 126, given));
+        assertEquals(1, GlassTabBar.screensAboveTheBar(content, 0, 126, 0, given));
+        assertEquals("the Reels slot", 126, margin(viewer));
+        assertEquals("a plain screen", 0, margin(home));
+        assertEquals("settled, nothing to give back", 0, GlassTabBar.reelsAboveTheBar(holder, bar, reels, 126, given));
+
+        assertEquals(1, GlassTabBar.reelsAboveTheBar(holder, bar, reels, 0, given));
+        withMargin(viewer, 126);
+        assertEquals("a margin the pill no longer holds is Instagram's", 1,
+                GlassTabBar.screensAboveTheBar(content, 0, 126, 0, given));
+        assertEquals(0, margin(viewer));
+    }
+
+    /**
      * #347: a reel opened from a feed post has Instagram hide the bar with Home selected, and the
      * pill's slot kept under that viewer was a blank band. The slot stays while the bar shows, and with
      * the Reels tab selected, where Instagram hides the bar for a paused reel (#221).
@@ -2532,19 +3784,120 @@ public class GlassTabBarTest {
 
     /**
      * #372: with the switch on, the viewer fills the screen behind the pill and its caption, buttons and
-     * seek bar are raised by the slot; off, today's layout. A slot not kept (bar hidden) changes nothing.
+     * seek bar are raised by the slot; off, today's layout. A slot not kept (bar hidden) has the viewer
+     * run to the window's bottom, so only the navigation bar's height is cleared (#450). Over a kept slot
+     * the seek bar also keeps a gap above the pill, either way (#187).
      */
     @Test
     public void reelsBehindThePillRaiseTheControlsInsteadOfStoppingTheViewer() {
         assertFalse("off by default", Settings.GLASS_TAB_BAR_REELS_BEHIND.defaultValue);
         assertEquals(126, GlassTabBar.reelsViewerMargin(true, false, 126));
-        assertEquals(0, GlassTabBar.reelsBandLift(true, false, 126));
+        assertEquals("only the gap over a viewer that stops at the slot", 8, GlassTabBar.reelsBandLift(true, false, 126, 48, 8));
         assertEquals(0, GlassTabBar.reelsViewerMargin(true, true, 126));
-        assertEquals(126, GlassTabBar.reelsBandLift(true, true, 126));
-        assertEquals("no slot kept, nothing raised", 0, GlassTabBar.reelsBandLift(false, true, 126));
+        assertEquals("the slot and the gap behind the pill", 134, GlassTabBar.reelsBandLift(true, true, 126, 48, 8));
+        assertEquals("no slot kept, only the navigation bar cleared", 48, GlassTabBar.reelsBandLift(false, true, 126, 48, 8));
+        assertEquals(48, GlassTabBar.reelsBandLift(false, false, 126, 48, 8));
+        assertEquals("Instagram pads for the navigation bar itself", 0, GlassTabBar.reelsBandLift(false, false, 126, 0, 8));
         assertEquals(0, GlassTabBar.reelsViewerMargin(false, true, 126));
         assertEquals(0, GlassTabBar.reelsViewerMargin(false, false, 126));
-        assertEquals(0, GlassTabBar.reelsBandLift(true, true, -5));
+        assertEquals(8, GlassTabBar.reelsBandLift(true, true, -5, 48, 8));
+        assertEquals(0, GlassTabBar.reelsBandLift(false, true, 126, -5, 8));
+        assertEquals(126, GlassTabBar.reelsBandLift(true, true, 126, 48, -3));
+        assertTrue("a gap you can see", GlassTabBar.REELS_GAP_DP >= 6);
+    }
+
+    /**
+     * #450: a 1920 pixel reel centred in a 2260 pixel viewer that runs behind a 250 pixel slot sat 125
+     * pixels lower than in the 2010 pixel viewer stopped at the slot. A 250 margin puts it back. A reel
+     * with only 100 pixels to spare rises by those and no further, a reel filling the viewer or laid
+     * from the top stays, and a viewer stopped at the slot, or with no slot kept, gets no margin.
+     */
+    @Test
+    public void aReelBehindThePillSitsWhereTheSlotWouldPutIt() {
+        int centre = Gravity.CENTER;
+        assertEquals("half the slot, which lifts a centred view by all of it", 125, GlassTabBar.reelsMediaMargin(true, true, 250, 2260, 1920, centre));
+        assertEquals("only as far as the reel's top room", 50, GlassTabBar.reelsMediaMargin(true, true, 250, 2260, 2160, centre));
+        assertEquals("a reel that fills the viewer", 0, GlassTabBar.reelsMediaMargin(true, true, 250, 2260, 2260, centre));
+        assertEquals("a reel taller than the viewer", 0, GlassTabBar.reelsMediaMargin(true, true, 250, 2260, 2400, centre));
+        assertEquals("laid from the top", 0, GlassTabBar.reelsMediaMargin(true, true, 250, 2260, 1920, Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+        assertEquals(125, GlassTabBar.reelsMediaMargin(true, true, 250, 2260, 1920, Gravity.CENTER_VERTICAL));
+        assertEquals("a viewer stopped at the slot", 0, GlassTabBar.reelsMediaMargin(true, false, 250, 2010, 1920, centre));
+        assertEquals("no slot kept", 0, GlassTabBar.reelsMediaMargin(false, true, 250, 2260, 1920, centre));
+        assertEquals(0, GlassTabBar.reelsMediaMargin(true, true, 0, 2260, 1920, centre));
+        assertEquals(0, GlassTabBar.reelsMediaMargin(true, true, 250, 0, 1920, centre));
+        assertEquals(0, GlassTabBar.reelsMediaMargin(true, true, 250, 2260, 0, centre));
+    }
+
+    /**
+     * #450: in a 2260 pixel viewer behind a 250 pixel slot, a 1920 pixel reel's video and cover move up to
+     * 45 from the top, where a viewer stopped at the slot puts them, and the play button centred over them
+     * stays. With the reel no longer behind the pill they go back to 170, and the margin they had is theirs again.
+     */
+    @Test
+    public void aReelBehindThePillMovesItsVideoAndCoverOnly() {
+        Context context = RuntimeEnvironment.getApplication();
+        FrameLayout viewer = new FrameLayout(context);
+        FrameLayout item = new FrameLayout(context);
+        viewer.addView(item, new FrameLayout.LayoutParams(1080, ViewGroup.LayoutParams.MATCH_PARENT));
+        ImageView cover = new ImageView(context);
+        item.addView(cover, new FrameLayout.LayoutParams(1080, 1920, Gravity.CENTER));
+        View video = new com.instagram.ui.simplevideolayout.SimpleVideoLayout(context);
+        item.addView(video, new FrameLayout.LayoutParams(1080, 1920, Gravity.CENTER));
+        ImageView play = new ImageView(context);
+        item.addView(play, new FrameLayout.LayoutParams(120, 120, Gravity.CENTER));
+        View inside = new com.instagram.ui.simplevideolayout.SimpleVideoLayout(context);
+        ((ViewGroup) video).addView(inside);
+        layOutReel(viewer);
+
+        java.util.List<View> media = new java.util.ArrayList<>();
+        GlassTabBar.reelMedia(viewer, media, 0);
+        assertEquals("the video and its cover, not the play button or inside the video",
+                java.util.Arrays.asList(video, cover), media);
+
+        Map<View, Integer> given = new HashMap<>();
+        for (View view : media) assertTrue(GlassTabBar.placeReelMedia(view, true, true, 250, given));
+        layOutReel(viewer);
+        assertEquals(45, video.getTop());
+        assertEquals(45, cover.getTop());
+        assertEquals("the play button stays", (2260 - 120) / 2, play.getTop());
+        assertFalse("nothing to change the next look", GlassTabBar.placeReelMedia(video, true, true, 250, given));
+
+        for (View view : media) assertTrue(GlassTabBar.placeReelMedia(view, true, false, 250, given));
+        layOutReel(viewer);
+        assertEquals(170, video.getTop());
+        assertEquals(0, ((FrameLayout.LayoutParams) video.getLayoutParams()).bottomMargin);
+        assertTrue(given.isEmpty());
+
+        ((FrameLayout.LayoutParams) cover.getLayoutParams()).bottomMargin = 10;
+        assertTrue(GlassTabBar.placeReelMedia(cover, true, true, 250, given));
+        assertEquals("Instagram's own margin kept under ours", 135, ((FrameLayout.LayoutParams) cover.getLayoutParams()).bottomMargin);
+        assertTrue(GlassTabBar.placeReelMedia(cover, false, true, 250, given));
+        assertEquals(10, ((FrameLayout.LayoutParams) cover.getLayoutParams()).bottomMargin);
+    }
+
+    private static void layOutReel(View view) {
+        view.measure(View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(2260, View.MeasureSpec.EXACTLY));
+        view.layout(0, 0, 1080, 2260);
+    }
+
+    /**
+     * #450: a reel opened from a feed post on a 1600 pixel window with a 48 pixel navigation bar. Run down
+     * to the window's foot, as with Instagram answered 0 or Full screen Reels hiding the bar, it reaches all
+     * 48 into the bar; stopped above the bar, as where Instagram pads for it, not at all; part way, only
+     * that part. Nothing past the bar's own height, and nothing without a bar.
+     */
+    @Test
+    public void aReelOverTheNavigationBarClearsOnlyThePartInsideIt() {
+        assertEquals("runs to the foot", 48, GlassTabBar.intoTheNavigationBar(1600, 1600, 48));
+        assertEquals("stops above the bar", 0, GlassTabBar.intoTheNavigationBar(1552, 1600, 48));
+        assertEquals("well above it", 0, GlassTabBar.intoTheNavigationBar(1400, 1600, 48));
+        assertEquals("part way in", 20, GlassTabBar.intoTheNavigationBar(1572, 1600, 48));
+        assertEquals("past the foot counts the bar only", 48, GlassTabBar.intoTheNavigationBar(1700, 1600, 48));
+        assertEquals("no bar", 0, GlassTabBar.intoTheNavigationBar(1600, 1600, 0));
+        assertEquals("no window yet", 0, GlassTabBar.intoTheNavigationBar(1600, 0, 48));
+        assertEquals(48, GlassTabBar.reelsBandLift(false, false, 126, GlassTabBar.intoTheNavigationBar(1600, 1600, 48), 8));
+        assertEquals(0, GlassTabBar.reelsBandLift(false, false, 126, GlassTabBar.intoTheNavigationBar(1552, 1600, 48), 8));
     }
 
     /**
@@ -2645,15 +3998,64 @@ public class GlassTabBarTest {
     }
 
     /**
+     * #704: the seek bar's room lifts a reel's seek bar row out of the navigation bar, and the pill raises the
+     * same row. When the room got there first, the pill took its lift for Instagram's and left the row there,
+     * with the seek bar behind the pill. The room's lift, and the caption scroll that goes with it, are the
+     * pill's to take over now. A translation or a scroll anyone else gave stays theirs.
+     */
+    @Test
+    public void theSeekBarRoomsLiftIsThePillsToTakeOver() {
+        Context context = RuntimeEnvironment.getApplication();
+        int info = 0x7f0b0633;
+        FrameLayout layer = new FrameLayout(context);
+        FrameLayout caption = new FrameLayout(context);
+        View name = new View(context);
+        name.setId(info);
+        caption.addView(name);
+        FrameLayout row = new FrameLayout(context);
+        layer.addView(caption);
+        layer.addView(row);
+        caption.layout(0, 0, 1080, 2316);
+        name.layout(0, 1500, 1080, 1800);
+        assertFalse("nothing on it", GlassTabBar.othersTranslation(row, null));
+        assertFalse(GlassTabBar.othersScroll(caption, null));
+
+        ReflectionHelpers.callStaticMethod(ReelSeekRoom.class, "due",
+                ReflectionHelpers.ClassParameter.from(View.class, row), ReflectionHelpers.ClassParameter.from(long.class, 10_000L));
+        ReflectionHelpers.callStaticMethod(ReelSeekRoom.class, "keep",
+                ReflectionHelpers.ClassParameter.from(View.class, row), ReflectionHelpers.ClassParameter.from(boolean.class, true),
+                ReflectionHelpers.ClassParameter.from(int.class, 2316), ReflectionHelpers.ClassParameter.from(int.class, 2316),
+                ReflectionHelpers.ClassParameter.from(int.class, 48));
+        ReflectionHelpers.callStaticMethod(ReelSeekRoom.class, "along",
+                ReflectionHelpers.ClassParameter.from(View.class, row), ReflectionHelpers.ClassParameter.from(int.class, info));
+        assertEquals("the room lifted the row", -48f, row.getTranslationY(), 0f);
+        assertEquals("and scrolled the caption", 48, caption.getScrollY());
+        assertFalse("the room's lift is the pill's to take", GlassTabBar.othersTranslation(row, null));
+        assertFalse("and so is the caption's scroll", GlassTabBar.othersScroll(caption, null));
+        assertTrue("moved since the pill raised it", GlassTabBar.othersTranslation(row, -134f));
+
+        View other = new View(context);
+        other.setTranslationY(-48f);
+        other.scrollTo(0, 48);
+        assertTrue("Instagram's", GlassTabBar.othersTranslation(other, null));
+        assertTrue(GlassTabBar.othersScroll(other, null));
+        assertFalse("the pill's own", GlassTabBar.othersTranslation(other, -48f));
+        assertFalse(GlassTabBar.othersScroll(other, 48));
+    }
+
+    /**
      * Instagram's touch strip for a reel's seek bar is placed by how far the reel stops above the screens'
      * bottom. Measured with its own margin back on for a frame and the pill's counted too (back from
      * HushGram's settings on the S22), it sat a bar's height too high, over the reel's More button, and
-     * took its taps. It goes back so its bottom edge is the seek bar's, or the viewer's with no seek bar
-     * showing. A strip hung from the top, or a reel off the screen, is left alone.
+     * took its taps. It goes back so it runs a seek bar's height past the seek bar's bottom edge, or the
+     * viewer's with no seek bar showing, where Instagram keeps it over its own bar (#526). A strip hung
+     * from the top, or a reel off the screen, is left alone.
      */
     @Test
     @Config(qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
     public void theSeekBarsTouchStripStaysOnTheReelAboveThePill() {
+        final int BELOW = 28;
+        final int NO_FLOOR = Integer.MAX_VALUE;
         ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup();
         try {
             Activity activity = controller.get();
@@ -2682,44 +4084,126 @@ public class GlassTabBarTest {
             Rect scratch = new Rect();
             layOut(root);
 
-            assertTrue("a bar's height too high", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
+            assertTrue("a bar's height too high", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
             layOut(root);
-            assertEquals("on the seek bar of the reel on screen", bottomOnScreen(seekBar), bottomOnScreen(strip));
-            assertEquals(180, stripParams.bottomMargin);
-            assertFalse("settled, nothing moves", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
+            assertEquals("on the seek bar of the reel on screen, running on past it as over Instagram's own bar",
+                    bottomOnScreen(seekBar) + BELOW, bottomOnScreen(strip));
+            assertEquals(180 - BELOW, stripParams.bottomMargin);
+            assertFalse("settled, nothing moves", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
 
             stripParams.bottomMargin = 107;
             strip.setLayoutParams(stripParams);
-            assertFalse("not laid out again yet", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
+            assertFalse("not laid out again yet", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
             layOut(root);
-            assertTrue("measured before the reel was kept above the pill", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
-            assertEquals(180, stripParams.bottomMargin);
+            assertTrue("measured before the reel was kept above the pill", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
+            assertEquals(180 - BELOW, stripParams.bottomMargin);
 
             seekParams.bottomMargin = 300;
             seekBar.setLayoutParams(seekParams);
             layOut(root);
-            assertTrue("a seek bar higher up", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
+            assertTrue("a seek bar higher up", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
             layOut(root);
-            assertEquals(bottomOnScreen(seekBar), bottomOnScreen(strip));
+            assertEquals(bottomOnScreen(seekBar) + BELOW, bottomOnScreen(strip));
 
             seekBar.setVisibility(View.GONE);
             layOut(root);
-            assertTrue("no seek bar showing", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
+            assertTrue("no seek bar showing", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
             layOut(root);
-            assertEquals("the viewer's bottom edge", bottomOnScreen(viewer), bottomOnScreen(strip));
+            assertEquals("past the viewer's bottom edge", bottomOnScreen(viewer) + BELOW, bottomOnScreen(strip));
 
             stripParams.gravity = Gravity.TOP;
             stripParams.topMargin = 40;
             strip.setLayoutParams(stripParams);
             layOut(root);
-            assertFalse("hung from the top", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
+            assertFalse("hung from the top", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
             stripParams.gravity = Gravity.BOTTOM;
             stripParams.bottomMargin = 287;
             strip.setLayoutParams(stripParams);
             viewer.setTranslationX(-10000);
             layOut(root);
-            assertFalse("no reel on the screen", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, scratch));
+            assertFalse("no reel on the screen", GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, NO_FLOOR, scratch));
             assertEquals(287, stripParams.bottomMargin);
+        } finally {
+            controller.pause().stop().destroy();
+        }
+    }
+
+    /**
+     * Past the top of the strip at the window's foot a drag is the system's, so Instagram's touch strip stops
+     * there, short of its usual run past the seek bar, and on the bar's own edge when the bar reaches it (#633).
+     */
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void theSeekBarsTouchStripStopsWhereTheSystemsStripStarts() {
+        final int BELOW = 28;
+        ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup();
+        try {
+            Activity activity = controller.get();
+            FrameLayout root = new FrameLayout(activity);
+            View strip = new View(activity);
+            FrameLayout.LayoutParams stripParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 112, Gravity.BOTTOM);
+            stripParams.bottomMargin = 287;
+            root.addView(strip, stripParams);
+            FrameLayout viewer = new FrameLayout(activity);
+            root.addView(viewer, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            int scrubberId = 0x7f0b0011;
+            View seekBar = new View(activity);
+            seekBar.setId(scrubberId);
+            FrameLayout.LayoutParams seekParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 28, Gravity.BOTTOM);
+            seekParams.bottomMargin = 100;
+            viewer.addView(seekBar, seekParams);
+            activity.setContentView(root);
+            java.util.List<View> viewers = java.util.Collections.singletonList(viewer);
+            Rect scratch = new Rect();
+            layOut(root);
+            int barBottom = bottomOnScreen(seekBar);
+
+            assertTrue(GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, barBottom + 10, scratch));
+            layOut(root);
+            assertEquals("short of its run, at the system's strip", barBottom + 10, bottomOnScreen(strip));
+
+            assertTrue(GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, barBottom - 40, scratch));
+            layOut(root);
+            assertEquals("a bar already in it keeps the strip on its own edge", barBottom, bottomOnScreen(strip));
+
+            assertTrue(GlassTabBar.stripOnTheReel(strip, viewers, scrubberId, BELOW, barBottom + 500, scratch));
+            layOut(root);
+            assertEquals("well clear, the usual run", barBottom + BELOW, bottomOnScreen(strip));
+        } finally {
+            controller.pause().stop().destroy();
+        }
+    }
+
+    /**
+     * #526: the seek bar's touch strip runs over the pill's top edge, and a sideways drag that starts
+     * there seeks the reel. It used to start a slide across the tabs instead. Below the strip, or with no
+     * strip showing, the pill is the pill.
+     */
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-xhdpi")
+    public void aDragOnTheSeekBarsStripIsNeverATabSlide() {
+        ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup();
+        try {
+            Activity activity = controller.get();
+            FrameLayout root = new FrameLayout(activity);
+            View bar = new View(activity);
+            root.addView(bar, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 177, Gravity.BOTTOM));
+            View strip = new View(activity);
+            FrameLayout.LayoutParams stripParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 112, Gravity.BOTTOM);
+            stripParams.bottomMargin = 177 - 28;
+            root.addView(strip, stripParams);
+            activity.setContentView(root);
+            layOut(root);
+
+            assertTrue("the pill's top edge, under the strip", GlassTabBar.onTheStrip(strip, bar, 300, 10));
+            assertTrue(GlassTabBar.onTheStrip(strip, bar, 0, 27));
+            assertFalse("past the strip's bottom edge", GlassTabBar.onTheStrip(strip, bar, 300, 28));
+            assertFalse("the tabs' row", GlassTabBar.onTheStrip(strip, bar, 300, 90));
+            assertFalse("on the strip but above the bar, where the reel's buttons are", GlassTabBar.onTheStrip(strip, bar, 300, -40));
+            assertFalse("no strip found", GlassTabBar.onTheStrip(null, bar, 300, 10));
+            strip.setVisibility(View.GONE);
+            layOut(root);
+            assertFalse("a strip that doesn't show", GlassTabBar.onTheStrip(strip, bar, 300, 10));
         } finally {
             controller.pause().stop().destroy();
         }

@@ -16,6 +16,7 @@ import app.morphe.patches.instagram.download.INSTAGRAM_MEDIA
 import app.morphe.patches.instagram.download.MEDIA
 import app.morphe.patches.instagram.download.PANDO_IMAGE_INFO
 import app.morphe.patches.instagram.download.USER
+import app.morphe.patches.instagram.misc.extension.PatchLogCapture
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -28,6 +29,8 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference
 import java.io.File
 import org.junit.Assert.*
 import org.junit.Test
@@ -72,6 +75,55 @@ class CommentPhotoHookTest {
             val copyRows = patch.mutableClassDefBy(COMMENT_NATIVE).methods.single { it.name == "callback" }
             assertTrue("Copy reads only its own rows", copyRows.code().any { (it.reference() as? TypeReference)?.type == COPY_ROW })
             assertTrue(copyRows.code().none { (it.reference() as? TypeReference)?.type == PHOTO_ROW })
+        }
+    }
+
+    /**
+     * A selected comment keeping no raw comment of its own (455's) gets it from the patch: the
+     * conversion's answer carries the raw comment it was handed, each copy's carries its source's, and
+     * the photo's raw read takes it from there. A second pass finds it in place and adds nothing.
+     */
+    @Test fun aSelectedCommentKeepingNoRawCommentGetsItFromTheConversionAndItsCopies() {
+        for (copyFirst in listOf(true, false)) {
+            val native = CommentWorld.nativeClasses("Flat", photo = PhotoWorld(), keepsRaw = false)
+            val patch = PatchContexts.of(native + extension())
+            if (copyFirst) patch.applyCommentMenu(patch.findCommentMenu())
+            val plan = patch.findCommentPhoto()
+            val keeping = plan.surface.keeping ?: error("the patch doesn't keep the raw comment")
+            assertEquals("Ltest/FlatConverter;->convert(Ltest/FlatRaw;)Ltest/FlatView;" to 0, keeping.conversion.toString() to keeping.rawAt)
+            assertEquals(listOf("Ltest/FlatView;->copy(Ltest/FlatView;Ljava/lang/String;)Ltest/FlatView;" to 0),
+                keeping.copies.map { (copy, from) -> copy.toString() to from })
+            assertEquals(ImmutableFieldReference("Ltest/FlatView;", KEPT_RAW, "Ltest/FlatRaw;").toString(), plan.surface.rawField.toString())
+            patch.applyCommentPhoto(plan)
+            if (!copyFirst) patch.applyCommentMenu(patch.findCommentMenu())
+            patch.keepRawComment(plan.surface)
+            assertPhotoWiring(patch, plan)
+            CommentWorld.assertKeptRaw(patch, plan.surface, native, "copy first $copyFirst")
+        }
+    }
+
+    @Test fun aSelectedCommentThatCantKeepTheRawCommentRefusesBeforeAnyMutation() {
+        val view = "Ltest/RefusedView;"
+        val outside = CommentWorld.clazz("Ltest/RefusedOutside;", methods = listOf(CommentWorld.method("Ltest/RefusedOutside;", "again",
+            listOf(view), view, 3, AccessFlags.PUBLIC.value or AccessFlags.STATIC.value, """
+                new-instance v0, $view
+                const/4 v1, 0x0
+                invoke-direct { v0, v1, v1, v1 }, $view-><init>(Ltest/RefusedRaw;$STRING$STRING)V
+                return-object v0
+            """)))
+        val cases = mapOf(
+            "an instance copy" to CommentWorld.nativeClasses("Refused", photo = PhotoWorld(), keepsRaw = false,
+                copyFlags = AccessFlags.PUBLIC.value),
+            "a copy outside it" to CommentWorld.nativeClasses("Refused", photo = PhotoWorld(), keepsRaw = false) + outside,
+        )
+        for ((case, native) in cases) {
+            val classes = native + extension()
+            val patch = PatchContexts.of(classes)
+            val before = CommentWorld.snapshot(patch, classes.map { it.type })
+            val failure = runCatching { patch.applyCommentPhoto(patch.findCommentPhoto()) }.exceptionOrNull()
+            assertTrue("$case: $failure", failure?.message?.startsWith("Save comment photo: ") == true)
+            assertEquals(case, before, CommentWorld.snapshot(patch, classes.map { it.type }))
+            assertTrue(case, patch.mutableClassDefBy(view).fields.none { it.name == KEPT_RAW })
         }
     }
 
@@ -199,6 +251,44 @@ class CommentPhotoHookTest {
     }
 
     /**
+     * #402: every build has the gallery pick Send saved GIFs as GIFs hooks, Unit return included, even
+     * where Redex renamed kotlin.Unit (454's armeabi-v7a and x86 builds did). Only the comment screen and
+     * the comment_image_ lambda are read from each build.
+     */
+    @Test fun everyBuildHasTheGalleryPickTheGifHookProves() {
+        val versions = AppCompatibilities.instagram().single().targets.mapNotNull { it.version }.toSet()
+        val bundles = versions.flatMap { version -> Fixtures.files { it.extension == "apks" && it.name.contains("-$version-") } } +
+            Fixtures.otherBuilds()
+        assertEquals("every 455 build", Fixtures.BUILDS, bundles.size)
+        for (bundle in bundles) {
+            val label = if (bundle.extension == "apk") bundle.parentFile.name else bundle.name
+            val native = (FixtureDex.classesHolding(bundle, COMMENT_SELECT) + FixtureDex.classesLoading(bundle, "comment_image_"))
+                .associateBy { it.type }.values
+            val select = native.flatMap { it.methods }.single { COMMENT_SELECT in it.strings() &&
+                it.parameters() == listOf(STRING, STRING, "F", "Z") && it.returnType == "V" }
+            val patch = PatchContexts.of(native + extension())
+            var found: GifPickPlan? = null
+            val warnings = PatchLogCapture.warnings {
+                found = discovering(PHOTO_PATCH) { patch.gifPickOrNull(pickReply(select), patch.classPool()) }
+            }
+            assertEquals(label, emptyList<String>(), warnings)
+            val pick = found ?: error("$label: the comment box's gallery pick wasn't found")
+            assertEquals(label, select.definingClass, pick.pick.definingClass)
+            discovering(PHOTO_PATCH) { patch.applyGifPick(pick) }
+            assertGifPickWiring(patch, pick)
+        }
+    }
+
+    /** A GIF reply on [select]'s screen. The gallery pick reads only that screen from it. */
+    private fun pickReply(select: MethodReference): GifReplyPlan {
+        val screen = select.definingClass
+        fun call(name: String) = ImmutableMethodReference(screen, name, emptyList(), "V")
+        return GifReplyPlan(ImmutableMethodReference.of(select), 0, emptyList(), emptyList(), call("reply"),
+            ImmutableFieldReference(screen, "composer", OBJECT), call("target"), call("toHelper"), call("toInfo"), false,
+            call("send"), 0, 0)
+    }
+
+    /**
      * The comment GIF model's classes in [bundle]: its three interfaces, every class implementing
      * one, and the tree classes' superclasses up to Pando's tree, in two passes over the dex files.
      */
@@ -262,9 +352,16 @@ class CommentPhotoHookTest {
                 assertEquals(plan.surface.raw, plan.gif.definingClass)
                 assertNotNull("${bundle.name}: the comment GIF's model wasn't read", plan.gifModel)
                 assertNotEquals(plan.icon, plan.label)
+                // #502: a comment GIF's name, the one String getter that answers the tree's "title" read.
+                val gifName = plan.gifName ?: error("${bundle.name}: the comment GIF's title wasn't found")
+                assertEquals(listOf(GIPHY, "Ljava/lang/String;"), listOf(gifName.definingClass, gifName.returnType))
+                assertTrue("${bundle.name}: a GIF's title getter is a plain getter", gifName.parameterTypes.isEmpty())
                 // #402: Reply with a comment's GIF, labelled with the quick reply bar's own GIF button.
                 val gifReply = plan.gifReply ?: error("${bundle.name}: the comment screen's Reply or GIF send wasn't found")
                 GIF_BUTTONS[version]?.let { assertEquals("${bundle.name}: GIF button's icon and label", it, gifReply.icon to gifReply.label) }
+                // #402: the comment box's gallery pick, on the same screen the GIF reply sends from.
+                val gifPick = plan.gifPick ?: error("${bundle.name}: the comment box's gallery pick wasn't found")
+                assertEquals(gifReply.select.definingClass, gifPick.pick.definingClass)
                 // Who wrote the comment and when, for the save's name: read through the raw comment's
                 // interface, each proved on its tree-backed class by the key it reads.
                 val author = plan.author ?: error("${bundle.name}: the comment's author and time weren't found")
@@ -280,9 +377,14 @@ class CommentPhotoHookTest {
                     read >= 0 && code.drop(read).firstOrNull { it.opcode == Opcode.IPUT_OBJECT && it.field()?.type == USER }
                         ?.field().toString() == userField.toString()
                 })
+                // 455's selected comment keeps no raw comment of its own, so the patch keeps it there.
+                val model = classes.single { it.type == plan.surface.selectedType }
+                assertEquals("${bundle.name}: the patch keeps the raw comment", model.fields.none { it.type == plan.surface.raw },
+                    plan.surface.keeping != null)
                 patch.applyCommentPhoto(plan)
                 if (families == "photo+copy") patch.applyCommentMenu(patch.findCommentMenu())
                 assertPhotoWiring(patch, plan)
+                CommentWorld.assertKeptRaw(patch, plan.surface, classes, "${bundle.name} $families")
                 val hook = stockRenderer.code().indexOfFirst { it.call()?.toString() == COMMENT_HOOK }
                 original.assertPreserved("${bundle.name} $families", stockRenderer, (hook - 3..hook + 1).toSet())
                 assertEquals("legacy surface must not be reported as patched", unchanged, CommentWorld.snapshot(patch, legacy))
@@ -358,6 +460,17 @@ class CommentPhotoHookTest {
             assertEquals(name, getter.toString(), code[1].call().toString())
             assertEquals("$getter is read once", 1, native.sumOf { method -> method.code().count { it.call()?.toString() == getter.toString() } })
         }
+        // A GIF's name goes in on its own getter, whatever the rest of the model did; otherwise it answers null.
+        val titleBridge = read(GIF_NAME_READ)
+        val title = plan.gifName
+        if (title == null) {
+            assertTrue(GIF_NAME_READ, titleBridge.none { it.call() != null })
+        } else {
+            assertEquals(GIF_NAME_READ, listOf(Opcode.CHECK_CAST, Opcode.INVOKE_INTERFACE, Opcode.MOVE_RESULT_OBJECT, Opcode.RETURN_OBJECT),
+                titleBridge.map { it.opcode })
+            assertEquals(GIF_NAME_READ, title.definingClass, (titleBridge[0].reference() as TypeReference).type)
+            assertEquals(GIF_NAME_READ, title.toString(), titleBridge[1].call().toString())
+        }
         assertTrue("the old all-in-one bridge is gone", native.none { it.name == "photoMedia" })
         val factory = native.single { it.name == "newRow" }.code()
         assertTrue(factory.any { it.field()?.toString() == surface.style.toString() })
@@ -376,6 +489,41 @@ class CommentPhotoHookTest {
             assertEquals(name, Opcode.CHECK_CAST, images.single { it.name == name }.code().first().opcode)
         }
         assertGifReplyWiring(patch, plan)
+        assertGifPickWiring(patch, plan.gifPick)
+    }
+
+    /**
+     * #402: the gallery pick hands over the picked path and the screen right after reading the path,
+     * leaves through its Unit return on a 1, and clearPick attaches nothing to that screen.
+     */
+    private fun assertGifPickWiring(patch: BytecodePatchContext, pick: GifPickPlan?) {
+        val clear = patch.mutableClassDefBy(GIF_REPLY_NATIVE).methods.single { it.name == "clearPick" }.code()
+        if (pick == null) {
+            assertTrue("clearPick stays a stub without the pick", clear.none { it.call() != null })
+            return
+        }
+        val code = patch.mutableClassDefBy(pick.method.definingClass).methods.single { it.matches(pick.method) }.code()
+        val hook = code.indices.single { code[it].call()?.toString() == GIF_PICKED }
+        assertEquals(pick.hookAt + 2, hook)
+        assertEquals(Opcode.IGET_OBJECT, code[pick.hookAt - 1].opcode)
+        assertEquals(STRING, code[pick.hookAt - 1].field()?.type)
+        val copies = code.subList(pick.hookAt, hook)
+        assertEquals(List(2) { Opcode.MOVE_OBJECT_FROM16 }, copies.map { it.opcode })
+        assertEquals(listOf(pick.path, pick.screen), copies.map { (it as TwoRegisterInstruction).registerB })
+        assertEquals(pick.spares, copies.map { (it as TwoRegisterInstruction).registerA })
+        assertEquals(pick.spares, code[hook].arguments())
+        assertEquals(listOf(Opcode.MOVE_RESULT, Opcode.IF_NEZ), code.subList(hook + 1, hook + 3).map { it.opcode })
+        val addresses = code.runningFold(0) { address, instruction -> address + instruction.codeUnits }
+        val exit = addresses.indexOf(addresses[hook + 2] + (code[hook + 2] as OffsetInstruction).codeOffset)
+        // kotlin.Unit, or what Redex renamed it to on this build: a static holding its own class.
+        assertEquals(Opcode.SGET_OBJECT, code[exit].opcode)
+        val unit = code[exit].field() ?: error("a sent GIF leaves through the Unit return")
+        assertEquals("a sent GIF leaves through the Unit return", unit.definingClass, unit.type)
+        assertEquals(Opcode.RETURN_OBJECT, code[exit + 1].opcode)
+        assertEquals(listOf("Lcom/instagram/common/gallery/Medium;"), pick.pick.parameters())
+        assertEquals(listOf(Opcode.CHECK_CAST, Opcode.CONST_4, Opcode.INVOKE_VIRTUAL, Opcode.RETURN_VOID), clear.map { it.opcode })
+        assertEquals(pick.pick.definingClass, (clear[0].reference() as TypeReference).type)
+        assertEquals(pick.pick.toString(), clear[2].call().toString())
     }
 
     private fun renderer(patch: BytecodePatchContext, surface: CommentSurface) =
@@ -438,7 +586,8 @@ class CommentPhotoHookTest {
     }
 
     private fun extension() = listOf(COMMENT_NATIVE, COPY_ROW, COMMENT_COPY, COMMENT_ACTIONS,
-        PHOTO_NATIVE, PHOTO_ROW, COMMENT_PHOTO, INSTAGRAM_MEDIA, GIF_REPLY_NATIVE, GIF_REPLY_ROW, COMMENT_GIF_REPLY)
+        PHOTO_NATIVE, PHOTO_ROW, COMMENT_PHOTO, INSTAGRAM_MEDIA, GIF_REPLY_NATIVE, GIF_REPLY_ROW, COMMENT_GIF_REPLY,
+        COMMENT_GIF_PICK)
         .map(ExtensionDex::classDef)
 
     /**
@@ -476,8 +625,13 @@ class CommentPhotoHookTest {
         val selected = selectionType(select)
         load(listOf(selected))
         load(pool.getValue(selected).fields.map { it.type })
+        // The raw comment is a field of the selected comment, or on 455 only what its conversion is handed.
+        val makers = FixtureDex.classesCreating(bundle, setOf(selected))
+        add(makers)
+        val handed = makers.flatMap { it.methods }.filter { it.returnType == selected }.flatMap { it.parameters() }.toSet()
+        load(handed.filter { it.startsWith("L") })
         val raw = pool.values.single { type -> AccessFlags.INTERFACE.isSet(type.accessFlags) &&
-            type.type in pool.getValue(selected).fields.map { it.type } && type.methods.any { it.returnType == GIPHY } }.type
+            type.type in pool.getValue(selected).fields.map { it.type } + handed && type.methods.any { it.returnType == GIPHY } }.type
         scan { type -> raw in type.interfaces || type.methods.any { method -> method.returnType == selected ||
             method.parameters().let { it.size == 5 && it[1] == selected && it[3] == LIST && it[4] == "F" } } }
         val parsed = pool.values.filter { raw in it.interfaces }.map { it.type }.toSet()
@@ -519,11 +673,13 @@ class CommentPhotoHookTest {
         load((screen.methods.flatMap { it.parameters() } + screen.fields.map { it.type }).filter { it.startsWith("L") })
         load(pool.getValue(GIPHY).methods.map { it.returnType }.filter { it.startsWith("L") })
         load(references(listOf(screen)))
+        // #402: the comment box's gallery pick, the lambda that makes its comment_image_ still.
+        add(FixtureDex.classesLoading(bundle, "comment_image_"))
         return pool.values.toList()
     }
 
     private companion object {
         /** Instagram's GIF icon and its GIF label on the quick reply bar, read from the declared build's resources. */
-        val GIF_BUTTONS = mapOf("454.0.0.54.77" to (0x7f082608 to 0x7f136f8c))
+        val GIF_BUTTONS = mapOf("455.0.0.51.72" to (0x7f082632 to 0x7f1370eb))
     }
 }

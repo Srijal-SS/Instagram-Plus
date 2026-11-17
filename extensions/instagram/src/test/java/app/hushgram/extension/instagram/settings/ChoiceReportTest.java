@@ -34,6 +34,7 @@ public class ChoiceReportTest {
         Settings.DEFAULT_PLAYBACK_QUALITY.resetToDefault();
         Settings.PLAYBACK_QUALITY.resetToDefault();
         Settings.FONT.resetToDefault();
+        Settings.TEXT_SIZE.resetToDefault();
         Settings.KEEP_REELS_MUTED.resetToDefault();
         Settings.REEL_TAP_CHOICE.resetToDefault();
     }
@@ -53,7 +54,10 @@ public class ChoiceReportTest {
     @Test
     public void aChoiceWithNoSwitchSaysWhatWasPicked() {
         Settings.FONT.save(FontChoice.SYSTEM);
-        assertEquals("Font: a choice, not a switch (hushgram_font=SYSTEM)", line(PatchFamily.FONT));
+        assertEquals("Font: a choice, not a switch (hushgram_font=SYSTEM, hushgram_text_size_percent=100)", line(PatchFamily.FONT));
+        // The text size (#682) shows beside the font, so a report says why the text is big or small.
+        Settings.TEXT_SIZE.save(130);
+        assertEquals("Font: a choice, not a switch (hushgram_font=SYSTEM, hushgram_text_size_percent=130)", line(PatchFamily.FONT));
     }
 
     @Test
@@ -69,13 +73,19 @@ public class ChoiceReportTest {
         try {
             Settings.HIDDEN_SHARE_SHEET_BUTTONS.save("copy_link");
             assertEquals("Hide group buttons on the share sheet: on (hushgram_hide_share_sheet_group=off,"
-                    + " hushgram_hidden_share_sheet_buttons=copy_link)", line(PatchFamily.SHARE_SHEET));
+                    + " hushgram_hide_share_sheet_search=off, hushgram_hidden_share_sheet_buttons=copy_link)", line(PatchFamily.SHARE_SHEET));
 
             Settings.HIDDEN_SHARE_SHEET_BUTTONS.save("");
             assertEquals("Hide group buttons on the share sheet: disabled by its switch (hushgram_hide_share_sheet_group=off,"
-                    + " hushgram_hidden_share_sheet_buttons=)", line(PatchFamily.SHARE_SHEET));
+                    + " hushgram_hide_share_sheet_search=off, hushgram_hidden_share_sheet_buttons=)", line(PatchFamily.SHARE_SHEET));
+
+            // Hide the search bar is a switch of the family too, so it alone makes the line say on (#545).
+            Settings.HIDE_SHARE_SHEET_SEARCH.save(true);
+            assertEquals("Hide group buttons on the share sheet: on (hushgram_hide_share_sheet_group=off,"
+                    + " hushgram_hide_share_sheet_search=on, hushgram_hidden_share_sheet_buttons=)", line(PatchFamily.SHARE_SHEET));
         } finally {
             Settings.HIDDEN_SHARE_SHEET_BUTTONS.resetToDefault();
+            Settings.HIDE_SHARE_SHEET_SEARCH.resetToDefault();
         }
     }
 

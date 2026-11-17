@@ -40,6 +40,7 @@ import app.hushgram.extension.shared.SettingsContextRule;
 import app.hushgram.extension.shared.Utils;
 import app.hushgram.extension.shared.settings.BaseSettings;
 import app.hushgram.extension.shared.settings.PauseForTests;
+import app.hushgram.extension.shared.ui.Dim;
 
 /**
  * The page's side edges, as the S25 showed them (2026-11-03): main-page rows drew a grey hairline
@@ -127,8 +128,8 @@ public class SettingsEdgeInsetsTest {
         open(black, true);
         int width = dp(320);
         Rect overview = surfaceOf(categoryRow("Ads and privacy"));
-        assertTrue("the stroke's left side is off the screen: " + overview, overview.left <= -dp(1));
-        assertTrue("and its right side: " + overview, overview.right >= width + dp(1));
+        assertEquals("#650: a category's card sits 18dp in, as a page's rows do", dp(18), overview.left);
+        assertEquals(width - dp(18), overview.right);
 
         Preference ads = categoryRow("Ads and privacy");
         assertTrue(ads.getOnPreferenceClickListener().onPreferenceClick(ads));
@@ -171,8 +172,9 @@ public class SettingsEdgeInsetsTest {
         ShadowLooper.idleMainLooper();
         try {
             ViewGroup.MarginLayoutParams space = (ViewGroup.MarginLayoutParams) history.search.getLayoutParams();
-            assertEquals("the settings search's 18dp", dp(18), space.getMarginStart());
-            assertEquals(dp(18), space.getMarginEnd());
+            // Dim keeps the density of whichever test loaded it first, so this reads Dim too.
+            assertEquals("the settings search's 18dp", Dim.dp(18), space.getMarginStart());
+            assertEquals(Dim.dp(18), space.getMarginEnd());
         } finally {
             history.dialog.dismiss();
         }
